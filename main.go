@@ -84,6 +84,47 @@ func createMenu(isMacOS bool) *menu.Menu {
 		// 编辑菜单
 		appMenu.Append(menu.EditMenu())
 
+		// 帮助菜单
+		helpMenu := appMenu.AddSubmenu("帮助")
+		helpMenu.AddText("欢迎", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:welcome")
+		})
+		helpMenu.AddText("显示所有命令", keys.Combo("p", keys.ShiftKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:show-all-commands")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("文档", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:documentation")
+		})
+		helpMenu.AddText("视频教程", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:video-tutorials")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("键盘快捷方式参考", keys.Combo("k", keys.CmdOrCtrlKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:keyboard-shortcuts")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("搜索功能请求", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:search-feature-requests")
+		})
+		helpMenu.AddText("使用英文报告问题", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:report-issues")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("查看许可证", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:view-license")
+		})
+		helpMenu.AddText("隐私声明", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:privacy-statement")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("切换开发人员工具", keys.CmdOrCtrl("i"), func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:toggle-devtools")
+		})
+		helpMenu.AddText("打开进程资源管理器", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:open-process-explorer")
+		})
+
 		// 窗口菜单
 		appMenu.Append(menu.WindowMenu())
 	} else {
@@ -123,6 +164,47 @@ func createMenu(isMacOS bool) *menu.Menu {
 		})
 
 		appMenu.Append(menu.EditMenu())
+
+		// 帮助菜单
+		helpMenu := appMenu.AddSubmenu("帮助")
+		helpMenu.AddText("欢迎", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:welcome")
+		})
+		helpMenu.AddText("显示所有命令", keys.Combo("p", keys.ShiftKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:show-all-commands")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("文档", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:documentation")
+		})
+		helpMenu.AddText("视频教程", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:video-tutorials")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("键盘快捷方式参考", keys.Combo("k", keys.CmdOrCtrlKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:keyboard-shortcuts")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("搜索功能请求", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:search-feature-requests")
+		})
+		helpMenu.AddText("使用英文报告问题", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:report-issues")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("查看许可证", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:view-license")
+		})
+		helpMenu.AddText("隐私声明", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:privacy-statement")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.AddText("切换开发人员工具", keys.CmdOrCtrl("i"), func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:toggle-devtools")
+		})
+		helpMenu.AddText("打开进程资源管理器", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:open-process-explorer")
+		})
 	}
 
 	return appMenu

@@ -145,6 +145,7 @@ func (a *App) SaveFileDialog() (string, error) {
 	return a.adapter.SaveFileDialog()
 }
 
+
 // SetProjectRoot 设置项目根目录
 func (a *App) SetProjectRoot(path string) error {
 	return a.adapter.SetProjectRoot(path)

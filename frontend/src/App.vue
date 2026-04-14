@@ -129,10 +129,20 @@ onMounted(() => {
       }
 
       message.loading("正在加载文件夹...", { duration: 0 });
-      await ListDir(selectedPath);
-      message.destroyAll();
 
+      // 验证文件夹
+      try {
+        await ListDir(selectedPath);
+      } catch (error) {
+        message.destroyAll();
+        message.error("无法访问该文件夹");
+        return;
+      }
+
+      // 设置工作区
       editorStore.setWorkspace(selectedPath);
+
+      message.destroyAll();
       message.success(`已打开: ${selectedPath.split("/").pop()}`);
     } catch (error) {
       message.destroyAll();
@@ -280,6 +290,82 @@ onMounted(() => {
   // 新建窗口 - 目前暂不支持
   EventsOn("menu:new-window", () => {
     message.info("多窗口功能开发中...");
+  });
+
+  // ==================== 帮助菜单事件监听 ====================
+
+  // 欢迎
+  EventsOn("menu:welcome", () => {
+    message.info("欢迎使用 Hao-Code Editor！🎉");
+  });
+
+  // 显示所有命令
+  EventsOn("menu:show-all-commands", () => {
+    message.info("命令面板功能开发中... (⇧⌘P)");
+  });
+
+  // 文档
+  EventsOn("menu:documentation", () => {
+    window.open("https://github.com/your-repo/hao-code/wiki", "_blank");
+    message.info("正在打开文档...");
+  });
+
+  // 视频教程
+  EventsOn("menu:video-tutorials", () => {
+    window.open("https://www.youtube.com/", "_blank");
+    message.info("正在打开视频教程...");
+  });
+
+  // 键盘快捷方式参考
+  EventsOn("menu:keyboard-shortcuts", () => {
+    message.info("键盘快捷方式：\n\n保存: ⌘S\n打开: ⌘O\n打开文件夹: ⇧⌘O\n新建: ⌘N\n关闭: ⌘W");
+  });
+
+  // 搜索功能请求
+  EventsOn("menu:search-feature-requests", () => {
+    window.open("https://github.com/your-repo/hao-code/issues", "_blank");
+    message.info("正在打开功能请求页面...");
+  });
+
+  // 使用英文报告问题
+  EventsOn("menu:report-issues", () => {
+    window.open("https://github.com/your-repo/hao-code/issues/new", "_blank");
+    message.info("正在打开问题报告页面...");
+  });
+
+  // 查看许可证
+  EventsOn("menu:view-license", () => {
+    dialog.info({
+      title: "开源许可证",
+      content: "本项目使用 GNU Affero General Public License v3.0 (AGPL-3.0) 开源许可证。这是一个强 copyleft 许可证，要求网络使用也必须公开源代码。",
+      positiveText: "确定",
+    });
+  });
+
+  // 隐私声明
+  EventsOn("menu:privacy-statement", () => {
+    dialog.info({
+      title: "隐私声明",
+      content: "Hao-Code Editor 尊重您的隐私。所有数据都存储在本地，不会收集或传输任何个人信息。",
+      positiveText: "确定",
+    });
+  });
+
+  // 切换开发人员工具
+  EventsOn("menu:toggle-devtools", () => {
+    // 使用浏览器原生的开发者工具
+    // @ts-ignore
+    if (window.devToolsExtension) {
+      // @ts-ignore
+      window.devToolsExtension.open();
+    } else {
+      message.info("请使用浏览器快捷键: ⌘I (macOS) 或 Ctrl+Shift+I (Windows/Linux)");
+    }
+  });
+
+  // 打开进程资源管理器
+  EventsOn("menu:open-process-explorer", () => {
+    message.info("进程资源管理器功能开发中...");
   });
 });
 </script>
