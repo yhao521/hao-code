@@ -57,11 +57,12 @@ function closeWindow() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 32px;
-  background-color: #3C3C3C;
+  height: 30px;
+  background-color: #323233;
   color: #CCCCCC;
   user-select: none;
   -webkit-app-region: drag;
+  border-bottom: 1px solid #252526;
 }
 
 .titlebar-left,
@@ -75,19 +76,35 @@ function closeWindow() {
 .app-title {
   font-size: 12px;
   font-weight: 500;
+  padding-left: 12px;
 }
 
 .workspace-name {
   font-size: 12px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .titlebar-right {
   -webkit-app-region: no-drag;
+  padding-right: 8px;
 }
 
-.close-btn:hover {
+:deep(.n-button) {
+  width: 46px !important;
+  height: 30px !important;
+  border-radius: 0 !important;
+}
+
+:deep(.n-button:hover) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:deep(.close-btn:hover) {
   background-color: #E81123 !important;
   color: white !important;
+}
+
+:deep(.n-button .n-icon) {
+  font-size: 16px;
 }
 </style>

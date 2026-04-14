@@ -47,7 +47,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { NTabs, NTabPane, useMessage } from 'naive-ui'
 import * as monaco from 'monaco-editor'
 import { useEditorStore } from '@/stores/editor'
-import { WriteFile } from '../../../wailsjs/go/main/App'
+import { WriteFile } from '@wails/go/backend/App'
 
 const editorStore = useEditorStore()
 const message = useMessage()
@@ -153,17 +153,47 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  background-color: #1E1E1E;
 }
 
-.editor-tabs {
-  flex-shrink: 0;
+/* 标签页样式优化 */
+:deep(.editor-tabs) {
+  background-color: #252526;
+  border-bottom: 1px solid #3E3E42;
+  min-height: 35px;
 }
 
+:deep(.n-tabs .n-tabs-nav) {
+  background-color: #252526 !important;
+}
+
+:deep(.n-tabs .n-tabs-tab) {
+  background-color: #2D2D2D !important;
+  color: #969696 !important;
+  border-color: #252526 !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  margin-right: 1px !important;
+}
+
+:deep(.n-tabs .n-tabs-tab:hover) {
+  background-color: #2D2D2D !important;
+  color: #CCCCCC !important;
+}
+
+:deep(.n-tabs .n-tabs-tab--active) {
+  background-color: #1E1E1E !important;
+  color: #FFFFFF !important;
+}
+
+/* Monaco 编辑器容器 */
 .monaco-container {
   flex: 1;
-  height: calc(100vh - 90px);
+  overflow: hidden;
+  background-color: #1E1E1E;
 }
 
+/* 空状态 */
 .empty-state {
   flex: 1;
   display: flex;
@@ -174,12 +204,19 @@ onUnmounted(() => {
 
 .empty-content {
   text-align: center;
-  color: #888;
+  color: #858585;
 }
 
 .empty-content h2 {
+  font-size: 28px;
+  font-weight: 300;
   color: #CCCCCC;
   margin-bottom: 16px;
+}
+
+.empty-content p {
+  font-size: 14px;
+  color: #858585;
 }
 
 .shortcuts {
@@ -187,10 +224,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
 }
 
 .shortcuts div {
   font-size: 13px;
+  color: #858585;
 }
 
 kbd {
@@ -201,6 +240,7 @@ kbd {
   font-family: monospace;
   font-size: 12px;
   margin: 0 2px;
+  color: #CCCCCC;
 }
 
 .tab-label {

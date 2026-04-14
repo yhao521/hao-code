@@ -79,15 +79,16 @@ function showGitInfo() {
   height: 22px;
   background-color: #007ACC;
   color: white;
-  font-size: 11px;
-  padding: 0 10px;
+  font-size: 12px;
+  padding: 0 12px;
+  user-select: none;
 }
 
 .statusbar-left,
 .statusbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .status-item {
@@ -95,10 +96,16 @@ function showGitInfo() {
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  user-select: none;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
 }
 
 .status-item:hover {
-  opacity: 0.8;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.status-item .n-icon {
+  font-size: 14px;
 }
 </style>

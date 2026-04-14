@@ -34,7 +34,7 @@ import { NButton, NIcon, NTree, NSpin, NEmpty } from 'naive-ui'
 import type { TreeOption } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import { useEditorStore } from '@/stores/editor'
-import { GetProjectRoot, ListDir, ReadFile } from '../../../wailsjs/go/main/App'
+import { GetProjectRoot, ListDir, ReadFile } from '@wails/go/backend/App'
 
 const editorStore = useEditorStore()
 const loading = ref(false)
@@ -97,28 +97,55 @@ onMounted(() => {
 
 <style scoped>
 .file-explorer {
-  padding: 8px;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #252526;
 }
 
 .explorer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
+  padding: 4px 8px;
+  min-height: 22px;
+  background-color: #252526;
   border-bottom: 1px solid #3E3E42;
+  user-select: none;
 }
 
 .explorer-title {
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 600;
   text-transform: uppercase;
   color: #BBBBBB;
+  letter-spacing: 0.5px;
 }
 
 .empty-tree {
-  padding: 20px;
-  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #858585;
+}
+
+/* 树节点样式优化 */
+:deep(.n-tree-node) {
+  font-size: 13px;
+  color: #CCCCCC;
+  padding: 2px 0;
+}
+
+:deep(.n-tree-node:hover) {
+  background-color: #2A2D2E;
+}
+
+:deep(.n-tree-node--selected) {
+  background-color: #37373D !important;
+}
+
+:deep(.n-tree-node__content) {
+  padding-left: 8px !important;
 }
 </style>

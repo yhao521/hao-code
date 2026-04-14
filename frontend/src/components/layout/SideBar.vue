@@ -1,11 +1,20 @@
 <template>
   <div class="sidebar">
-    <NMenu
-      :options="menuOptions"
-      :value="activeView"
-      @update:value="handleViewChange"
-    />
+    <!-- 活动栏（垂直图标） -->
+    <div class="activity-bar">
+      <div 
+        v-for="item in activityItems" 
+        :key="item.id"
+        class="activity-item"
+        :class="{ active: activeView === item.id }"
+        @click="handleViewChange(item.id)"
+        :title="item.title"
+      >
+        <NIcon :component="item.icon" :size="24" />
+      </div>
+    </div>
     
+    <!-- 侧边栏内容 -->
     <div class="sidebar-content">
       <FileExplorer v-if="activeView === 'explorer'" />
       <SearchPanel v-else-if="activeView === 'search'" />
@@ -16,9 +25,9 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue'
-import { NMenu } from 'naive-ui'
-import type { MenuOption } from 'naive-ui'
+import { ref } from 'vue'
+import { NIcon } from 'naive-ui'
+import type { Component } from 'vue'
 import { 
   FolderOutline, 
   SearchOutline, 
@@ -30,46 +39,98 @@ import SearchPanel from './SearchPanel.vue'
 import GitPanel from './GitPanel.vue'
 import ExtensionsPanel from './ExtensionsPanel.vue'
 
+interface ActivityItem {
+  id: string
+  title: string
+  icon: Component
+}
+
 const activeView = ref('explorer')
 
-const menuOptions: MenuOption[] = [
+const activityItems: ActivityItem[] = [
   {
-    label: '资源管理器',
-    key: 'explorer',
-    icon: () => h('div', null, [h(FolderOutline)])
+    id: 'explorer',
+    title: '资源管理器',
+    icon: FolderOutline
   },
   {
-    label: '搜索',
-    key: 'search',
-    icon: () => h('div', null, [h(SearchOutline)])
+    id: 'search',
+    title: '搜索',
+    icon: SearchOutline
   },
   {
-    label: '源代码管理',
-    key: 'git',
-    icon: () => h('div', null, [h(GitBranchOutline)])
+    id: 'git',
+    title: '源代码管理',
+    icon: GitBranchOutline
   },
   {
-    label: '扩展',
-    key: 'extensions',
-    icon: () => h('div', null, [h(CubeOutline)])
+    id: 'extensions',
+    title: '扩展',
+    icon: CubeOutline
   }
 ]
 
-function handleViewChange(key: string) {
-  activeView.value = key
+function handleViewChange(id: string) {
+  activeView.value = activeView.value === id ? '' : id
 }
 </script>
 
 <style scoped>
 .sidebar {
   display: flex;
-  flex-direction: column;
   height: 100%;
-  background-color: #252526;
+  background-color: #2C2C2C;
 }
 
+/* 活动栏样式 */
+.activity-bar {
+  width: 48px;
+  min-width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+  background-color: #333333;
+  border-right: 1px solid #3E3E42;
+}
+
+.activity-item {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #858585;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.activity-item:hover {
+  color: #CCCCCC;
+  background-color: #2A2D2E;
+}
+
+.activity-item.active {
+  color: #FFFFFF;
+}
+
+.activity-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #FFFFFF;
+}
+
+/* 侧边栏内容 */
 .sidebar-content {
   flex: 1;
+  width: 240px;
+  min-width: 170px;
   overflow-y: auto;
+  background-color: #252526;
 }
 </style>

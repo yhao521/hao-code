@@ -97,12 +97,12 @@ import {
 import { GitBranchOutline, RefreshOutline } from '@vicons/ionicons5'
 import { useGitStore } from '@/stores/git'
 import { 
-  OpenRepository, 
+  OpenRepository,
   GetGitStatus, 
   GitCommit,
   GitGetBranches,
   GitGetLog 
-} from '../../../wailsjs/go/main/App'
+} from '@wails/go/backend/App'
 
 const gitStore = useGitStore()
 const recentCommits = ref<any[]>([])
@@ -112,7 +112,7 @@ const hasChanges = computed(() =>
 )
 
 async function loadGitInfo() {
-  const projectRoot = await import('../../../wailsjs/go/main/App').then(m => m.GetProjectRoot())
+  const projectRoot = await import('@wails/go/backend/App').then(m => m.GetProjectRoot())
   
   try {
     gitStore.isLoading = true
@@ -132,7 +132,7 @@ async function loadGitInfo() {
       // 获取分支列表
       const branches = await GitGetBranches(projectRoot)
       if (branches) {
-        gitStore.branches = branches.local.map(name => ({
+        gitStore.branches = branches.local.map((name: string) => ({
           name,
           fullName: `refs/heads/${name}`,
           isRemote: false,
@@ -159,11 +159,11 @@ async function fetchGitStatus() {
     const status = await GetGitStatus(gitStore.repository!.path)
     if (status) {
       // 将后端的 string 类型转换为前端的字面量类型
-      gitStore.changes = (status.changes || []).map(c => ({
+      gitStore.changes = (status.changes || []).map((c: any) => ({
         ...c,
         status: c.status as 'modified' | 'added' | 'deleted' | 'renamed'
       }))
-      gitStore.stagedChanges = (status.stagedChanges || []).map(c => ({
+      gitStore.stagedChanges = (status.stagedChanges || []).map((c: any) => ({
         ...c,
         status: c.status as 'modified' | 'added' | 'deleted' | 'renamed'
       }))

@@ -108,5 +108,21 @@ body {
 .main-layout {
   flex: 1;
   overflow: hidden;
+  background-color: #1E1E1E;
+}
+
+/* 侧边栏样式优化 */
+:deep(.n-layout-sider) {
+  background-color: #252526 !important;
+  border-right: 1px solid #3E3E42 !important;
+}
+
+:deep(.n-layout-sider .n-layout-sider__scrollbar) {
+  background-color: #252526 !important;
+}
+
+/* 编辑器区域占满 */
+:deep(.n-layout-content) {
+  background-color: #1E1E1E;
 }
 </style>

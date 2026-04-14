@@ -17,7 +17,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@wails/*": ["wailsjs/*"]
     }
   },
   "include": [
