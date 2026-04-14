@@ -3,7 +3,9 @@ package backend
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -14,6 +16,55 @@ type FileSystemService struct{}
 // NewFileSystemService 创建文件系统服务
 func NewFileSystemService() *FileSystemService {
 	return &FileSystemService{}
+}
+
+// OpenFolderDialog 打开文件夹选择对话框（跨平台）
+func (f *FileSystemService) OpenFolderDialog() (string, error) {
+	var cmd *exec.Cmd
+	
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		// 使用 osascript 打开文件夹选择对话框
+		cmd = exec.Command("osascript", "-e", `
+			tell application "System Events"
+				set theFolder to choose folder with prompt "选择项目文件夹"
+				return POSIX path of theFolder
+			end tell
+		`)
+	case "windows":
+		// Windows 使用 PowerShell
+		cmd = exec.Command("powershell", "-Command", `
+			Add-Type -AssemblyName System.Windows.Forms
+			$folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
+			$folderBrowser.Description = "选择项目文件夹"
+			$result = $folderBrowser.ShowDialog()
+			if ($result -eq "OK") {
+				return $folderBrowser.SelectedPath
+			}
+			return ""
+		`)
+	case "linux":
+		// Linux 使用 zenity（如果可用）
+		cmd = exec.Command("zenity", "--file-selection", "--directory", "--title=选择项目文件夹")
+	default:
+		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+	
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果对话框被取消，返回错误
+		return "", fmt.Errorf("dialog cancelled or failed: %v", err)
+	}
+	
+	// 清理输出（去除换行符等）
+	path := strings.TrimSpace(string(output))
+	
+	// 验证路径是否存在
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return "", fmt.Errorf("selected path does not exist")
+	}
+	
+	return path, nil
 }
 
 // ReadFile 读取文件内容
@@ -72,6 +123,17 @@ func (f *FileSystemService) ListDir(path string) ([]FileInfo, error) {
 func (f *FileSystemService) GetProjectRoot() string {
 	dir, _ := os.Getwd()
 	return dir
+}
+
+// SetProjectRoot 设置项目根目录
+func (f *FileSystemService) SetProjectRoot(path string) error {
+	// 验证路径是否存在
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("path does not exist: %s", path)
+	}
+	
+	// 切换到该目录
+	return os.Chdir(path)
 }
 
 // CreateFile 创建新文件

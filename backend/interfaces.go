@@ -18,7 +18,10 @@ type IFileSystemService interface {
 	ListDir(path string) ([]FileInfo, error)
 	// 获取项目根目录
 	GetProjectRoot() string
-	
+	// 打开文件夹选择对话框
+	OpenFolderDialog() (string, error)
+	// 设置当前工作目录
+	SetProjectRoot(path string) error
 	// 创建文件
 	CreateFile(path string) error
 	// 创建目录
@@ -29,12 +32,12 @@ type IFileSystemService interface {
 	RenameFileOrDirectory(oldPath, newPath string) error
 	// 移动文件或目录
 	MoveFileOrDirectory(sourcePath, targetPath string) error
+	// 复制文件或目录
+	CopyFileOrDirectory(sourcePath, targetPath string) error
 	// 获取文件统计信息
 	GetFileStats(path string) (*FileInfo, error)
 	// 搜索文件
 	SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error)
-	// 复制文件或目录
-	CopyFileOrDirectory(sourcePath, targetPath string) error
 	// 判断是否为文本文件
 	IsTextFile(path string) bool
 	// 获取文件扩展名
@@ -43,7 +46,7 @@ type IFileSystemService interface {
 	GetDirectoryTree(path string, depth int) ([]FileInfo, error)
 	// 备份文件
 	BackupFile(path string) error
-	// Touch 文件
+	// Touch文件
 	TouchFile(path string) error
 }
 
@@ -146,6 +149,16 @@ func (w *WailsV2Adapter) ListDir(path string) ([]FileInfo, error) {
 // GetProjectRoot 获取项目根目录
 func (w *WailsV2Adapter) GetProjectRoot() string {
 	return w.services.App.GetProjectRoot()
+}
+
+// OpenFolderDialog 打开文件夹选择对话框
+func (w *WailsV2Adapter) OpenFolderDialog() (string, error) {
+	return w.services.App.OpenFolderDialog()
+}
+
+// SetProjectRoot 设置项目根目录
+func (w *WailsV2Adapter) SetProjectRoot(path string) error {
+	return w.services.App.SetProjectRoot(path)
 }
 
 // CreateFile 创建新文件

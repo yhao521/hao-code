@@ -3,17 +3,38 @@
     <div class="explorer-header">
       <span class="explorer-title">{{ workspaceName }}</span>
       <div class="header-actions">
-        <NButton text circle size="tiny" @click="handleToolbarNewFile" title="新建文件">
+        <NButton 
+          v-if="hasWorkspace" 
+          text 
+          circle 
+          size="tiny" 
+          @click="handleToolbarNewFile" 
+          title="新建文件"
+        >
           <template #icon>
             <NIcon><AddOutline /></NIcon>
           </template>
         </NButton>
-        <NButton text circle size="tiny" @click="handleToolbarNewFolder" title="新建文件夹">
+        <NButton 
+          v-if="hasWorkspace" 
+          text 
+          circle 
+          size="tiny" 
+          @click="handleToolbarNewFolder" 
+          title="新建文件夹"
+        >
           <template #icon>
             <NIcon><FolderOpenOutline /></NIcon>
           </template>
         </NButton>
-        <NButton text circle size="tiny" @click="refreshFiles" title="刷新">
+        <NButton 
+          v-if="hasWorkspace" 
+          text 
+          circle 
+          size="tiny" 
+          @click="refreshFiles" 
+          title="刷新"
+        >
           <template #icon>
             <NIcon><RefreshOutline /></NIcon>
           </template>
@@ -21,7 +42,22 @@
       </div>
     </div>
     
-    <NSpin :show="loading">
+    <!-- 未打开文件夹时显示提示 -->
+    <div v-if="!hasWorkspace" class="no-workspace">
+      <NEmpty description="未打开文件夹">
+        <template #extra>
+          <NButton size="small" type="primary" @click="openFolderDialog">
+            <template #icon>
+              <NIcon><FolderOpenOutline /></NIcon>
+            </template>
+            打开文件夹
+          </NButton>
+        </template>
+      </NEmpty>
+    </div>
+    
+    <!-- 有工作区时显示文件树 -->
+    <NSpin v-else :show="loading">
       <NTree
         v-if="treeData.length > 0"
         :data="treeData"
@@ -36,7 +72,7 @@
         @update:expanded-keys="handleExpand"
       />
       <div v-else class="empty-tree">
-        <NEmpty description="未找到文件" />
+        <NEmpty description="文件夹为空" />
       </div>
     </NSpin>
 
@@ -111,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, computed } from 'vue'
 import { 
   NButton, NIcon, NTree, NSpin, NEmpty, NModal, NForm, NFormItem, 
   NInput, NSpace, NDropdown, useMessage, type TreeOption, type DropdownOption 
@@ -142,7 +178,8 @@ import {
   CreateDirectory,
   DeleteFileOrDirectory,
   RenameFileOrDirectory,
-  CopyFileOrDirectory
+  CopyFileOrDirectory,
+  OpenFolderDialog
 } from '@wails/go/backend/App'
 
 // 扩展 TreeOption 类型以支持自定义属性
@@ -157,6 +194,7 @@ const loading = ref(false)
 const treeData = ref<ExtendedTreeOption[]>([])
 const workspaceName = ref('Hao-Code')
 const projectRoot = ref('')
+const hasWorkspace = computed(() => !!editorStore.workspace)
 
 // 模态框状态
 const showNewFileModal = ref(false)
@@ -267,11 +305,11 @@ function renderTreeNode(data: any) {
   ])
 }
 
-async function loadFiles() {
+async function loadFiles(rootPath?: string) {
   loading.value = true
   try {
-    // 获取项目根目录
-    const root = await GetProjectRoot()
+    // 如果没有指定路径，使用当前工作区
+    const root = rootPath || await GetProjectRoot()
     projectRoot.value = root
     
     // 读取目录内容
@@ -471,6 +509,50 @@ function handleToolbarNewFolder() {
   showNewFolderModal.value = true
 }
 
+// 打开文件夹对话框
+async function openFolderDialog() {
+  try {
+    message.loading('正在打开文件夹选择对话框...', { duration: 0 })
+    
+    const selectedPath = await OpenFolderDialog()
+    
+    message.destroyAll()
+    
+    if (!selectedPath) {
+      message.info('已取消选择')
+      return
+    }
+    
+    message.loading('正在加载文件夹...', { duration: 0 })
+    
+    // 验证文件夹
+    try {
+      await ListDir(selectedPath)
+    } catch (error) {
+      message.destroyAll()
+      message.error('无法访问该文件夹')
+      return
+    }
+    
+    // 设置工作区并加载文件
+    editorStore.setWorkspace(selectedPath)
+    await loadFiles(selectedPath)
+    
+    message.destroyAll()
+    message.success(`已打开: ${selectedPath.split('/').pop()}`)
+    
+  } catch (error) {
+    message.destroyAll()
+    console.error('Failed to open folder:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    if (!errorMsg.includes('cancelled')) {
+      message.error(`打开文件夹失败: ${errorMsg}`)
+    } else {
+      message.info('已取消选择')
+    }
+  }
+}
+
 // 简单的路径处理函数
 function pathJoin(...paths: string[]): string {
   return paths.join('/').replace(/\/+/g, '/')
@@ -492,7 +574,13 @@ function pathExtname(p: string): string {
 }
 
 onMounted(() => {
-  loadFiles()
+  // 如果已经有工作区，加载文件
+  if (editorStore.workspace) {
+    loadFiles(editorStore.workspace.path)
+  } else {
+    // 否则加载默认项目根目录
+    loadFiles()
+  }
 })
 </script>
 
@@ -534,6 +622,14 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   color: #858585;
+}
+
+.no-workspace {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
 /* 树节点样式优化 */

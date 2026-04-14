@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+export interface Workspace {
+  path: string
+  name: string
+}
+
 export interface Tab {
   id: string
   path: string
@@ -18,6 +23,7 @@ export const useEditorStore = defineStore('editor', () => {
   const tabs = ref<Tab[]>([])
   const sidebarVisible = ref(true)
   const sidebarView = ref<SidebarView>('explorer')
+  const workspace = ref<Workspace | null>(null)
 
   // Getters
   const activeTab = computed(() => 
@@ -29,6 +35,20 @@ export const useEditorStore = defineStore('editor', () => {
   )
 
   // Actions
+  function setWorkspace(path: string) {
+    const name = path.split('/').filter(Boolean).pop() || path
+    workspace.value = { path, name }
+    // 清空 tabs
+    tabs.value = []
+    activeEditor.value = null
+  }
+
+  function clearWorkspace() {
+    workspace.value = null
+    tabs.value = []
+    activeEditor.value = null
+  }
+
   function openFile(path: string, content: string = '') {
     const existingTab = tabs.value.find(t => t.path === path)
     
@@ -110,7 +130,7 @@ export const useEditorStore = defineStore('editor', () => {
       'html': 'html',
       'css': 'css',
       'json': 'json',
-      'md': 'markdown',
+      'md': 'plaintext',
       'yaml': 'yaml',
       'xml': 'xml'
     }
@@ -123,6 +143,7 @@ export const useEditorStore = defineStore('editor', () => {
     tabs,
     sidebarVisible,
     sidebarView,
+    workspace,
     // Getters
     activeTab,
     dirtyTabs,
@@ -132,6 +153,8 @@ export const useEditorStore = defineStore('editor', () => {
     updateContent,
     saveFile,
     toggleSidebar,
-    setSidebarView
+    setSidebarView,
+    setWorkspace,
+    clearWorkspace
   }
 })

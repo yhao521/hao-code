@@ -39,6 +39,16 @@ func (a *AppService) GetProjectRoot() string {
 	return a.fileSystem.GetProjectRoot()
 }
 
+// OpenFolderDialog 打开文件夹选择对话框
+func (a *AppService) OpenFolderDialog() (string, error) {
+	return a.fileSystem.OpenFolderDialog()
+}
+
+// SetProjectRoot 设置项目根目录
+func (a *AppService) SetProjectRoot(path string) error {
+	return a.fileSystem.SetProjectRoot(path)
+}
+
 // OpenRepository 打开 Git 仓库（委托给 Git 服务）
 func (a *AppService) OpenRepository(path string) (*RepoInfo, error) {
 	return a.git.OpenRepository(path)

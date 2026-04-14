@@ -5,7 +5,6 @@ import {
   NMessageProvider,
   NNotificationProvider,
   NDialogProvider,
-  NLayout,
   darkTheme,
   zhCN,
   dateZhCN
@@ -52,6 +51,7 @@ const themeOverrides = {
       <NNotificationProvider>
         <NDialogProvider>
           <div class="app-container">
+            <!-- 标题栏（所有平台显示） -->
             <TitleBar />
             
             <!-- 主内容区 - 可拖拽分割 -->
