@@ -3,12 +3,12 @@
     <div class="explorer-header">
       <span class="explorer-title">{{ workspaceName }}</span>
       <div class="header-actions">
-        <NButton text circle size="tiny" @click="showNewFileModal = true" title="新建文件">
+        <NButton text circle size="tiny" @click="handleToolbarNewFile" title="新建文件">
           <template #icon>
             <NIcon><AddOutline /></NIcon>
           </template>
         </NButton>
-        <NButton text circle size="tiny" @click="showNewFolderModal = true" title="新建文件夹">
+        <NButton text circle size="tiny" @click="handleToolbarNewFolder" title="新建文件夹">
           <template #icon>
             <NIcon><FolderOpenOutline /></NIcon>
           </template>
@@ -29,9 +29,9 @@
         block-line
         selectable
         key-field="path"
-        label-field="name"
         children-field="children"
         show-line
+        :render-label="renderTreeNode"
         @update:selected-keys="handleFileSelect"
         @update:expanded-keys="handleExpand"
       />
@@ -44,7 +44,11 @@
     <NModal v-model:show="showNewFileModal" preset="dialog" title="新建文件">
       <NForm :model="newFileForm" label-placement="left" label-width="80">
         <NFormItem label="文件名" path="name">
-          <NInput v-model:value="newFileForm.name" placeholder="例如: index.ts" />
+          <NInput 
+            v-model:value="newFileForm.name" 
+            placeholder="例如: index.ts"
+            @keyup.enter="createNewFile"
+          />
         </NFormItem>
       </NForm>
       <template #footer>
@@ -59,7 +63,11 @@
     <NModal v-model:show="showNewFolderModal" preset="dialog" title="新建文件夹">
       <NForm :model="newFolderForm" label-placement="left" label-width="80">
         <NFormItem label="文件夹名" path="name">
-          <NInput v-model:value="newFolderForm.name" placeholder="例如: components" />
+          <NInput 
+            v-model:value="newFolderForm.name" 
+            placeholder="例如: components"
+            @keyup.enter="createNewFolder"
+          />
         </NFormItem>
       </NForm>
       <template #footer>
@@ -74,7 +82,11 @@
     <NModal v-model:show="showRenameModal" preset="dialog" title="重命名">
       <NForm :model="renameForm" label-placement="left" label-width="80">
         <NFormItem label="新名称" path="name">
-          <NInput v-model:value="renameForm.name" placeholder="输入新名称" />
+          <NInput 
+            v-model:value="renameForm.name" 
+            placeholder="输入新名称"
+            @keyup.enter="renameItem"
+          />
         </NFormItem>
       </NForm>
       <template #footer>
@@ -99,16 +111,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, h } from 'vue'
-import { NButton, NIcon, NTree, NSpin, NEmpty, NModal, NForm, NFormItem, NInput, NSpace, NDropdown, useMessage, type TreeOption, type DropdownOption } from 'naive-ui'
+import { ref, onMounted, h } from 'vue'
+import { 
+  NButton, NIcon, NTree, NSpin, NEmpty, NModal, NForm, NFormItem, 
+  NInput, NSpace, NDropdown, useMessage, type TreeOption, type DropdownOption 
+} from 'naive-ui'
 import { 
   RefreshOutline, 
   AddOutline, 
   FolderOpenOutline, 
+  DocumentTextOutline,
+  CodeSlashOutline,
+  LogoVue,
+  LogoJavascript,
+  LogoCss3,
+  LogoHtml5,
+  FileTrayOutline,
   CreateOutline,
   TrashOutline,
   CopyOutline,
-  PencilOutline
+  PencilOutline,
+  LogoMarkdown
 } from '@vicons/ionicons5'
 import { useEditorStore } from '@/stores/editor'
 import { 
@@ -122,24 +145,10 @@ import {
   CopyFileOrDirectory
 } from '@wails/go/backend/App'
 
-// 使用浏览器兼容的路径处理函数
-const path = {
-  join: (...paths: string[]) => paths.join('/'),
-  dirname: (p: string) => p.split('/').slice(0, -1).join('/'),
-  basename: (p: string, ext?: string) => {
-    const base = p.split('/').pop() || ''
-    return ext ? base.replace(new RegExp(ext.replace('.', '\\.') + '$'), '') : base
-  },
-  extname: (p: string) => {
-    const base = p.split('/').pop() || ''
-    const match = base.match(/\.[^.]+$/)
-    return match ? match[0] : ''
-  }
-}
-
 // 扩展 TreeOption 类型以支持自定义属性
 interface ExtendedTreeOption extends TreeOption {
   isDir?: boolean
+  extension?: string
 }
 
 const editorStore = useEditorStore()
@@ -165,48 +174,98 @@ const deleteItemName = ref('')
 const currentTargetPath = ref('')
 const currentParentPath = ref('')
 
-// 右键菜单（使用右键触发）
-const contextMenuOptions: DropdownOption[] = [
-  {
-    label: '打开',
-    key: 'open',
-    icon: () => h(NIcon, null, { default: () => h(CreateOutline) })
-  },
-  {
-    type: 'divider',
-    key: 'd1'
-  },
-  {
-    label: '新建文件',
-    key: 'newFile',
-    icon: () => h(NIcon, null, { default: () => h(AddOutline) })
-  },
-  {
-    label: '新建文件夹',
-    key: 'newFolder',
-    icon: () => h(NIcon, null, { default: () => h(FolderOpenOutline) })
-  },
-  {
-    type: 'divider',
-    key: 'd2'
-  },
-  {
-    label: '重命名',
-    key: 'rename',
-    icon: () => h(NIcon, null, { default: () => h(PencilOutline) })
-  },
-  {
-    label: '复制',
-    key: 'copy',
-    icon: () => h(NIcon, null, { default: () => h(CopyOutline) })
-  },
-  {
-    label: '删除',
-    key: 'delete',
-    props: { style: { color: '#d03050' } },
-    icon: () => h(NIcon, null, { default: () => h(TrashOutline) })
+// 获取文件扩展名
+function getExtension(filename: string): string {
+  const parts = filename.split('.')
+  return parts.length > 1 ? parts.pop()?.toLowerCase() || '' : ''
+}
+
+// 根据文件类型获取图标
+function getFileIcon(option: ExtendedTreeOption) {
+  if (option.isDir) {
+    return FolderOpenOutline
   }
-]
+  
+  const ext = option.extension || getExtension(option.name as string)
+  
+  const iconMap: Record<string, any> = {
+    'vue': LogoVue,
+    'js': LogoJavascript,
+    'jsx': LogoJavascript,
+    'ts': CodeSlashOutline,
+    'tsx': CodeSlashOutline,
+    'css': LogoCss3,
+    'html': LogoHtml5,
+    'htm': LogoHtml5,
+    'md': LogoMarkdown,
+    'markdown': LogoMarkdown,
+    'json': DocumentTextOutline,
+    'yaml': DocumentTextOutline,
+    'yml': DocumentTextOutline,
+    'xml': DocumentTextOutline,
+    'go': CodeSlashOutline,
+    'py': CodeSlashOutline,
+    'java': CodeSlashOutline,
+    'cpp': CodeSlashOutline,
+    'c': CodeSlashOutline,
+    'h': CodeSlashOutline,
+    'rs': CodeSlashOutline,
+    'rb': CodeSlashOutline,
+    'php': CodeSlashOutline,
+    'sh': CodeSlashOutline,
+    'bash': CodeSlashOutline,
+    'txt': DocumentTextOutline,
+    'log': DocumentTextOutline,
+    'env': DocumentTextOutline,
+    'gitignore': DocumentTextOutline,
+    'dockerfile': DocumentTextOutline,
+    'mod': DocumentTextOutline,
+    'sum': DocumentTextOutline,
+  }
+  
+  return iconMap[ext] || FileTrayOutline
+}
+
+// 根据文件类型获取图标颜色
+function getFileIconColor(option: ExtendedTreeOption): string {
+  if (option.isDir) {
+    return '#D7BA7D' // 文件夹黄色
+  }
+  
+  const ext = option.extension || getExtension(option.name as string)
+  
+  const colorMap: Record<string, string> = {
+    'vue': '#42b883',
+    'js': '#f7df1e',
+    'jsx': '#61dafb',
+    'ts': '#3178c6',
+    'tsx': '#3178c6',
+    'css': '#1572b6',
+    'html': '#e34c26',
+    'md': '#519aba',
+    'go': '#00add8',
+    'py': '#3776ab',
+    'java': '#b07219',
+    'json': '#519aba',
+  }
+  
+  return colorMap[ext] || '#CCCCCC'
+}
+
+// 自定义树节点渲染
+function renderTreeNode(data: any) {
+  const option = data.option as ExtendedTreeOption
+  
+  return h('div', { class: 'tree-node-content' }, [
+    h(NIcon, {
+      component: getFileIcon(option),
+      color: getFileIconColor(option),
+      size: 16,
+      style: { marginRight: '6px', flexShrink: '0' }
+    }),
+    h('span', { class: 'tree-node-label' }, [String(option.name)])
+  ])
+}
 
 async function loadFiles() {
   loading.value = true
@@ -227,11 +286,21 @@ async function loadFiles() {
 }
 
 function convertToTree(files: any[]): ExtendedTreeOption[] {
-  return files.map(file => ({
+  // 排序：文件夹优先，然后按名称字母顺序
+  const sortedFiles = files.sort((a, b) => {
+    // 文件夹排在前面
+    if (a.isDir && !b.isDir) return -1
+    if (!a.isDir && b.isDir) return 1
+    // 同类型按名称排序
+    return a.name.localeCompare(b.name)
+  })
+  
+  return sortedFiles.map(file => ({
     key: file.path,
     name: file.name,
     isLeaf: !file.isDir,
     disabled: false,
+    extension: file.isDir ? undefined : getExtension(file.name),
     ...(file.isDir ? { 
       children: [],
       isDir: true
@@ -248,11 +317,18 @@ async function handleFileSelect(keys: string[]) {
   
   try {
     loading.value = true
+    console.log('[FileExplorer] Reading file:', filePath)
+    
     const content = await ReadFile(filePath)
+    
+    console.log('[FileExplorer] File content loaded, length:', content.length)
+    
     editorStore.openFile(filePath, content)
+    message.success(`已打开: ${filePath.split('/').pop()}`)
   } catch (error) {
-    console.error('Failed to read file:', error)
-    message.error('读取文件失败')
+    console.error('[FileExplorer] Failed to read file:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    message.error(`读取文件失败: ${errorMsg}`)
   } finally {
     loading.value = false
   }
@@ -291,16 +367,6 @@ async function refreshFiles() {
   message.success('刷新成功')
 }
 
-// 处理节点右键菜单
-function handleNodeContextmenu(e: MouseEvent, node: ExtendedTreeOption) {
-  e.preventDefault()
-  currentTargetPath.value = node.key as string
-  currentParentPath.value = node.isDir ? node.key as string : path.dirname(node.key as string)
-  
-  // 显示右键菜单（简化版，实际项目中可以使用 NDropdown 的 trigger="manual"）
-  console.log('Context menu on:', node.name)
-}
-
 // 创建新文件
 async function createNewFile() {
   if (!newFileForm.value.name) {
@@ -309,14 +375,15 @@ async function createNewFile() {
   }
   
   try {
-    const filePath = path.join(currentParentPath.value, newFileForm.value.name)
+    const filePath = pathJoin(currentParentPath.value, newFileForm.value.name)
     await CreateFile(filePath)
     message.success('文件创建成功')
     showNewFileModal.value = false
+    newFileForm.value.name = ''
     await refreshFiles()
   } catch (error) {
     console.error('Failed to create file:', error)
-    message.error('创建文件失败')
+    message.error(`创建文件失败: ${error}`)
   }
 }
 
@@ -328,14 +395,15 @@ async function createNewFolder() {
   }
   
   try {
-    const dirPath = path.join(currentParentPath.value, newFolderForm.value.name)
+    const dirPath = pathJoin(currentParentPath.value, newFolderForm.value.name)
     await CreateDirectory(dirPath)
     message.success('文件夹创建成功')
     showNewFolderModal.value = false
+    newFolderForm.value.name = ''
     await refreshFiles()
   } catch (error) {
     console.error('Failed to create folder:', error)
-    message.error('创建文件夹失败')
+    message.error(`创建文件夹失败: ${error}`)
   }
 }
 
@@ -348,31 +416,32 @@ async function renameItem() {
   
   try {
     const oldPath = currentTargetPath.value
-    const newPath = path.join(path.dirname(oldPath), renameForm.value.name)
+    const newPath = pathJoin(pathDirname(oldPath), renameForm.value.name)
     await RenameFileOrDirectory(oldPath, newPath)
     message.success('重命名成功')
     showRenameModal.value = false
+    renameForm.value.name = ''
     await refreshFiles()
   } catch (error) {
     console.error('Failed to rename:', error)
-    message.error('重命名失败')
+    message.error(`重命名失败: ${error}`)
   }
 }
 
 // 复制
 async function copyItem(sourcePath: string) {
   try {
-    const ext = path.extname(sourcePath)
-    const baseName = path.basename(sourcePath, ext)
-    const dirName = path.dirname(sourcePath)
-    const targetPath = path.join(dirName, `${baseName}-copy${ext}`)
+    const ext = pathExtname(sourcePath)
+    const baseName = pathBasename(sourcePath, ext)
+    const dirName = pathDirname(sourcePath)
+    const targetPath = pathJoin(dirName, `${baseName}-copy${ext}`)
     
     await CopyFileOrDirectory(sourcePath, targetPath)
     message.success('复制成功')
     await refreshFiles()
   } catch (error) {
     console.error('Failed to copy:', error)
-    message.error('复制失败')
+    message.error(`复制失败: ${error}`)
   }
 }
 
@@ -385,7 +454,7 @@ async function confirmDelete() {
     await refreshFiles()
   } catch (error) {
     console.error('Failed to delete:', error)
-    message.error('删除失败')
+    message.error(`删除失败: ${error}`)
   }
 }
 
@@ -400,6 +469,26 @@ function handleToolbarNewFolder() {
   currentParentPath.value = projectRoot.value
   newFolderForm.value.name = ''
   showNewFolderModal.value = true
+}
+
+// 简单的路径处理函数
+function pathJoin(...paths: string[]): string {
+  return paths.join('/').replace(/\/+/g, '/')
+}
+
+function pathDirname(p: string): string {
+  return p.split('/').slice(0, -1).join('/')
+}
+
+function pathBasename(p: string, ext?: string): string {
+  const base = p.split('/').pop() || ''
+  return ext ? base.replace(new RegExp(ext.replace('.', '\\.') + '$'), '') : base
+}
+
+function pathExtname(p: string): string {
+  const base = p.split('/').pop() || ''
+  const match = base.match(/\.[^.]+$/)
+  return match ? match[0] : ''
 }
 
 onMounted(() => {
@@ -463,6 +552,65 @@ onMounted(() => {
 }
 
 :deep(.n-tree-node__content) {
-  padding-left: 8px !important;
+  padding-left: 0 !important; /* 移除左侧内边距 */
+  padding-right: 0 !important; /* 移除右侧内边距 */
+  height: 22px;
+  justify-content: flex-start !important; /* 左对齐 */
+  text-align: left !important; /* 文本左对齐 */
+}
+
+:deep(.n-tree-node__content > .n-tree-node-switcher) {
+  width: 16px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+:deep(.n-tree-node__content > .n-tree-node-checkbox) {
+  margin-right: 4px;
+}
+
+:deep(.n-tree-node__content > .n-tree-node-content__text) {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 自定义树节点内容 */
+.tree-node-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* 左对齐 */
+  flex: 1;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+.tree-node-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: left; /* 文本左对齐 */
+  min-width: 0; /* 允许文本收缩 */
+}
+
+/* 修复 Naive UI NTree 可能的居中问题 */
+:deep(.n-tree .n-tree-node) {
+  text-align: left;
+}
+
+:deep(.n-tree .n-tree-node-wrapper) {
+  text-align: left;
+}
+
+:deep(.n-tree-node-content) {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100%;
 }
 </style>
