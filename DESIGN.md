@@ -323,90 +323,232 @@ type Diagnostic struct {
 
 ## 6. 前端架构
 
-### 6.1 技术选型对比
+### 6.1 技术选型：Vue 3 + Naive UI
 
-#### Vue 3 方案
+#### 为什么选择 Vue 3？
 ```
-优势:
-- 学习曲线平缓
-- Composition API 灵活
-- 响应式系统高效
-- 生态丰富 (Element Plus, Vite)
-
-劣势:
-- 大型项目规范性稍弱
-- TypeScript 支持略逊于 React
+✅ 优势:
+- Composition API 提供灵活的逻辑复用
+- 响应式系统高效且直观
+- 学习曲线平缓，开发效率高
+- TypeScript 支持持续改进
+- 社区生态成熟 (Vite, Pinia, Vue Router)
 ```
 
-#### React 18 方案
+#### 为什么选择 Naive UI？
 ```
-优势:
-- 大型企业项目首选
-- TypeScript 完美支持
-- 生态最丰富
-- 社区资源最多
-
-劣势:
-- 学习曲线较陡
-- 样板代码较多
+✅ 核心优势:
+1. 完整组件体系 - 90+ 高质量组件，覆盖企业级应用全场景
+2. TypeScript 原生 - 全量使用 TypeScript 编写，类型定义完善
+3. 主题定制灵活 - 先进的类型安全主题系统，无需 CSS 变量或预处理器
+4. 按需导入优化 - 所有组件支持 Tree Shaking，优化打包体积
+5. 性能优化设计 - select、tree、table 等组件内置虚拟列表
+6. 开发者友好 - 清晰的文档和 API 设计，快速上手
+7. 官方推荐 - Vue 作者尤雨溪亲自推荐的 UI 组件库
 ```
 
-### 6.2 状态管理
-
-#### Pinia Store (Vue)
+#### Naive UI 关键特性
 ```typescript
-interface EditorState {
-  activeEditor: string | null;
-  editors: Record<string, EditorInstance>;
-  tabs: Tab[];
-  sidebarVisible: boolean;
-  sidebarView: 'explorer' | 'search' | 'git' | 'extensions';
+// 1. 主题定制 - 类型安全
+import { darkTheme, NConfigProvider } from 'naive-ui'
+
+const themeOverrides = {
+  common: {
+    primaryColor: '#18A058',
+    borderRadius: '6px'
+  },
+  Button: {
+    textColor: '#FF6B00',
+    borderHover: '1px solid #FF6B00'
+  }
 }
 
-interface GitState {
-  repository: Repository | null;
-  branches: Branch[];
-  currentBranch: string;
-  changes: Change[];
-  stagedChanges: Change[];
-  commitMessage: string;
-  isCommitting: boolean;
-}
+// 2. 按需导入 - 自动 Tree Shaking
+import { 
+  NButton, 
+  NInput, 
+  NTree, 
+  NDataTable,
+  NModal 
+} from 'naive-ui'
 
-interface PluginState {
-  installedPlugins: PluginInfo[];
-  activatedPlugins: Set<string>;
-  marketplace: PluginMarketplace;
-}
+// 3. 全局配置 - i18n & RTL
+import { zhCN, dateZhCN } from 'naive-ui'
 ```
 
-### 6.3 组件结构
+### 6.2 状态管理：Pinia
+
+#### Store 设计
+``typescript
+// stores/editor.ts
+export const useEditorStore = defineStore('editor', {
+  state: () => ({
+    activeEditor: null as string | null,
+    editors: {} as Record<string, EditorInstance>,
+    tabs: [] as Tab[],
+    sidebarVisible: true,
+    sidebarView: 'explorer' as SidebarView
+  }),
+  
+  getters: {
+    activeTab: (state) => state.tabs.find(t => t.id === state.activeEditor),
+    dirtyTabs: (state) => state.tabs.filter(t => t.dirty)
+  },
+  
+  actions: {
+    openFile(path: string) { /* ... */ },
+    closeTab(id: string) { /* ... */ },
+    saveFile(id: string) { /* ... */ }
+  }
+})
+
+// stores/git.ts
+export const useGitStore = defineStore('git', {
+  state: () => ({
+    repository: null as Repository | null,
+    branches: [] as Branch[],
+    currentBranch: '',
+    changes: [] as Change[],
+    stagedChanges: [] as Change[],
+    commitMessage: '',
+    isCommitting: false,
+    isLoading: false
+  }),
+  
+  actions: {
+    async loadRepository() { /* ... */ },
+    async fetchChanges() { /* ... */ },
+    async commit(message: string) { /* ... */ },
+    async switchBranch(branch: string) { /* ... */ }
+  }
+})
+
+// stores/plugins.ts
+export const usePluginStore = defineStore('plugins', {
+  state: () => ({
+    installedPlugins: [] as PluginInfo[],
+    activatedPlugins: new Set<string>(),
+    marketplace: null as PluginMarketplace | null,
+    isLoading: false
+  }),
+  
+  actions: {
+    async installPlugin(id: string) { /* ... */ },
+    async uninstallPlugin(id: string) { /* ... */ },
+    activatePlugin(id: string) { /* ... */ }
+  }
+})
+```
+
+### 6.3 Naive UI 组件映射
+
+| 编辑器功能 | Naive UI 组件 |
+|-----------|--------------|
+| 文件树 | `NTree`, `NDirectoryTree` |
+| 表格/列表 | `NDataTable`, `NList` |
+| 对话框/模态框 | `NModal`, `NDrawer` |
+| 消息提示 | `NMessage`, `NNotification` |
+| 按钮/图标 | `NButton`, `NIcon` |
+| 输入框 | `NInput`, `NInputGroup` |
+| 标签页 | `NTabs`, `NTabPane` |
+| 菜单 | `NMenu`, `NDropdown` |
+| 加载状态 | `NSpin`, `NSkeleton` |
+| 工具提示 | `NTooltip`, `NPopover` |
+| 表单 | `NForm`, `NFormItem` |
+| 选择器 | `NSelect` |
+| 进度条 | `NProgress` |
+| 分割面板 | `NSplit` |
+| 滚动容器 | `NScrollbar` |
+
+### 6.4 组件结构
 
 ```
 App.vue
-├── TitleBar (标题栏)
-├── ActivityBar (活动栏)
-│   ├── ExplorerIcon
-│   ├── SearchIcon
-│   ├── GitIcon
-│   └── ExtensionsIcon
-├── SideBar (侧边栏)
-│   ├── FileExplorer
-│   ├── SearchPanel
-│   ├── GitPanel
-│   │   ├── ChangesView
-│   │   ├── HistoryView
-│   │   └── BranchesView
-│   └── ExtensionsPanel
-├── EditorArea (编辑区)
-│   ├── TabBar
-│   ├── Breadcrumbs
-│   └── MonacoEditor
-├── Panel (底部面板)
-│   ├── Terminal
-│   ├── Output
-│   └── Problems
-└── StatusBar (状态栏)
+├── NLayout (整体布局)
+│   ├── NLayoutHeader (标题栏)
+│   │   └── CustomTitleBar
+│   ├── NLayout (主体区域)
+│   │   ├── NLayoutSider (侧边栏)
+│   │   │   ├── NMenu (活动栏)
+│   │   │   └── SidePanel
+│   │   │       ├── FileExplorer (NTree)
+│   │   │       ├── SearchPanel
+│   │   │       ├── GitPanel
+│   │   │       │   ├── ChangesView (NDataTable)
+│   │   │       │   ├── HistoryView (NList)
+│   │   │       │   └── BranchesView (NSelect)
+│   │   │       └── ExtensionsPanel
+│   │   ├── NLayoutContent (编辑区)
+│   │   │   ├── NTabs (标签页)
+│   │   │   ├── Breadcrumbs
+│   │   │   └── MonacoEditor
+│   │   └── NLayoutFooter (底部面板)
+│   │       ├── Terminal
+│   │       ├── Output
+│   │       └── Problems
+│   └── NLayoutFooter (状态栏)
+│       └── StatusBar
+```
+
+### 6.5 主题系统设计
+
+#### 深色/浅色主题切换
+```typescript
+// composables/useTheme.ts
+export function useTheme() {
+  const theme = ref<'light' | 'dark'>('dark')
+  const themeOverrides = computed(() => {
+    return theme.value === 'dark' ? darkThemeOverrides : lightThemeOverrides
+  })
+  
+  return {
+    theme,
+    themeOverrides,
+    toggleTheme: () => theme.value = theme.value === 'dark' ? 'light' : 'dark'
+  }
+}
+
+// VSCode 风格深色主题
+const darkThemeOverrides = {
+  common: {
+    primaryColor: '#0E639C',
+    primaryColorHover: '#1177BB',
+    bodyColor: '#1E1E1E',
+    cardColor: '#252526',
+    borderColor: '#3E3E42',
+    textColor: '#CCCCCC'
+  },
+  Menu: {
+    itemColor: '#CCCCCC',
+    itemColorActive: '#FFFFFF',
+    itemColorHover: '#2A2D2E'
+  },
+  Tree: {
+    nodeColor: '#CCCCCC',
+    nodeColorHover: '#2A2D2E'
+  }
+}
+```
+
+### 6.6 性能优化策略
+
+#### Naive UI 性能优化
+```typescript
+// 1. 按需导入 - 减小打包体积
+import { NTree, NDataTable } from 'naive-ui' // ✅ Tree Shaking
+
+// 2. 虚拟滚动 - 大列表优化
+<NVirtualList :items={largeDataSet} :item-size={32}>
+  {({ item }) => <div>{item.name}</div>}
+</NVirtualList>
+
+// 3. 懒加载 - 路由级别代码分割
+const GitPanel = defineAsyncComponent(() => import('./views/GitPanel.vue'))
+
+// 4. Memoization - 缓存计算结果
+const filteredFiles = computed(() => {
+  return files.value.filter(f => f.name.includes(searchQuery.value))
+})
 ```
 
 ---
