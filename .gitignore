@@ -1,3 +1,5 @@
 build/bin
 node_modules
 frontend/dist
+hao-code-test
+frontend/wailsjs

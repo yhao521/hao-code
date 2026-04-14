@@ -34,7 +34,7 @@ import { NButton, NIcon, NTree, NSpin, NEmpty } from 'naive-ui'
 import type { TreeOption } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import { useEditorStore } from '@/stores/editor'
-import { GetProjectRoot, ListDir, ReadFile } from '../../wailsjs/go/main/App'
+import { GetProjectRoot, ListDir, ReadFile } from '../../../wailsjs/go/main/App'
 
 const editorStore = useEditorStore()
 const loading = ref(false)

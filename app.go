@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
-	git "github.com/libgit2/git2go/v34"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 // WailsV2Adapter handles the business logic
@@ -89,64 +93,51 @@ func (a *WailsV2Adapter) GetProjectRoot() string {
 
 // OpenRepository opens a git repository at the given path
 func (a *WailsV2Adapter) OpenRepository(path string) (*RepoInfo, error) {
-	repo, err := git.OpenRepository(path)
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open repository: %v", err)
 	}
-	defer repo.Free()
 
 	// 获取当前分支
 	head, err := repo.Head()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get head: %v", err)
 	}
-	defer head.Free()
 
-	branchName := head.Shorthand()
+	branchName := head.Name().Short()
 
 	return &RepoInfo{
-		Path:           path,
-		CurrentBranch:  branchName,
-		IsRepository:   true,
+		Path:          path,
+		CurrentBranch: branchName,
+		IsRepository:  true,
 	}, nil
 }
 
 // GetGitStatus gets the current status of the repository
 func (a *WailsV2Adapter) GetGitStatus(path string) (*GitStatus, error) {
-	repo, err := git.OpenRepository(path)
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
-	defer repo.Free()
 
-	statusList, err := repo.StatusList(&git.StatusOptions{
-		Show:  git.StatusShowIndexAndWorkdir,
-		Flags: git.StatusOptIncludeUntracked,
-	})
+	worktree, err := repo.Worktree()
 	if err != nil {
 		return nil, err
 	}
-	defer statusList.Free()
+
+	status, err := worktree.Status()
+	if err != nil {
+		return nil, err
+	}
 
 	var stagedChanges []Change
 	var changes []Change
 
-	entryCount, err := statusList.EntryCount()
-	if err != nil {
-		return nil, err
-	}
-
-	for i := 0; i < entryCount; i++ {
-		entry, err := statusList.ByIndex(i)
-		if err != nil {
-			continue
-		}
-
-		change := a.parseStatusEntry(entry)
+	for file, s := range status {
+		change := a.parseFileStatus(s, file)
 		if change != nil {
-			if entry.Status&git.StatusIndexNew != 0 ||
-				entry.Status&git.StatusIndexModified != 0 ||
-				entry.Status&git.StatusIndexDeleted != 0 {
+			// go-git 中 Staging 表示暂存区状态，Worktree 表示工作区状态
+			if s.Staging != git.Unmodified {
 				stagedChanges = append(stagedChanges, *change)
 			} else {
 				changes = append(changes, *change)
@@ -162,126 +153,90 @@ func (a *WailsV2Adapter) GetGitStatus(path string) (*GitStatus, error) {
 
 // GitCommit creates a new commit
 func (a *WailsV2Adapter) GitCommit(path, message string) (string, error) {
-	repo, err := git.OpenRepository(path)
-	if err != nil {
-		return "", err
-	}
-	defer repo.Free()
-
-	// 获取 HEAD
-	head, err := repo.Head()
-	if err != nil {
-		return "", err
-	}
-	defer head.Free()
-
-	// 获取签名
-	sig, err := repo.DefaultSignature()
-	if err != nil {
-		return "", fmt.Errorf("failed to get signature: %v", err)
-	}
-
-	// 创建树
-	index, err := repo.Index()
-	if err != nil {
-		return "", err
-	}
-	defer index.Free()
-
-	treeId, err := index.WriteTree()
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return "", err
 	}
 
-	tree, err := repo.LookupTree(treeId)
+	worktree, err := repo.Worktree()
 	if err != nil {
 		return "", err
 	}
-	defer tree.Free()
 
-	// 获取父提交
-	var parents []*git.Commit
-	if head.Target() != nil {
-		parentCommit, err := repo.LookupCommit(head.Target())
-		if err != nil {
-			return "", err
-		}
-		defer parentCommit.Free()
-		parents = append(parents, parentCommit)
+	// 获取用户信息（用于提交）
+	config, err := repo.Config()
+	if err != nil {
+		return "", fmt.Errorf("failed to get config: %v", err)
+	}
+
+	author := &object.Signature{
+		Name:  config.User.Name,
+		Email: config.User.Email,
+		When:  time.Now(),
+	}
+
+	// 添加所有更改到暂存区
+	err = worktree.AddGlob(".")
+	if err != nil {
+		return "", err
 	}
 
 	// 创建提交
-	commitId, err := repo.CreateCommit(
-		"HEAD",
-		sig,
-		sig,
-		message,
-		tree,
-		parents...,
-	)
+	commitHash, err := worktree.Commit(message, &git.CommitOptions{
+		Author: author,
+	})
 	if err != nil {
 		return "", err
 	}
 
-	return commitId.String(), nil
+	return commitHash.String(), nil
 }
 
 // GitGetBranches gets all branches
 func (a *WailsV2Adapter) GitGetBranches(path string) (*BranchInfo, error) {
-	repo, err := git.OpenRepository(path)
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
-	defer repo.Free()
 
-	var localBranches []string
-	var remoteBranches []string
-
-	// 遍历本地分支
-	localBranchIter, err := repo.NewBranchIterator(git.BranchLocal)
+	// 获取本地分支
+	localBranches := []string{}
+	branchIter, err := repo.Branches()
 	if err != nil {
 		return nil, err
 	}
-	defer localBranchIter.Free()
 
-	branch, branchType, iterErr := localBranchIter.Next()
-	for iterErr == nil {
-		if branch != nil && branchType == git.BranchLocal {
-			name := branch.Shorthand()
-			localBranches = append(localBranches, name)
+	err = branchIter.ForEach(func(ref *plumbing.Reference) error {
+		name := ref.Name().Short()
+		localBranches = append(localBranches, name)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取远程分支
+	remoteBranches := []string{}
+	refs, err := repo.References()
+	if err != nil {
+		return nil, err
+	}
+
+	err = refs.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Name().IsRemote() && ref.Name().Short() != "HEAD" {
+			remoteBranches = append(remoteBranches, ref.Name().Short())
 		}
-		branch.Free()
-		branch, branchType, iterErr = localBranchIter.Next()
-	}
-	if iterErr != nil && iterErr.Error() != git.ErrIterOver.String() {
-		return nil, iterErr
-	}
-
-	// 遍历远程分支
-	remoteBranchIter, err := repo.NewBranchIterator(git.BranchRemote)
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-	defer remoteBranchIter.Free()
-
-	branch, branchType, iterErr = remoteBranchIter.Next()
-	for iterErr == nil {
-		if branch != nil && branchType == git.BranchRemote {
-			name := branch.Shorthand()
-			remoteBranches = append(remoteBranches, name)
-		}
-		branch.Free()
-		branch, branchType, iterErr = remoteBranchIter.Next()
-	}
-	if iterErr != nil && iterErr.Error() != git.ErrIterOver.String() {
-		return nil, iterErr
 	}
 
 	// 获取当前分支
 	currentBranch := ""
 	head, err := repo.Head()
-	if err == nil && head.Target() != nil {
-		currentBranch = head.Shorthand()
+	if err == nil {
+		currentBranch = head.Name().Short()
 	}
 
 	return &BranchInfo{
@@ -293,53 +248,121 @@ func (a *WailsV2Adapter) GitGetBranches(path string) (*BranchInfo, error) {
 
 // GitGetLog gets commit log
 func (a *WailsV2Adapter) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
-	repo, err := git.OpenRepository(path)
+	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
-	defer repo.Free()
 
-	head, err := repo.Head()
+	// 获取 HEAD 引用
+	ref, err := repo.Head()
 	if err != nil {
 		return nil, err
 	}
-	defer head.Free()
 
-	walk, err := repo.Walk()
+	// 创建提交迭代器
+	commitIter, err := repo.Log(&git.LogOptions{From: ref.Hash()})
 	if err != nil {
 		return nil, err
 	}
-	defer walk.Free()
-
-	err = walk.PushHead()
-	if err != nil {
-		return nil, err
-	}
+	defer commitIter.Close()
 
 	var commits []CommitInfo
 	count := 0
 
-	walk.Iterate(func(commit *git.Commit) bool {
+	err = commitIter.ForEach(func(c *object.Commit) error {
 		if count >= maxCommits {
-			return false
+			return nil // 停止迭代
 		}
 
-		author := commit.Author()
-
 		commits = append(commits, CommitInfo{
-			Hash:      commit.Id().String(),
-			ShortHash: commit.Id().String()[:7],
-			Message:   commit.Message(),
-			Author:    author.Name,
-			Email:     author.Email,
-			Timestamp: time.Unix(author.When.Unix(), 0).Format("2006-01-02 15:04:05"),
+			Hash:      c.Hash.String(),
+			ShortHash: c.Hash.String()[:7],
+			Message:   strings.TrimSpace(c.Message),
+			Author:    c.Author.Name,
+			Email:     c.Author.Email,
+			Timestamp: c.Author.When.Format("2006-01-02 15:04:05"),
 		})
 
 		count++
-		return true
+		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return commits, nil
+}
+
+// ==================== 高级 Git 操作（使用 exec.Command）====================
+
+// GitRebase 执行 rebase 操作
+func (a *WailsV2Adapter) GitRebase(path, upstream string) (string, error) {
+	return a.execGitCommand(path, "rebase", upstream)
+}
+
+// GitCherryPick 执行 cherry-pick 操作
+func (a *WailsV2Adapter) GitCherryPick(path, commit string) (string, error) {
+	return a.execGitCommand(path, "cherry-pick", commit)
+}
+
+// GitMerge 执行 merge 操作
+func (a *WailsV2Adapter) GitMerge(path, branch string) (string, error) {
+	return a.execGitCommand(path, "merge", branch)
+}
+
+// GitReset 执行 reset 操作
+func (a *WailsV2Adapter) GitReset(path, mode, target string) (string, error) {
+	return a.execGitCommand(path, "reset", fmt.Sprintf("--%s", mode), target)
+}
+
+// GitStash 执行 stash 操作
+func (a *WailsV2Adapter) GitStash(path, action string, message string) (string, error) {
+	args := []string{"stash"}
+	if action == "save" && message != "" {
+		args = append(args, "save", message)
+	} else if action != "" {
+		args = append(args, action)
+	}
+	return a.execGitCommand(path, args...)
+}
+
+// GitCheckout 执行 checkout 操作
+func (a *WailsV2Adapter) GitCheckout(path, branch string) (string, error) {
+	return a.execGitCommand(path, "checkout", branch)
+}
+
+// GitPull 执行 pull 操作
+func (a *WailsV2Adapter) GitPull(path, remote, branch string) (string, error) {
+	return a.execGitCommand(path, "pull", remote, branch)
+}
+
+// GitPush 执行 push 操作
+func (a *WailsV2Adapter) GitPush(path, remote, branch string) (string, error) {
+	return a.execGitCommand(path, "push", remote, branch)
+}
+
+// execGitCommand 执行 git 命令并返回输出
+func (a *WailsV2Adapter) execGitCommand(path string, args ...string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = path
+	
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		errorMsg := stderr.String()
+		if errorMsg == "" {
+			errorMsg = err.Error()
+		}
+		return "", fmt.Errorf("git command failed: %s", errorMsg)
+	}
+
+	return strings.TrimSpace(stdout.String()), nil
 }
 
 // FileInfo represents information about a file
@@ -390,30 +413,30 @@ type CommitInfo struct {
 
 // Helper functions
 
-func (a *WailsV2Adapter) parseStatusEntry(entry git.StatusEntry) *Change {
+func (a *WailsV2Adapter) parseFileStatus(s *git.FileStatus, file string) *Change {
 	var status string
-	var path string
 
-	switch {
-	case entry.Status&git.StatusIndexNew != 0 || entry.Status&git.StatusWtNew != 0:
+	switch s.Worktree {
+	case git.Added:
 		status = "added"
-		path = entry.HeadToIndex.NewFile.Path
-	case entry.Status&git.StatusIndexDeleted != 0 || entry.Status&git.StatusWtDeleted != 0:
+	case git.Deleted:
 		status = "deleted"
-		path = entry.HeadToIndex.OldFile.Path
-	case entry.Status&git.StatusIndexModified != 0 || entry.Status&git.StatusWtModified != 0:
+	case git.Modified:
 		status = "modified"
-		if entry.Status&git.StatusIndexModified != 0 {
-			path = entry.HeadToIndex.OldFile.Path
-		} else {
-			path = entry.IndexToWorkdir.OldFile.Path
-		}
+	case git.Renamed:
+		status = "renamed"
+	case git.Copied:
+		status = "copied"
 	default:
-		return nil
+		if s.Staging == git.Added {
+			status = "staged"
+		} else {
+			return nil
+		}
 	}
 
 	return &Change{
-		Path:   path,
+		Path:   file,
 		Status: status,
 	}
 }
@@ -490,3 +513,5 @@ func (a *App) GitGetBranches(path string) (*BranchInfo, error) {
 func (a *App) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
 	return a.adapter.GitGetLog(path, maxCommits)
 }
+
+

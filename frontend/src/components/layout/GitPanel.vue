@@ -102,7 +102,7 @@ import {
   GitCommit,
   GitGetBranches,
   GitGetLog 
-} from '../../wailsjs/go/main/App'
+} from '../../../wailsjs/go/main/App'
 
 const gitStore = useGitStore()
 const recentCommits = ref<any[]>([])
@@ -112,7 +112,7 @@ const hasChanges = computed(() =>
 )
 
 async function loadGitInfo() {
-  const projectRoot = await import('../../wailsjs/go/main/App').then(m => m.GetProjectRoot())
+  const projectRoot = await import('../../../wailsjs/go/main/App').then(m => m.GetProjectRoot())
   
   try {
     gitStore.isLoading = true
@@ -158,8 +158,15 @@ async function fetchGitStatus() {
   try {
     const status = await GetGitStatus(gitStore.repository!.path)
     if (status) {
-      gitStore.changes = status.changes || []
-      gitStore.stagedChanges = status.stagedChanges || []
+      // 将后端的 string 类型转换为前端的字面量类型
+      gitStore.changes = (status.changes || []).map(c => ({
+        ...c,
+        status: c.status as 'modified' | 'added' | 'deleted' | 'renamed'
+      }))
+      gitStore.stagedChanges = (status.stagedChanges || []).map(c => ({
+        ...c,
+        status: c.status as 'modified' | 'added' | 'deleted' | 'renamed'
+      }))
     }
   } catch (error) {
     console.error('Failed to get git status:', error)
