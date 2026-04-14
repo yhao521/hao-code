@@ -8,26 +8,33 @@
       closable
       @close="(tabId: string) => editorStore.closeTab(tabId)"
       @update:value="handleTabChange"
+      class="editor-tabs"
     >
       <NTabPane
         v-for="tab in editorStore.tabs"
         :key="tab.id"
         :name="tab.id"
-        :tab="tab.name + (tab.dirty ? ' •' : '')"
       >
-        <!-- Monaco Editor 容器 -->
-        <div ref="editorContainer" class="monaco-container"></div>
+        <template #tab>
+          <div class="tab-label">
+            <span :class="{ dirty: tab.dirty }">{{ tab.name }}</span>
+            <span v-if="tab.dirty" class="dirty-indicator">•</span>
+          </div>
+        </template>
       </NTabPane>
     </NTabs>
     
+    <!-- Monaco Editor 容器 -->
+    <div ref="editorContainer" class="monaco-container"></div>
+    
     <!-- 空状态 -->
-    <div v-else class="empty-state">
+    <div v-if="editorStore.tabs.length === 0" class="empty-state">
       <div class="empty-content">
         <h2>Hao-Code Editor</h2>
         <p>打开文件开始编辑</p>
         <div class="shortcuts">
           <div><kbd>Ctrl+P</kbd> 快速打开</div>
-          <div><kbd>Ctrl+Shift+P</kbd> 命令面板</div>
+          <div><kbd>Ctrl+S</kbd> 保存文件</div>
           <div><kbd>Ctrl+B</kbd> 切换侧边栏</div>
         </div>
       </div>
@@ -36,20 +43,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { NTabs, NTabPane } from 'naive-ui'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { NTabs, NTabPane, useMessage } from 'naive-ui'
 import * as monaco from 'monaco-editor'
 import { useEditorStore } from '@/stores/editor'
+import { WriteFile } from '../../wailsjs/go/main/App'
 
 const editorStore = useEditorStore()
+const message = useMessage()
 const editorContainer = ref<HTMLElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
+let currentModel: monaco.editor.ITextModel | null = null
 
-function handleTabChange(tabId: string) {
-  editorStore.activeEditor = tabId
-  // TODO: 更新编辑器内容
-}
-
+// 初始化编辑器
 onMounted(() => {
   if (editorContainer.value && !editor) {
     editor = monaco.editor.create(editorContainer.value, {
@@ -66,18 +72,78 @@ onMounted(() => {
       renderWhitespace: 'selection',
       bracketPairColorization: {
         enabled: true
+      },
+      tabSize: 2,
+      insertSpaces: true,
+      wordWrap: 'on'
+    })
+    
+    // 监听内容变化
+    editor.onDidChangeModelContent(() => {
+      if (editorStore.activeEditor) {
+        const content = editor!.getValue()
+        editorStore.updateContent(editorStore.activeEditor, content)
+      }
+    })
+    
+    // 注册保存快捷键
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      if (editorStore.activeEditor) {
+        handleSave(editorStore.activeEditor)
       }
     })
   }
 })
 
-// 监听活动标签页变化
+// 监听标签页变化
 watch(() => editorStore.activeEditor, (newTabId) => {
   if (newTabId && editor) {
     const tab = editorStore.tabs.find(t => t.id === newTabId)
-    if (tab && tab.content) {
-      editor.setValue(tab.content)
+    if (tab) {
+      loadFileIntoEditor(tab)
     }
+  }
+})
+
+// 将文件加载到编辑器
+function loadFileIntoEditor(tab: any) {
+  const language = tab.language || 'plaintext'
+  
+  // 设置语言
+  monaco.editor.setModelLanguage(editor!.getModel()!, language)
+  
+  // 设置内容
+  if (tab.content !== undefined) {
+    editor!.setValue(tab.content)
+  }
+  
+  // 滚动到顶部
+  editor!.setScrollPosition({ scrollTop: 0 })
+}
+
+// 处理标签页切换
+function handleTabChange(tabId: string) {
+  editorStore.activeEditor = tabId
+}
+
+// 保存文件
+async function handleSave(tabId: string) {
+  const tab = editorStore.tabs.find(t => t.id === tabId)
+  if (!tab || !tab.content) return
+  
+  try {
+    await WriteFile(tab.path, tab.content)
+    editorStore.saveFile(tabId)
+    message.success(`已保存: ${tab.name}`)
+  } catch (error) {
+    message.error(`保存失败: ${error}`)
+  }
+}
+
+// 清理
+onUnmounted(() => {
+  if (editor) {
+    editor.dispose()
   }
 })
 </script>
@@ -89,7 +155,12 @@ watch(() => editorStore.activeEditor, (newTabId) => {
   height: 100%;
 }
 
+.editor-tabs {
+  flex-shrink: 0;
+}
+
 .monaco-container {
+  flex: 1;
   height: calc(100vh - 90px);
 }
 
@@ -129,5 +200,18 @@ kbd {
   border: 1px solid #555;
   font-family: monospace;
   font-size: 12px;
+  margin: 0 2px;
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dirty-indicator {
+  color: #4EC9B0;
+  font-size: 16px;
+  line-height: 1;
 }
 </style>

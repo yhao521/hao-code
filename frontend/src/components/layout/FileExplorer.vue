@@ -1,7 +1,7 @@
 <template>
   <div class="file-explorer">
     <div class="explorer-header">
-      <span class="explorer-title">资源管理器</span>
+      <span class="explorer-title">{{ workspaceName }}</span>
       <NButton text circle size="tiny" @click="refreshFiles">
         <template #icon>
           <NIcon><RefreshOutline /></NIcon>
@@ -9,86 +9,96 @@
       </NButton>
     </div>
     
-    <NTree
-      :data="treeData"
-      :default-expand-all="true"
-      block-line
-      selectable
-      @update:selected-keys="handleFileSelect"
-    />
+    <NSpin :show="loading">
+      <NTree
+        v-if="treeData.length > 0"
+        :data="treeData"
+        :default-expand-all="false"
+        block-line
+        selectable
+        key-field="path"
+        label-field="name"
+        children-field="children"
+        @update:selected-keys="handleFileSelect"
+      />
+      <div v-else class="empty-tree">
+        <NEmpty description="未找到文件" />
+      </div>
+    </NSpin>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { NButton, NIcon, NTree } from 'naive-ui'
+import { ref, onMounted, computed } from 'vue'
+import { NButton, NIcon, NTree, NSpin, NEmpty } from 'naive-ui'
 import type { TreeOption } from 'naive-ui'
 import { RefreshOutline } from '@vicons/ionicons5'
 import { useEditorStore } from '@/stores/editor'
+import { GetProjectRoot, ListDir, ReadFile } from '../../wailsjs/go/main/App'
 
 const editorStore = useEditorStore()
+const loading = ref(false)
+const treeData = ref<TreeOption[]>([])
+const workspaceName = ref('Hao-Code')
+const projectRoot = ref('')
 
-// 模拟文件树数据（实际应该从后端获取）
-const treeData = ref<TreeOption[]>([
-  {
-    key: 'src',
-    label: 'src',
-    children: [
-      {
-        key: 'frontend',
-        label: 'frontend',
-        children: [
-          { key: 'src/main.ts', label: 'main.ts' },
-          { key: 'src/App.vue', label: 'App.vue' },
-          { key: 'src/components/layout/TitleBar.vue', label: 'TitleBar.vue' },
-          { key: 'src/stores/editor.ts', label: 'editor.ts' }
-        ]
-      },
-      {
-        key: 'backend',
-        label: 'backend',
-        children: [
-          { key: 'main.go', label: 'main.go' },
-          { key: 'app.go', label: 'app.go' }
-        ]
-      }
-    ]
-  },
-  {
-    key: 'package.json',
-    label: 'package.json'
-  },
-  {
-    key: 'go.mod',
-    label: 'go.mod'
-  },
-  {
-    key: 'README.md',
-    label: 'README.md'
-  }
-])
-
-function handleFileSelect(keys: string[]) {
-  if (keys.length > 0) {
-    const filePath = keys[0]
-    // TODO: 读取文件内容
-    editorStore.openFile(filePath, '// File content')
+async function loadFiles() {
+  loading.value = true
+  try {
+    // 获取项目根目录
+    const root = await GetProjectRoot()
+    projectRoot.value = root
+    
+    // 读取目录内容
+    const files = await ListDir(root)
+    treeData.value = convertToTree(files)
+  } catch (error) {
+    console.error('Failed to load files:', error)
+  } finally {
+    loading.value = false
   }
 }
 
-function refreshFiles() {
-  // TODO: 刷新文件树
-  console.log('Refresh files')
+function convertToTree(files: any[]): TreeOption[] {
+  return files.map(file => ({
+    key: file.path,
+    name: file.name,
+    isLeaf: !file.isDir,
+    ...(file.isDir ? { 
+      children: [] // 懒加载子目录
+    } : {})
+  }))
+}
+
+async function handleFileSelect(keys: string[]) {
+  if (keys.length === 0) return
+  
+  const filePath = keys[0]
+  
+  try {
+    loading.value = true
+    const content = await ReadFile(filePath)
+    editorStore.openFile(filePath, content)
+  } catch (error) {
+    console.error('Failed to read file:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function refreshFiles() {
+  await loadFiles()
 }
 
 onMounted(() => {
-  // TODO: 加载文件树
+  loadFiles()
 })
 </script>
 
 <style scoped>
 .file-explorer {
   padding: 8px;
+  height: 100%;
 }
 
 .explorer-header {
@@ -105,5 +115,10 @@ onMounted(() => {
   font-weight: bold;
   text-transform: uppercase;
   color: #BBBBBB;
+}
+
+.empty-tree {
+  padding: 20px;
+  text-align: center;
 }
 </style>

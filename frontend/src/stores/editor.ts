@@ -80,8 +80,6 @@ export const useEditorStore = defineStore('editor', () => {
     const tab = tabs.value.find(t => t.id === id)
     if (tab) {
       tab.dirty = false
-      // TODO: 调用后端保存
-      console.log('Saved:', tab.path)
     }
   }
 
