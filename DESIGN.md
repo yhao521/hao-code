@@ -9,13 +9,25 @@ Hao-Code Editor
 打造一个轻量级但功能强大的跨平台代码编辑器，对标 VSCode 的扩展能力和 IntelliJ IDEA 的 Git 集成体验。
 
 ### 1.3 核心技术栈（最终选型）
-- **后端框架**: Wails v3 (Go)
+- **后端框架**: Wails v2 (Go) - 稳定优先，接口解耦适配未来 v3 迁移
 - **前端框架**: Vue 3 + TypeScript
 - **UI 组件库**: Naive UI
 - **代码编辑核心**: Monaco Editor
 - **状态管理**: Pinia
 - **构建工具**: Vite
 - **插件系统**: 基于 Go plugin + JavaScript SDK
+
+### 1.4 开源许可证
+**AGPL-3.0 License** (GNU Affero General Public License v3.0)
+
+本项目采用 AGPL-3.0 开源许可证，这是一个强 copyleft 许可证，确保：
+- ✅ 源代码必须公开
+- ✅ 修改后的版本也必须使用 AGPL-3.0
+- ✅ 网络使用也视为分发（触发源码公开义务）
+- ✅ 保护用户自由使用、研究、分享的权利
+- ⚠️ 商业使用需谨慎（必须开放整个应用源代码）
+
+详细条款请查看 [LICENSE](LICENSE) 文件。
 
 ---
 
