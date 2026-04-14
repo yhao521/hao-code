@@ -11,31 +11,30 @@ import (
 	git "github.com/libgit2/git2go/v34"
 )
 
-// App struct
-type App struct {
+// WailsV2Adapter handles the business logic
+type WailsV2Adapter struct {
 	ctx context.Context
 }
 
-// NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+// NewWailsV2Adapter creates a new adapter instance
+func NewWailsV2Adapter() *WailsV2Adapter {
+	return &WailsV2Adapter{}
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
-func (a *App) startup(ctx context.Context) {
+// Startup initializes the adapter with context
+func (a *WailsV2Adapter) Startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
 // Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
+func (a *WailsV2Adapter) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, Welcome to Hao-Code Editor!", name)
 }
 
 // ==================== 文件系统 API ====================
 
 // ReadFile reads content from a file
-func (a *App) ReadFile(path string) (string, error) {
+func (a *WailsV2Adapter) ReadFile(path string) (string, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
@@ -44,12 +43,12 @@ func (a *App) ReadFile(path string) (string, error) {
 }
 
 // WriteFile writes content to a file
-func (a *App) WriteFile(path string, content string) error {
+func (a *WailsV2Adapter) WriteFile(path string, content string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
 
 // ListDir lists files in a directory
-func (a *App) ListDir(path string) ([]FileInfo, error) {
+func (a *WailsV2Adapter) ListDir(path string) ([]FileInfo, error) {
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -81,24 +80,15 @@ func (a *App) ListDir(path string) ([]FileInfo, error) {
 }
 
 // GetProjectRoot returns the project root directory
-func (a *App) GetProjectRoot() string {
+func (a *WailsV2Adapter) GetProjectRoot() string {
 	dir, _ := os.Getwd()
 	return dir
-}
-
-// FileInfo represents information about a file
-type FileInfo struct {
-	Name    string `json:"name"`
-	Path    string `json:"path"`
-	Size    int64  `json:"size,omitempty"`
-	IsDir   bool   `json:"isDir"`
-	ModTime int64  `json:"modTime,omitempty"`
 }
 
 // ==================== Git API ====================
 
 // OpenRepository opens a git repository at the given path
-func (a *App) OpenRepository(path string) (*RepoInfo, error) {
+func (a *WailsV2Adapter) OpenRepository(path string) (*RepoInfo, error) {
 	repo, err := git.OpenRepository(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open repository: %v", err)
@@ -122,7 +112,7 @@ func (a *App) OpenRepository(path string) (*RepoInfo, error) {
 }
 
 // GetGitStatus gets the current status of the repository
-func (a *App) GetGitStatus(path string) (*GitStatus, error) {
+func (a *WailsV2Adapter) GetGitStatus(path string) (*GitStatus, error) {
 	repo, err := git.OpenRepository(path)
 	if err != nil {
 		return nil, err
@@ -154,9 +144,9 @@ func (a *App) GetGitStatus(path string) (*GitStatus, error) {
 
 		change := a.parseStatusEntry(entry)
 		if change != nil {
-			if entry.Status&git.StatusIndexNew != 0 || 
-			   entry.Status&git.StatusIndexModified != 0 ||
-			   entry.Status&git.StatusIndexDeleted != 0 {
+			if entry.Status&git.StatusIndexNew != 0 ||
+				entry.Status&git.StatusIndexModified != 0 ||
+				entry.Status&git.StatusIndexDeleted != 0 {
 				stagedChanges = append(stagedChanges, *change)
 			} else {
 				changes = append(changes, *change)
@@ -171,7 +161,7 @@ func (a *App) GetGitStatus(path string) (*GitStatus, error) {
 }
 
 // GitCommit creates a new commit
-func (a *App) GitCommit(path, message string) (string, error) {
+func (a *WailsV2Adapter) GitCommit(path, message string) (string, error) {
 	repo, err := git.OpenRepository(path)
 	if err != nil {
 		return "", err
@@ -238,7 +228,7 @@ func (a *App) GitCommit(path, message string) (string, error) {
 }
 
 // GitGetBranches gets all branches
-func (a *App) GitGetBranches(path string) (*BranchInfo, error) {
+func (a *WailsV2Adapter) GitGetBranches(path string) (*BranchInfo, error) {
 	repo, err := git.OpenRepository(path)
 	if err != nil {
 		return nil, err
@@ -271,14 +261,14 @@ func (a *App) GitGetBranches(path string) (*BranchInfo, error) {
 	}
 
 	return &BranchInfo{
-		Local:          localBranches,
-		Remote:         remoteBranches,
-		CurrentBranch:  currentBranch,
+		Local:         localBranches,
+		Remote:        remoteBranches,
+		CurrentBranch: currentBranch,
 	}, nil
 }
 
 // GitGetLog gets commit log
-func (a *App) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
+func (a *WailsV2Adapter) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
 	repo, err := git.OpenRepository(path)
 	if err != nil {
 		return nil, err
@@ -311,7 +301,7 @@ func (a *App) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
 		}
 
 		author := commit.Author()
-		
+
 		commits = append(commits, CommitInfo{
 			Hash:      commit.Id().String(),
 			ShortHash: commit.Id().String()[:7],
@@ -330,7 +320,7 @@ func (a *App) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
 
 // Helper functions
 
-func (a *App) parseStatusEntry(entry git.StatusEntry) *Change {
+func (a *WailsV2Adapter) parseStatusEntry(entry git.StatusEntry) *Change {
 	var status string
 	var path string
 
@@ -357,32 +347,45 @@ func (a *App) parseStatusEntry(entry git.StatusEntry) *Change {
 		Status: status,
 	}
 }
+package main
 
-// Git types
+// FileInfo represents information about a file
+type FileInfo struct {
+	Name    string `json:"name"`
+	Path    string `json:"path"`
+	Size    int64  `json:"size,omitempty"`
+	IsDir   bool   `json:"isDir"`
+	ModTime int64  `json:"modTime,omitempty"`
+}
 
+// RepoInfo represents information about a git repository
 type RepoInfo struct {
 	Path           string `json:"path"`
 	CurrentBranch  string `json:"currentBranch"`
 	IsRepository   bool   `json:"isRepository"`
 }
 
+// GitStatus represents the status of a git repository
 type GitStatus struct {
 	StagedChanges []Change `json:"stagedChanges"`
 	Changes       []Change `json:"changes"`
 }
 
+// Change represents a single change in a git repository
 type Change struct {
 	Path    string `json:"path"`
 	Status  string `json:"status"`
 	OldPath string `json:"oldPath,omitempty"`
 }
 
+// BranchInfo represents information about git branches
 type BranchInfo struct {
 	Local         []string `json:"local"`
 	Remote        []string `json:"remote"`
 	CurrentBranch string   `json:"currentBranch"`
 }
 
+// CommitInfo represents information about a git commit
 type CommitInfo struct {
 	Hash      string `json:"hash"`
 	ShortHash string `json:"shortHash"`
@@ -390,4 +393,82 @@ type CommitInfo struct {
 	Author    string `json:"author"`
 	Email     string `json:"email"`
 	Timestamp string `json:"timestamp"`
+}
+package main
+
+import (
+	"context"
+)
+
+// App struct - 保持向后兼容，但内部使用新的服务架构
+type App struct {
+	ctx     context.Context
+	adapter *WailsV2Adapter
+}
+
+// NewApp creates a new App application struct
+func NewApp() *App {
+	return &App{
+		adapter: NewWailsV2Adapter(),
+	}
+}
+
+// startup is called when the app starts. The context is saved
+// so we can call the runtime methods
+func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
+	a.adapter.Startup(ctx)
+}
+
+// ==================== 暴露给前端的方法 ====================
+// 这些方法直接代理到适配器层
+
+// Greet returns a greeting for the given name
+func (a *App) Greet(name string) string {
+	return a.adapter.Greet(name)
+}
+
+// ReadFile reads content from a file
+func (a *App) ReadFile(path string) (string, error) {
+	return a.adapter.ReadFile(path)
+}
+
+// WriteFile writes content to a file
+func (a *App) WriteFile(path string, content string) error {
+	return a.adapter.WriteFile(path, content)
+}
+
+// ListDir lists files in a directory
+func (a *App) ListDir(path string) ([]FileInfo, error) {
+	return a.adapter.ListDir(path)
+}
+
+// GetProjectRoot returns the project root directory
+func (a *App) GetProjectRoot() string {
+	return a.adapter.GetProjectRoot()
+}
+
+// OpenRepository opens a git repository at the given path
+func (a *App) OpenRepository(path string) (*RepoInfo, error) {
+	return a.adapter.OpenRepository(path)
+}
+
+// GetGitStatus gets the current status of the repository
+func (a *App) GetGitStatus(path string) (*GitStatus, error) {
+	return a.adapter.GetGitStatus(path)
+}
+
+// GitCommit creates a new commit
+func (a *App) GitCommit(path, message string) (string, error) {
+	return a.adapter.GitCommit(path, message)
+}
+
+// GitGetBranches gets all branches
+func (a *App) GitGetBranches(path string) (*BranchInfo, error) {
+	return a.adapter.GitGetBranches(path)
+}
+
+// GitGetLog gets commit log
+func (a *App) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
+	return a.adapter.GitGetLog(path, maxCommits)
 }

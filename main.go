@@ -13,20 +13,21 @@ var assets embed.FS
 
 func main() {
 	// Create an instance of the app structure
+	// App 内部使用了分层架构和接口解耦设计，便于未来迁移到 Wails v3
 	app := NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "hao-code",
-		Width:  1024,
-		Height: 768,
+		Title:  "Hao-Code Editor",
+		Width:  1280,
+		Height: 800,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
+		BackgroundColour: &options.RGBA{R: 30, G: 30, B: 30, A: 1}, // VSCode 深色背景
 		OnStartup:        app.startup,
 		Bind: []interface{}{
-			app,
+			app, // 绑定 App 实例，暴露方法给前端
 		},
 	})
 

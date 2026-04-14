@@ -3,7 +3,7 @@ module hao-code
 go 1.23
 
 require (
-	github.com/libgit2/git2go/v34 v34.0.0
+	// github.com/libgit2/git2go/v34 v34.0.0 // 临时禁用 Git 功能来测试架构
 	github.com/wailsapp/wails/v2 v2.10.2
 )
 
