@@ -130,7 +130,7 @@ func (g *GitService) GitCommit(path, message string) (string, error) {
 
 	// 获取父提交
 	var parents []*git.Commit
-	if !head.IsUnborn() {
+	if head.Target() != nil {
 		parentCommit, err := repo.LookupCommit(head.Target())
 		if err != nil {
 			return "", err
@@ -142,11 +142,10 @@ func (g *GitService) GitCommit(path, message string) (string, error) {
 	// 创建提交
 	commitId, err := repo.CreateCommit(
 		"HEAD",
-		&sig,
-		&sig,
+		sig,
+		sig,
 		message,
 		tree,
-		len(parents) > 0,
 		parents...,
 	)
 	if err != nil {
@@ -167,8 +166,19 @@ func (g *GitService) GitGetBranches(path string) (*BranchInfo, error) {
 	var localBranches []string
 	var remoteBranches []string
 
-	// 遍历本地分支
-	err = repo.WalkReferences(git.ReferenceTypeDirect, func(ref *git.Reference) error {
+	// 创建引用迭代器
+	iter, err := repo.NewReferenceIterator()
+	if err != nil {
+		return nil, err
+	}
+
+	// 遍历所有引用
+	for {
+		ref, err := iter.Next()
+		if err != nil {
+			break // 迭代完成
+		}
+
 		if strings.HasPrefix(ref.Name(), "refs/heads/") {
 			name := strings.TrimPrefix(ref.Name(), "refs/heads/")
 			localBranches = append(localBranches, name)
@@ -176,16 +186,12 @@ func (g *GitService) GitGetBranches(path string) (*BranchInfo, error) {
 			name := strings.TrimPrefix(ref.Name(), "refs/remotes/")
 			remoteBranches = append(remoteBranches, name)
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	// 获取当前分支
 	currentBranch := ""
 	head, err := repo.Head()
-	if err == nil && !head.IsUnborn() {
+	if err == nil && head.Target() != nil {
 		currentBranch = head.Shorthand()
 	}
 
@@ -253,18 +259,18 @@ func (g *GitService) parseStatusEntry(entry git.StatusEntry) *Change {
 	var path string
 
 	switch {
-	case entry.Status&git.StatusIndexNew != 0 || entry.Status&git.StatusWTNew != 0:
+	case entry.Status&git.StatusIndexNew != 0 || entry.Status&git.StatusWtNew != 0:
 		status = "added"
 		path = entry.HeadToIndex.NewFile.Path
-	case entry.Status&git.StatusIndexDeleted != 0 || entry.Status&git.StatusWTDeleted != 0:
+	case entry.Status&git.StatusIndexDeleted != 0 || entry.Status&git.StatusWtDeleted != 0:
 		status = "deleted"
 		path = entry.HeadToIndex.OldFile.Path
-	case entry.Status&git.StatusIndexModified != 0 || entry.Status&git.StatusWTModified != 0:
+	case entry.Status&git.StatusIndexModified != 0 || entry.Status&git.StatusWtModified != 0:
 		status = "modified"
 		if entry.Status&git.StatusIndexModified != 0 {
 			path = entry.HeadToIndex.OldFile.Path
 		} else {
-			path = entry.WorkdirToIndex.OldFile.Path
+			path = entry.IndexToWorkdir.OldFile.Path
 		}
 	default:
 		return nil

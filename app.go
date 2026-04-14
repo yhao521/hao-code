@@ -201,7 +201,7 @@ func (a *WailsV2Adapter) GitCommit(path, message string) (string, error) {
 
 	// 获取父提交
 	var parents []*git.Commit
-	if !head.IsUnborn() {
+	if head.Target() != nil {
 		parentCommit, err := repo.LookupCommit(head.Target())
 		if err != nil {
 			return "", err
@@ -213,11 +213,10 @@ func (a *WailsV2Adapter) GitCommit(path, message string) (string, error) {
 	// 创建提交
 	commitId, err := repo.CreateCommit(
 		"HEAD",
-		&sig,
-		&sig,
+		sig,
+		sig,
 		message,
 		tree,
-		len(parents) > 0,
 		parents...,
 	)
 	if err != nil {
@@ -239,24 +238,49 @@ func (a *WailsV2Adapter) GitGetBranches(path string) (*BranchInfo, error) {
 	var remoteBranches []string
 
 	// 遍历本地分支
-	err = repo.WalkReferences(git.ReferenceTypeDirect, func(ref *git.Reference) error {
-		if strings.HasPrefix(ref.Name(), "refs/heads/") {
-			name := strings.TrimPrefix(ref.Name(), "refs/heads/")
-			localBranches = append(localBranches, name)
-		} else if strings.HasPrefix(ref.Name(), "refs/remotes/") {
-			name := strings.TrimPrefix(ref.Name(), "refs/remotes/")
-			remoteBranches = append(remoteBranches, name)
-		}
-		return nil
-	})
+	localBranchIter, err := repo.NewBranchIterator(git.BranchLocal)
 	if err != nil {
 		return nil, err
+	}
+	defer localBranchIter.Free()
+
+	branch, branchType, iterErr := localBranchIter.Next()
+	for iterErr == nil {
+		if branch != nil && branchType == git.BranchLocal {
+			name := branch.Shorthand()
+			localBranches = append(localBranches, name)
+		}
+		branch.Free()
+		branch, branchType, iterErr = localBranchIter.Next()
+	}
+	if iterErr != nil && iterErr.Error() != git.ErrIterOver.String() {
+		return nil, iterErr
+	}
+
+	// 遍历远程分支
+	remoteBranchIter, err := repo.NewBranchIterator(git.BranchRemote)
+	if err != nil {
+		return nil, err
+	}
+	defer remoteBranchIter.Free()
+
+	branch, branchType, iterErr = remoteBranchIter.Next()
+	for iterErr == nil {
+		if branch != nil && branchType == git.BranchRemote {
+			name := branch.Shorthand()
+			remoteBranches = append(remoteBranches, name)
+		}
+		branch.Free()
+		branch, branchType, iterErr = remoteBranchIter.Next()
+	}
+	if iterErr != nil && iterErr.Error() != git.ErrIterOver.String() {
+		return nil, iterErr
 	}
 
 	// 获取当前分支
 	currentBranch := ""
 	head, err := repo.Head()
-	if err == nil && !head.IsUnborn() {
+	if err == nil && head.Target() != nil {
 		currentBranch = head.Shorthand()
 	}
 
@@ -318,37 +342,6 @@ func (a *WailsV2Adapter) GitGetLog(path string, maxCommits int) ([]CommitInfo, e
 	return commits, nil
 }
 
-// Helper functions
-
-func (a *WailsV2Adapter) parseStatusEntry(entry git.StatusEntry) *Change {
-	var status string
-	var path string
-
-	switch {
-	case entry.Status&git.StatusIndexNew != 0 || entry.Status&git.StatusWTNew != 0:
-		status = "added"
-		path = entry.HeadToIndex.NewFile.Path
-	case entry.Status&git.StatusIndexDeleted != 0 || entry.Status&git.StatusWTDeleted != 0:
-		status = "deleted"
-		path = entry.HeadToIndex.OldFile.Path
-	case entry.Status&git.StatusIndexModified != 0 || entry.Status&git.StatusWTModified != 0:
-		status = "modified"
-		if entry.Status&git.StatusIndexModified != 0 {
-			path = entry.HeadToIndex.OldFile.Path
-		} else {
-			path = entry.WorkdirToIndex.OldFile.Path
-		}
-	default:
-		return nil
-	}
-
-	return &Change{
-		Path:   path,
-		Status: status,
-	}
-}
-package main
-
 // FileInfo represents information about a file
 type FileInfo struct {
 	Name    string `json:"name"`
@@ -394,11 +387,36 @@ type CommitInfo struct {
 	Email     string `json:"email"`
 	Timestamp string `json:"timestamp"`
 }
-package main
 
-import (
-	"context"
-)
+// Helper functions
+
+func (a *WailsV2Adapter) parseStatusEntry(entry git.StatusEntry) *Change {
+	var status string
+	var path string
+
+	switch {
+	case entry.Status&git.StatusIndexNew != 0 || entry.Status&git.StatusWtNew != 0:
+		status = "added"
+		path = entry.HeadToIndex.NewFile.Path
+	case entry.Status&git.StatusIndexDeleted != 0 || entry.Status&git.StatusWtDeleted != 0:
+		status = "deleted"
+		path = entry.HeadToIndex.OldFile.Path
+	case entry.Status&git.StatusIndexModified != 0 || entry.Status&git.StatusWtModified != 0:
+		status = "modified"
+		if entry.Status&git.StatusIndexModified != 0 {
+			path = entry.HeadToIndex.OldFile.Path
+		} else {
+			path = entry.IndexToWorkdir.OldFile.Path
+		}
+	default:
+		return nil
+	}
+
+	return &Change{
+		Path:   path,
+		Status: status,
+	}
+}
 
 // App struct - 保持向后兼容，但内部使用新的服务架构
 type App struct {
