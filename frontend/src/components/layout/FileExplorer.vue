@@ -1,12 +1,24 @@
 <template>
-  <div class="file-explorer">
+  <div class="file-explorer" @contextmenu.prevent>
     <div class="explorer-header">
       <span class="explorer-title">{{ workspaceName }}</span>
-      <NButton text circle size="tiny" @click="refreshFiles">
-        <template #icon>
-          <NIcon><RefreshOutline /></NIcon>
-        </template>
-      </NButton>
+      <div class="header-actions">
+        <NButton text circle size="tiny" @click="showNewFileModal = true" title="新建文件">
+          <template #icon>
+            <NIcon><AddOutline /></NIcon>
+          </template>
+        </NButton>
+        <NButton text circle size="tiny" @click="showNewFolderModal = true" title="新建文件夹">
+          <template #icon>
+            <NIcon><FolderOpenOutline /></NIcon>
+          </template>
+        </NButton>
+        <NButton text circle size="tiny" @click="refreshFiles" title="刷新">
+          <template #icon>
+            <NIcon><RefreshOutline /></NIcon>
+          </template>
+        </NButton>
+      </div>
     </div>
     
     <NSpin :show="loading">
@@ -19,28 +31,182 @@
         key-field="path"
         label-field="name"
         children-field="children"
+        show-line
         @update:selected-keys="handleFileSelect"
+        @update:expanded-keys="handleExpand"
       />
       <div v-else class="empty-tree">
         <NEmpty description="未找到文件" />
       </div>
     </NSpin>
+
+    <!-- 新建文件对话框 -->
+    <NModal v-model:show="showNewFileModal" preset="dialog" title="新建文件">
+      <NForm :model="newFileForm" label-placement="left" label-width="80">
+        <NFormItem label="文件名" path="name">
+          <NInput v-model:value="newFileForm.name" placeholder="例如: index.ts" />
+        </NFormItem>
+      </NForm>
+      <template #footer>
+        <NSpace>
+          <NButton @click="showNewFileModal = false">取消</NButton>
+          <NButton type="primary" @click="createNewFile">创建</NButton>
+        </NSpace>
+      </template>
+    </NModal>
+
+    <!-- 新建文件夹对话框 -->
+    <NModal v-model:show="showNewFolderModal" preset="dialog" title="新建文件夹">
+      <NForm :model="newFolderForm" label-placement="left" label-width="80">
+        <NFormItem label="文件夹名" path="name">
+          <NInput v-model:value="newFolderForm.name" placeholder="例如: components" />
+        </NFormItem>
+      </NForm>
+      <template #footer>
+        <NSpace>
+          <NButton @click="showNewFolderModal = false">取消</NButton>
+          <NButton type="primary" @click="createNewFolder">创建</NButton>
+        </NSpace>
+      </template>
+    </NModal>
+
+    <!-- 重命名对话框 -->
+    <NModal v-model:show="showRenameModal" preset="dialog" title="重命名">
+      <NForm :model="renameForm" label-placement="left" label-width="80">
+        <NFormItem label="新名称" path="name">
+          <NInput v-model:value="renameForm.name" placeholder="输入新名称" />
+        </NFormItem>
+      </NForm>
+      <template #footer>
+        <NSpace>
+          <NButton @click="showRenameModal = false">取消</NButton>
+          <NButton type="primary" @click="renameItem">确定</NButton>
+        </NSpace>
+      </template>
+    </NModal>
+
+    <!-- 删除确认对话框 -->
+    <NModal v-model:show="showDeleteModal" preset="dialog" title="确认删除">
+      <p>确定要删除 "{{ deleteItemName }}" 吗？此操作不可撤销。</p>
+      <template #footer>
+        <NSpace>
+          <NButton @click="showDeleteModal = false">取消</NButton>
+          <NButton type="error" @click="confirmDelete">删除</NButton>
+        </NSpace>
+      </template>
+    </NModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { NButton, NIcon, NTree, NSpin, NEmpty } from 'naive-ui'
-import type { TreeOption } from 'naive-ui'
-import { RefreshOutline } from '@vicons/ionicons5'
+import { ref, onMounted, computed, h } from 'vue'
+import { NButton, NIcon, NTree, NSpin, NEmpty, NModal, NForm, NFormItem, NInput, NSpace, NDropdown, useMessage, type TreeOption, type DropdownOption } from 'naive-ui'
+import { 
+  RefreshOutline, 
+  AddOutline, 
+  FolderOpenOutline, 
+  CreateOutline,
+  TrashOutline,
+  CopyOutline,
+  PencilOutline
+} from '@vicons/ionicons5'
 import { useEditorStore } from '@/stores/editor'
-import { GetProjectRoot, ListDir, ReadFile } from '@wails/go/backend/App'
+import { 
+  GetProjectRoot, 
+  ListDir, 
+  ReadFile,
+  CreateFile,
+  CreateDirectory,
+  DeleteFileOrDirectory,
+  RenameFileOrDirectory,
+  CopyFileOrDirectory
+} from '@wails/go/backend/App'
+
+// 使用浏览器兼容的路径处理函数
+const path = {
+  join: (...paths: string[]) => paths.join('/'),
+  dirname: (p: string) => p.split('/').slice(0, -1).join('/'),
+  basename: (p: string, ext?: string) => {
+    const base = p.split('/').pop() || ''
+    return ext ? base.replace(new RegExp(ext.replace('.', '\\.') + '$'), '') : base
+  },
+  extname: (p: string) => {
+    const base = p.split('/').pop() || ''
+    const match = base.match(/\.[^.]+$/)
+    return match ? match[0] : ''
+  }
+}
+
+// 扩展 TreeOption 类型以支持自定义属性
+interface ExtendedTreeOption extends TreeOption {
+  isDir?: boolean
+}
 
 const editorStore = useEditorStore()
+const message = useMessage()
 const loading = ref(false)
-const treeData = ref<TreeOption[]>([])
+const treeData = ref<ExtendedTreeOption[]>([])
 const workspaceName = ref('Hao-Code')
 const projectRoot = ref('')
+
+// 模态框状态
+const showNewFileModal = ref(false)
+const showNewFolderModal = ref(false)
+const showRenameModal = ref(false)
+const showDeleteModal = ref(false)
+
+// 表单数据
+const newFileForm = ref({ name: '' })
+const newFolderForm = ref({ name: '' })
+const renameForm = ref({ name: '' })
+const deleteItemName = ref('')
+
+// 当前操作项
+const currentTargetPath = ref('')
+const currentParentPath = ref('')
+
+// 右键菜单（使用右键触发）
+const contextMenuOptions: DropdownOption[] = [
+  {
+    label: '打开',
+    key: 'open',
+    icon: () => h(NIcon, null, { default: () => h(CreateOutline) })
+  },
+  {
+    type: 'divider',
+    key: 'd1'
+  },
+  {
+    label: '新建文件',
+    key: 'newFile',
+    icon: () => h(NIcon, null, { default: () => h(AddOutline) })
+  },
+  {
+    label: '新建文件夹',
+    key: 'newFolder',
+    icon: () => h(NIcon, null, { default: () => h(FolderOpenOutline) })
+  },
+  {
+    type: 'divider',
+    key: 'd2'
+  },
+  {
+    label: '重命名',
+    key: 'rename',
+    icon: () => h(NIcon, null, { default: () => h(PencilOutline) })
+  },
+  {
+    label: '复制',
+    key: 'copy',
+    icon: () => h(NIcon, null, { default: () => h(CopyOutline) })
+  },
+  {
+    label: '删除',
+    key: 'delete',
+    props: { style: { color: '#d03050' } },
+    icon: () => h(NIcon, null, { default: () => h(TrashOutline) })
+  }
+]
 
 async function loadFiles() {
   loading.value = true
@@ -54,19 +220,24 @@ async function loadFiles() {
     treeData.value = convertToTree(files)
   } catch (error) {
     console.error('Failed to load files:', error)
+    message.error('加载文件失败')
   } finally {
     loading.value = false
   }
 }
 
-function convertToTree(files: any[]): TreeOption[] {
+function convertToTree(files: any[]): ExtendedTreeOption[] {
   return files.map(file => ({
     key: file.path,
     name: file.name,
     isLeaf: !file.isDir,
+    disabled: false,
     ...(file.isDir ? { 
-      children: [] // 懒加载子目录
-    } : {})
+      children: [],
+      isDir: true
+    } : {
+      isDir: false
+    })
   }))
 }
 
@@ -81,13 +252,154 @@ async function handleFileSelect(keys: string[]) {
     editorStore.openFile(filePath, content)
   } catch (error) {
     console.error('Failed to read file:', error)
+    message.error('读取文件失败')
   } finally {
     loading.value = false
   }
 }
 
+async function handleExpand(keys: string[]) {
+  // 懒加载子目录
+  for (const key of keys) {
+    const node = findNodeByKey(treeData.value, key) as ExtendedTreeOption
+    if (node && node.isDir && (!node.children || node.children.length === 0)) {
+      try {
+        const files = await ListDir(key)
+        node.children = convertToTree(files)
+      } catch (error) {
+        console.error('Failed to load directory:', error)
+        message.error('加载目录失败')
+      }
+    }
+  }
+}
+
+function findNodeByKey(nodes: ExtendedTreeOption[], key: string): ExtendedTreeOption | null {
+  for (const node of nodes) {
+    if (node.key === key) return node
+    if (node.children) {
+      const found = findNodeByKey(node.children as ExtendedTreeOption[], key)
+      if (found) return found
+    }
+  }
+  return null
+}
+
 async function refreshFiles() {
+  treeData.value = []
   await loadFiles()
+  message.success('刷新成功')
+}
+
+// 处理节点右键菜单
+function handleNodeContextmenu(e: MouseEvent, node: ExtendedTreeOption) {
+  e.preventDefault()
+  currentTargetPath.value = node.key as string
+  currentParentPath.value = node.isDir ? node.key as string : path.dirname(node.key as string)
+  
+  // 显示右键菜单（简化版，实际项目中可以使用 NDropdown 的 trigger="manual"）
+  console.log('Context menu on:', node.name)
+}
+
+// 创建新文件
+async function createNewFile() {
+  if (!newFileForm.value.name) {
+    message.warning('请输入文件名')
+    return
+  }
+  
+  try {
+    const filePath = path.join(currentParentPath.value, newFileForm.value.name)
+    await CreateFile(filePath)
+    message.success('文件创建成功')
+    showNewFileModal.value = false
+    await refreshFiles()
+  } catch (error) {
+    console.error('Failed to create file:', error)
+    message.error('创建文件失败')
+  }
+}
+
+// 创建新文件夹
+async function createNewFolder() {
+  if (!newFolderForm.value.name) {
+    message.warning('请输入文件夹名')
+    return
+  }
+  
+  try {
+    const dirPath = path.join(currentParentPath.value, newFolderForm.value.name)
+    await CreateDirectory(dirPath)
+    message.success('文件夹创建成功')
+    showNewFolderModal.value = false
+    await refreshFiles()
+  } catch (error) {
+    console.error('Failed to create folder:', error)
+    message.error('创建文件夹失败')
+  }
+}
+
+// 重命名
+async function renameItem() {
+  if (!renameForm.value.name) {
+    message.warning('请输入新名称')
+    return
+  }
+  
+  try {
+    const oldPath = currentTargetPath.value
+    const newPath = path.join(path.dirname(oldPath), renameForm.value.name)
+    await RenameFileOrDirectory(oldPath, newPath)
+    message.success('重命名成功')
+    showRenameModal.value = false
+    await refreshFiles()
+  } catch (error) {
+    console.error('Failed to rename:', error)
+    message.error('重命名失败')
+  }
+}
+
+// 复制
+async function copyItem(sourcePath: string) {
+  try {
+    const ext = path.extname(sourcePath)
+    const baseName = path.basename(sourcePath, ext)
+    const dirName = path.dirname(sourcePath)
+    const targetPath = path.join(dirName, `${baseName}-copy${ext}`)
+    
+    await CopyFileOrDirectory(sourcePath, targetPath)
+    message.success('复制成功')
+    await refreshFiles()
+  } catch (error) {
+    console.error('Failed to copy:', error)
+    message.error('复制失败')
+  }
+}
+
+// 确认删除
+async function confirmDelete() {
+  try {
+    await DeleteFileOrDirectory(currentTargetPath.value)
+    message.success('删除成功')
+    showDeleteModal.value = false
+    await refreshFiles()
+  } catch (error) {
+    console.error('Failed to delete:', error)
+    message.error('删除失败')
+  }
+}
+
+// 工具栏操作
+function handleToolbarNewFile() {
+  currentParentPath.value = projectRoot.value
+  newFileForm.value.name = ''
+  showNewFileModal.value = true
+}
+
+function handleToolbarNewFolder() {
+  currentParentPath.value = projectRoot.value
+  newFolderForm.value.name = ''
+  showNewFolderModal.value = true
 }
 
 onMounted(() => {
@@ -112,6 +424,11 @@ onMounted(() => {
   background-color: #252526;
   border-bottom: 1px solid #3E3E42;
   user-select: none;
+}
+
+.header-actions {
+  display: flex;
+  gap: 2px;
 }
 
 .explorer-title {

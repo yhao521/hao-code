@@ -130,6 +130,71 @@ func (a *App) GetProjectRoot() string {
 	return a.adapter.GetProjectRoot()
 }
 
+// CreateFile 创建新文件
+func (a *App) CreateFile(path string) error {
+	return a.adapter.CreateFile(path)
+}
+
+// CreateDirectory 创建新目录
+func (a *App) CreateDirectory(path string) error {
+	return a.adapter.CreateDirectory(path)
+}
+
+// DeleteFileOrDirectory 删除文件或目录
+func (a *App) DeleteFileOrDirectory(path string) error {
+	return a.adapter.DeleteFileOrDirectory(path)
+}
+
+// RenameFileOrDirectory 重命名文件或目录
+func (a *App) RenameFileOrDirectory(oldPath, newPath string) error {
+	return a.adapter.RenameFileOrDirectory(oldPath, newPath)
+}
+
+// MoveFileOrDirectory 移动文件或目录
+func (a *App) MoveFileOrDirectory(sourcePath, targetPath string) error {
+	return a.adapter.MoveFileOrDirectory(sourcePath, targetPath)
+}
+
+// GetFileStats 获取文件统计信息
+func (a *App) GetFileStats(path string) (*FileInfo, error) {
+	return a.adapter.GetFileStats(path)
+}
+
+// SearchFiles 搜索文件
+func (a *App) SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error) {
+	return a.adapter.SearchFiles(rootPath, keyword, maxResults)
+}
+
+// CopyFileOrDirectory 复制文件或目录
+func (a *App) CopyFileOrDirectory(sourcePath, targetPath string) error {
+	return a.adapter.CopyFileOrDirectory(sourcePath, targetPath)
+}
+
+// IsTextFile 判断是否为文本文件
+func (a *App) IsTextFile(path string) bool {
+	return a.adapter.IsTextFile(path)
+}
+
+// GetFileExtension 获取文件扩展名
+func (a *App) GetFileExtension(path string) string {
+	return a.adapter.GetFileExtension(path)
+}
+
+// GetDirectoryTree 获取目录树
+func (a *App) GetDirectoryTree(path string, depth int) ([]FileInfo, error) {
+	return a.adapter.GetDirectoryTree(path, depth)
+}
+
+// BackupFile 备份文件
+func (a *App) BackupFile(path string) error {
+	return a.adapter.BackupFile(path)
+}
+
+// TouchFile Touch 文件
+func (a *App) TouchFile(path string) error {
+	return a.adapter.TouchFile(path)
+}
+
 // OpenRepository opens a git repository at the given path
 func (a *App) OpenRepository(path string) (*RepoInfo, error) {
 	return a.adapter.OpenRepository(path)

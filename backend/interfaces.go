@@ -18,6 +18,33 @@ type IFileSystemService interface {
 	ListDir(path string) ([]FileInfo, error)
 	// 获取项目根目录
 	GetProjectRoot() string
+	
+	// 创建文件
+	CreateFile(path string) error
+	// 创建目录
+	CreateDirectory(path string) error
+	// 删除文件或目录
+	DeleteFileOrDirectory(path string) error
+	// 重命名文件或目录
+	RenameFileOrDirectory(oldPath, newPath string) error
+	// 移动文件或目录
+	MoveFileOrDirectory(sourcePath, targetPath string) error
+	// 获取文件统计信息
+	GetFileStats(path string) (*FileInfo, error)
+	// 搜索文件
+	SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error)
+	// 复制文件或目录
+	CopyFileOrDirectory(sourcePath, targetPath string) error
+	// 判断是否为文本文件
+	IsTextFile(path string) bool
+	// 获取文件扩展名
+	GetFileExtension(path string) string
+	// 获取目录树
+	GetDirectoryTree(path string, depth int) ([]FileInfo, error)
+	// 备份文件
+	BackupFile(path string) error
+	// Touch 文件
+	TouchFile(path string) error
 }
 
 // IGitService Git 服务接口
@@ -119,6 +146,71 @@ func (w *WailsV2Adapter) ListDir(path string) ([]FileInfo, error) {
 // GetProjectRoot 获取项目根目录
 func (w *WailsV2Adapter) GetProjectRoot() string {
 	return w.services.App.GetProjectRoot()
+}
+
+// CreateFile 创建新文件
+func (w *WailsV2Adapter) CreateFile(path string) error {
+	return w.services.App.CreateFile(path)
+}
+
+// CreateDirectory 创建新目录
+func (w *WailsV2Adapter) CreateDirectory(path string) error {
+	return w.services.App.CreateDirectory(path)
+}
+
+// DeleteFileOrDirectory 删除文件或目录
+func (w *WailsV2Adapter) DeleteFileOrDirectory(path string) error {
+	return w.services.App.DeleteFileOrDirectory(path)
+}
+
+// RenameFileOrDirectory 重命名文件或目录
+func (w *WailsV2Adapter) RenameFileOrDirectory(oldPath, newPath string) error {
+	return w.services.App.RenameFileOrDirectory(oldPath, newPath)
+}
+
+// MoveFileOrDirectory 移动文件或目录
+func (w *WailsV2Adapter) MoveFileOrDirectory(sourcePath, targetPath string) error {
+	return w.services.App.MoveFileOrDirectory(sourcePath, targetPath)
+}
+
+// GetFileStats 获取文件统计信息
+func (w *WailsV2Adapter) GetFileStats(path string) (*FileInfo, error) {
+	return w.services.App.GetFileStats(path)
+}
+
+// SearchFiles 搜索文件
+func (w *WailsV2Adapter) SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error) {
+	return w.services.App.SearchFiles(rootPath, keyword, maxResults)
+}
+
+// CopyFileOrDirectory 复制文件或目录
+func (w *WailsV2Adapter) CopyFileOrDirectory(sourcePath, targetPath string) error {
+	return w.services.App.CopyFileOrDirectory(sourcePath, targetPath)
+}
+
+// IsTextFile 判断是否为文本文件
+func (w *WailsV2Adapter) IsTextFile(path string) bool {
+	return w.services.App.IsTextFile(path)
+}
+
+// GetFileExtension 获取文件扩展名
+func (w *WailsV2Adapter) GetFileExtension(path string) string {
+	return w.services.App.GetFileExtension(path)
+}
+
+// GetDirectoryTree 获取目录树
+func (w *WailsV2Adapter) GetDirectoryTree(path string, depth int) ([]FileInfo, error) {
+	return w.services.App.GetDirectoryTree(path, depth)
+}
+
+// BackupFile 备份文件
+func (w *WailsV2Adapter) BackupFile(path string) error {
+	return w.services.App.BackupFile(path)
+}
+
+// TouchFile Touch 文件
+func (w *WailsV2Adapter) TouchFile(path string) error {
+	return w.services.App.TouchFile(path)
 }
 
 // OpenRepository 打开 Git 仓库

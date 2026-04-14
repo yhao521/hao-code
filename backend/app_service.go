@@ -63,3 +63,68 @@ func (a *AppService) GitGetBranches(path string) (*BranchInfo, error) {
 func (a *AppService) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
 	return a.git.GitGetLog(path, maxCommits)
 }
+
+// CreateFile 创建新文件
+func (a *AppService) CreateFile(path string) error {
+	return a.fileSystem.CreateFile(path)
+}
+
+// CreateDirectory 创建新目录
+func (a *AppService) CreateDirectory(path string) error {
+	return a.fileSystem.CreateDirectory(path)
+}
+
+// DeleteFileOrDirectory 删除文件或目录
+func (a *AppService) DeleteFileOrDirectory(path string) error {
+	return a.fileSystem.DeleteFileOrDirectory(path)
+}
+
+// RenameFileOrDirectory 重命名文件或目录
+func (a *AppService) RenameFileOrDirectory(oldPath, newPath string) error {
+	return a.fileSystem.RenameFileOrDirectory(oldPath, newPath)
+}
+
+// MoveFileOrDirectory 移动文件或目录
+func (a *AppService) MoveFileOrDirectory(sourcePath, targetPath string) error {
+	return a.fileSystem.MoveFileOrDirectory(sourcePath, targetPath)
+}
+
+// GetFileStats 获取文件统计信息
+func (a *AppService) GetFileStats(path string) (*FileInfo, error) {
+	return a.fileSystem.GetFileStats(path)
+}
+
+// SearchFiles 搜索文件
+func (a *AppService) SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error) {
+	return a.fileSystem.SearchFiles(rootPath, keyword, maxResults)
+}
+
+// CopyFileOrDirectory 复制文件或目录
+func (a *AppService) CopyFileOrDirectory(sourcePath, targetPath string) error {
+	return a.fileSystem.CopyFileOrDirectory(sourcePath, targetPath)
+}
+
+// IsTextFile 判断是否为文本文件
+func (a *AppService) IsTextFile(path string) bool {
+	return a.fileSystem.IsTextFile(path)
+}
+
+// GetFileExtension 获取文件扩展名
+func (a *AppService) GetFileExtension(path string) string {
+	return a.fileSystem.GetFileExtension(path)
+}
+
+// GetDirectoryTree 获取目录树
+func (a *AppService) GetDirectoryTree(path string, depth int) ([]FileInfo, error) {
+	return a.fileSystem.GetDirectoryTree(path, depth)
+}
+
+// BackupFile 备份文件
+func (a *AppService) BackupFile(path string) error {
+	return a.fileSystem.BackupFile(path)
+}
+
+// TouchFile Touch 文件
+func (a *AppService) TouchFile(path string) error {
+	return a.fileSystem.TouchFile(path)
+}
