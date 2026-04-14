@@ -533,7 +533,7 @@ const darkThemeOverrides = {
 ### 6.6 性能优化策略
 
 #### Naive UI 性能优化
-```typescript
+``typescript
 // 1. 按需导入 - 减小打包体积
 import { NTree, NDataTable } from 'naive-ui' // ✅ Tree Shaking
 
@@ -806,33 +806,78 @@ interface ThemeColors {
 hao-code/
 ├── backend/                 # Go 后端
 │   ├── cmd/
-│   │   └── main.go
+│   │   └── main.go         # Wails 应用入口
 │   ├── internal/
-│   │   ├── app/
-│   │   ├── filesystem/
-│   │   ├── git/
-│   │   ├── plugin/
-│   │   ├── lsp/
-│   │   ├── config/
-│   │   └── search/
+│   │   ├── app/            # 主应用逻辑
+│   │   ├── filesystem/     # 文件系统模块
+│   │   ├── git/            # Git 引擎
+│   │   ├── plugin/         # 插件管理器
+│   │   ├── lsp/            # LSP 客户端
+│   │   ├── config/         # 配置管理
+│   │   └── search/         # 搜索索引
 │   ├── pkg/
-│   │   ├── types/
-│   │   └── utils/
+│   │   ├── types/          # 共享类型定义
+│   │   └── utils/          # 工具函数
 │   └── go.mod
 │
-├── frontend/                # 前端 (Vue 或 React)
+├── frontend/                # 前端 (Vue 3 + TypeScript + Naive UI)
 │   ├── src/
-│   │   ├── components/
-│   │   ├── views/
-│   │   ├── stores/ (Vue) 或 store/ (React)
-│   │   ├── services/
-│   │   ├── types/
-│   │   ├── hooks/ (React) 或 composables/ (Vue)
-│   │   ├── styles/
-│   │   └── App.tsx
+│   │   ├── components/     # 通用组件
+│   │   │   ├── editor/     # 编辑器相关
+│   │   │   │   ├── MonacoEditor.vue
+│   │   │   │   ├── TabBar.vue
+│   │   │   │   └── Breadcrumbs.vue
+│   │   │   ├── layout/     # 布局组件
+│   │   │   │   ├── TitleBar.vue
+│   │   │   │   ├── ActivityBar.vue
+│   │   │   │   ├── SideBar.vue
+│   │   │   │   ├── StatusBar.vue
+│   │   │   │   └── BottomPanel.vue
+│   │   │   └── common/     # Naive UI 封装
+│   │   │       ├── FileTree.vue      (NTree)
+│   │   │       ├── DataTable.vue     (NDataTable)
+│   │   │       └── SearchBox.vue     (NInput)
+│   │   ├── views/          # 页面视图
+│   │   │   ├── ExplorerView.vue
+│   │   │   ├── SearchView.vue
+│   │   │   ├── GitView/
+│   │   │   │   ├── ChangesPanel.vue
+│   │   │   │   ├── HistoryPanel.vue
+│   │   │   │   └── BranchesPanel.vue
+│   │   │   └── ExtensionsView.vue
+│   │   ├── stores/         # Pinia 状态管理
+│   │   │   ├── editor.ts
+│   │   │   ├── git.ts
+│   │   │   ├── plugins.ts
+│   │   │   └── theme.ts
+│   │   ├── composables/    # Vue Composition API
+│   │   │   ├── useTheme.ts
+│   │   │   ├── useKeybindings.ts
+│   │   │   └── useFileSystem.ts
+│   │   ├── services/       # 业务服务
+│   │   │   ├── wails.service.ts
+│   │   │   ├── plugin.service.ts
+│   │   │   └── lsp.service.ts
+│   │   ├── types/          # TypeScript 类型定义
+│   │   │   ├── editor.types.ts
+│   │   │   ├── git.types.ts
+│   │   │   └── plugin.types.ts
+│   │   ├── styles/         # 全局样式
+│   │   │   ├── variables.css
+│   │   │   └── theme-overrides.css
+│   │   ├── utils/          # 工具函数
+│   │   │   ├── format.ts
+│   │   │   └── validation.ts
+│   │   ├── App.vue         # 根组件
+│   │   └── main.ts         # 应用入口
 │   ├── public/
+│   │   └── icons/
 │   ├── package.json
-│   └── vite.config.ts
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── wailsjs/            # Wails 生成的 TS 绑定
+│       ├── runtime/
+│       └── main/
 │
 ├── extensions/              # 内置插件
 │   ├── git/
@@ -841,16 +886,122 @@ hao-code/
 │   └── ...
 │
 ├── docs/                    # 文档
-│   ├── architecture.md
-│   ├── plugin-api.md
-│   └── contributing.md
+│   ├── DESIGN.md           # 设计文档
+│   ├── PLUGIN_API.md       # 插件开发指南
+│   └── CONTRIBUTING.md     # 贡献指南
 │
-└── wails.json
+├── build/                   # 构建输出
+├── wails.json              # Wails 配置
+└── README.md
 ```
 
 ---
 
-## 15. 总结
+## 15. Naive UI 快速上手指南
+
+### 15.1 安装依赖
+
+```bash
+cd frontend
+npm install naive-ui vfonts @vicons/ionicons5
+```
+
+### 15.2 基础配置
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  optimizeDeps: {
+    include: ['naive-ui']
+  }
+})
+```
+
+### 15.3 主题提供者
+
+```
+<!-- App.vue -->
+<template>
+  <NConfigProvider
+    :theme="theme"
+    :theme-overrides="themeOverrides"
+    :locale="zhCN"
+    :date-locale="dateZhCN"
+  >
+    <NMessageProvider>
+      <NNotificationProvider>
+        <NDialogProvider>
+          <RouterView />
+        </NDialogProvider>
+      </NNotificationProvider>
+    </NMessageProvider>
+  </NConfigProvider>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { 
+  NConfigProvider,
+  NMessageProvider,
+  NNotificationProvider,
+  NDialogProvider,
+  darkTheme,
+  zhCN,
+  dateZhCN
+} from 'naive-ui'
+
+const theme = ref(darkTheme)
+const themeOverrides = {
+  common: {
+    primaryColor: '#0E639C',
+    borderRadius: '6px'
+  }
+}
+</script>
+```
+
+### 15.4 常用组件示例
+
+```
+<!-- 文件树示例 -->
+<template>
+  <NTree
+    :data="fileTreeData"
+    :default-expand-all="true"
+    block-line
+    selectable
+    @update:selected-keys="handleFileSelect"
+  />
+</template>
+
+<script setup lang="ts">
+import { NTree } from 'naive-ui'
+import type { TreeOption } from 'naive-ui'
+
+const fileTreeData: TreeOption[] = [
+  {
+    key: 'src',
+    label: 'src',
+    children: [
+      { key: 'main.ts', label: 'main.ts' },
+      { key: 'App.vue', label: 'App.vue' }
+    ]
+  }
+]
+
+const handleFileSelect = (keys: string[]) => {
+  console.log('Selected:', keys)
+}
+</script>
+```
+
+---
+
+## 16. 总结
 
 本项目旨在打造一个现代化的代码编辑器，核心特点：
 
@@ -858,6 +1009,25 @@ hao-code/
 2. **可扩展**: 完善的插件系统，对标 VSCode
 3. **Git 强大**: Idea 级别的 Git 可视化和管理
 4. **高性能**: 多层次优化，流畅处理大项目
-5. **易用性**: 直观界面，降低新手门槛
+5. **易用性**: Naive UI 提供优雅的用户界面
+6. **TypeScript**: 全链路类型安全，提升开发体验
 
-技术挑战与机遇并存，需要平衡功能完整性与性能表现。
+### 技术栈总览
+
+| 层级 | 技术选型 | 说明 |
+|------|---------|------|
+| 后端 | Wails v3 + Go | 跨平台桌面应用框架 |
+| 前端 | Vue 3 + TypeScript | 现代化前端框架 |
+| UI | Naive UI | 企业级组件库 |
+| 编辑器 | Monaco Editor | VSCode 同款编辑器 |
+| 状态管理 | Pinia | Vue 官方推荐 |
+| 构建工具 | Vite | 极速开发体验 |
+| Git | libgit2 | 成熟稳定的 Git 库 |
+
+技术挑战与机遇并存，需要平衡功能完整性与性能表现。选择 Naive UI 将为项目带来：
+- 🎨 **优雅的视觉设计** - 默认主题已非常美观
+- 🔧 **强大的定制能力** - 类型安全的主题系统
+- ⚡ **优秀的性能** - 内置虚拟滚动等优化
+- 📦 **完整的组件体系** - 90+ 组件覆盖全场景
+
+让我们开始构建吧！🚀
