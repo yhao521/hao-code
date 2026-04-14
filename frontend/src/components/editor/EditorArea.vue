@@ -47,7 +47,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { NTabs, NTabPane, useMessage } from 'naive-ui'
 import * as monaco from 'monaco-editor'
 import { useEditorStore } from '@/stores/editor'
-import { WriteFile } from '../../wailsjs/go/main/App'
+import { WriteFile } from '../../../wailsjs/go/main/App'
 
 const editorStore = useEditorStore()
 const message = useMessage()
