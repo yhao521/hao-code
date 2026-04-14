@@ -14,6 +14,8 @@ interface WailsGoBackendApp {
   ListDir(path: string): Promise<any[]>
   GetProjectRoot(): Promise<string>
   OpenFolderDialog(): Promise<string>
+  OpenFileDialog(): Promise<string>
+  SaveFileDialog(): Promise<string>
   SetProjectRoot(path: string): Promise<void>
   CreateFile(path: string): Promise<void>
   CreateDirectory(path: string): Promise<void>

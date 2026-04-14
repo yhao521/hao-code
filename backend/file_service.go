@@ -52,16 +52,98 @@ func (f *FileSystemService) OpenFolderDialog() (string, error) {
 	
 	output, err := cmd.Output()
 	if err != nil {
-		// 如果对话框被取消，返回错误
-		return "", fmt.Errorf("dialog cancelled or failed: %v", err)
+		return "", err
 	}
 	
-	// 清理输出（去除换行符等）
 	path := strings.TrimSpace(string(output))
+	if path == "" {
+		return "", fmt.Errorf("user cancelled")
+	}
 	
-	// 验证路径是否存在
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return "", fmt.Errorf("selected path does not exist")
+	return path, nil
+}
+
+// OpenFileDialog 打开文件选择对话框（跨平台）
+func (f *FileSystemService) OpenFileDialog() (string, error) {
+	var cmd *exec.Cmd
+	
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		cmd = exec.Command("osascript", "-e", `
+			tell application "System Events"
+				set theFile to choose file with prompt "选择文件"
+				return POSIX path of theFile
+			end tell
+		`)
+	case "windows":
+		cmd = exec.Command("powershell", "-Command", `
+			Add-Type -AssemblyName System.Windows.Forms
+			$openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+			$openFileDialog.Title = "选择文件"
+			$openFileDialog.Filter = "All Files (*.*)|*.*"
+			$result = $openFileDialog.ShowDialog()
+			if ($result -eq "OK") {
+				return $openFileDialog.FileName
+			}
+			return ""
+		`)
+	case "linux":
+		cmd = exec.Command("zenity", "--file-selection", "--title=选择文件")
+	default:
+		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	
+	path := strings.TrimSpace(string(output))
+	if path == "" {
+		return "", fmt.Errorf("user cancelled")
+	}
+	
+	return path, nil
+}
+
+// SaveFileDialog 保存文件对话框（跨平台）
+func (f *FileSystemService) SaveFileDialog() (string, error) {
+	var cmd *exec.Cmd
+	
+	switch runtime.GOOS {
+	case "darwin": // macOS
+		cmd = exec.Command("osascript", "-e", `
+			tell application "System Events"
+				set theFile to choose file name default name "untitled" with prompt "保存文件"
+				return POSIX path of theFile
+			end tell
+		`)
+	case "windows":
+		cmd = exec.Command("powershell", "-Command", `
+			Add-Type -AssemblyName System.Windows.Forms
+			$saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
+			$saveFileDialog.Title = "保存文件"
+			$saveFileDialog.Filter = "All Files (*.*)|*.*"
+			$result = $saveFileDialog.ShowDialog()
+			if ($result -eq "OK") {
+				return $saveFileDialog.FileName
+			}
+			return ""
+		`)
+	case "linux":
+		cmd = exec.Command("zenity", "--file-selection", "--save", "--confirm-overwrite", "--title=保存文件")
+	default:
+		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	
+	path := strings.TrimSpace(string(output))
+	if path == "" {
+		return "", fmt.Errorf("user cancelled")
 	}
 	
 	return path, nil

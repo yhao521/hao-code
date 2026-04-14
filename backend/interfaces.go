@@ -20,6 +20,10 @@ type IFileSystemService interface {
 	GetProjectRoot() string
 	// 打开文件夹选择对话框
 	OpenFolderDialog() (string, error)
+	// 打开文件选择对话框
+	OpenFileDialog() (string, error)
+	// 保存文件对话框
+	SaveFileDialog() (string, error)
 	// 设置当前工作目录
 	SetProjectRoot(path string) error
 	// 创建文件
@@ -154,6 +158,16 @@ func (w *WailsV2Adapter) GetProjectRoot() string {
 // OpenFolderDialog 打开文件夹选择对话框
 func (w *WailsV2Adapter) OpenFolderDialog() (string, error) {
 	return w.services.App.OpenFolderDialog()
+}
+
+// OpenFileDialog 打开文件选择对话框
+func (w *WailsV2Adapter) OpenFileDialog() (string, error) {
+	return w.services.App.OpenFileDialog()
+}
+
+// SaveFileDialog 保存文件对话框
+func (w *WailsV2Adapter) SaveFileDialog() (string, error) {
+	return w.services.App.SaveFileDialog()
 }
 
 // SetProjectRoot 设置项目根目录

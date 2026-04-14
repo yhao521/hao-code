@@ -135,6 +135,16 @@ func (a *App) OpenFolderDialog() (string, error) {
 	return a.adapter.OpenFolderDialog()
 }
 
+// OpenFileDialog 打开文件选择对话框
+func (a *App) OpenFileDialog() (string, error) {
+	return a.adapter.OpenFileDialog()
+}
+
+// SaveFileDialog 保存文件对话框
+func (a *App) SaveFileDialog() (string, error) {
+	return a.adapter.SaveFileDialog()
+}
+
 // SetProjectRoot 设置项目根目录
 func (a *App) SetProjectRoot(path string) error {
 	return a.adapter.SetProjectRoot(path)

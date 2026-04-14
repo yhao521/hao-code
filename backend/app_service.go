@@ -44,6 +44,16 @@ func (a *AppService) OpenFolderDialog() (string, error) {
 	return a.fileSystem.OpenFolderDialog()
 }
 
+// OpenFileDialog 打开文件选择对话框
+func (a *AppService) OpenFileDialog() (string, error) {
+	return a.fileSystem.OpenFileDialog()
+}
+
+// SaveFileDialog 保存文件对话框
+func (a *AppService) SaveFileDialog() (string, error) {
+	return a.fileSystem.SaveFileDialog()
+}
+
 // SetProjectRoot 设置项目根目录
 func (a *AppService) SetProjectRoot(path string) error {
 	return a.fileSystem.SetProjectRoot(path)

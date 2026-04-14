@@ -24,6 +24,8 @@ export const useEditorStore = defineStore('editor', () => {
   const sidebarVisible = ref(true)
   const sidebarView = ref<SidebarView>('explorer')
   const workspace = ref<Workspace | null>(null)
+  const autoSave = ref(true) // 自动保存状态
+  const recentFiles = ref<string[]>([]) // 最近打开的文件
 
   // Getters
   const activeTab = computed(() => 
@@ -68,6 +70,9 @@ export const useEditorStore = defineStore('editor', () => {
 
     tabs.value.push(tab)
     activeEditor.value = tab.id
+    
+    // 添加到最近文件
+    addToRecentFiles(path)
   }
 
   function closeTab(id: string) {
@@ -88,6 +93,11 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
+  function closeAllTabs() {
+    tabs.value = []
+    activeEditor.value = null
+  }
+
   function updateContent(id: string, content: string) {
     const tab = tabs.value.find(t => t.id === id)
     if (tab) {
@@ -96,10 +106,46 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
-  function saveFile(id: string) {
+  async function saveFile(id: string) {
     const tab = tabs.value.find(t => t.id === id)
-    if (tab) {
-      tab.dirty = false
+    if (tab && tab.content !== undefined) {
+      try {
+        await window.go.backend.App.WriteFile(tab.path, tab.content)
+        tab.dirty = false
+        return true
+      } catch (error) {
+        console.error('Failed to save file:', error)
+        return false
+      }
+    }
+    return false
+  }
+
+  async function saveAllFiles() {
+    const dirtyTabsList = dirtyTabs.value
+    let successCount = 0
+    
+    for (const tab of dirtyTabsList) {
+      if (await saveFile(tab.id)) {
+        successCount++
+      }
+    }
+    
+    return successCount
+  }
+
+  function toggleAutoSave() {
+    autoSave.value = !autoSave.value
+  }
+
+  function addToRecentFiles(path: string) {
+    // 移除已存在的路径
+    recentFiles.value = recentFiles.value.filter(p => p !== path)
+    // 添加到开头
+    recentFiles.value.unshift(path)
+    // 最多保留 10 个最近文件
+    if (recentFiles.value.length > 10) {
+      recentFiles.value = recentFiles.value.slice(0, 10)
     }
   }
 
@@ -144,14 +190,20 @@ export const useEditorStore = defineStore('editor', () => {
     sidebarVisible,
     sidebarView,
     workspace,
+    autoSave,
+    recentFiles,
     // Getters
     activeTab,
     dirtyTabs,
     // Actions
     openFile,
     closeTab,
+    closeAllTabs,
     updateContent,
     saveFile,
+    saveAllFiles,
+    toggleAutoSave,
+    addToRecentFiles,
     toggleSidebar,
     setSidebarView,
     setWorkspace,
