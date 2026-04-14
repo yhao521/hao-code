@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"fmt"
@@ -247,5 +247,7 @@ func (g *GitService) parseFileStatus(s *git.FileStatus, file string) *Change {
 		Status: status,
 	}
 }
+
+
 
 

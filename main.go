@@ -6,6 +6,8 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	
+	"hao-code/backend"
 )
 
 //go:embed all:frontend/dist
@@ -14,7 +16,7 @@ var assets embed.FS
 func main() {
 	// Create an instance of the app structure
 	// App 内部使用了分层架构和接口解耦设计，便于未来迁移到 Wails v3
-	app := NewApp()
+	app := backend.NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -25,8 +27,8 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 30, G: 30, B: 30, A: 1}, // VSCode 深色背景
-		OnStartup:        app.startup,
-		Bind: []interface{}{
+		OnStartup:        app.Startup,
+		Bind: []any{
 			app, // 绑定 App 实例，暴露方法给前端
 		},
 	})

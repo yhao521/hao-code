@@ -1,4 +1,4 @@
-package main
+package backend
 
 // AppService 应用主服务，组合所有子服务
 type AppService struct {
