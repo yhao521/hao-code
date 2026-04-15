@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 # 检查依赖
 if ! command -v wails &> /dev/null; then
     echo "❌ Wails is not installed. Installing..."
-    go install github.com/wailsapp/wails/v2/cmd/wails@latest
+    go install -v github.com/wailsapp/wails/v3/cmd/wails3@latest
 fi
 
 # 安装前端依赖
@@ -26,4 +26,4 @@ echo "🔨 Building and running Hao-Code Editor..."
 echo ""
 
 # 启动开发模式
-wails dev
+wails3 dev
