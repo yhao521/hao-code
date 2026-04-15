@@ -31,7 +31,23 @@
     </div>
 
     <!-- Monaco Editor 容器 -->
-    <div ref="editorContainer" class="monaco-container"></div>
+    <div
+      ref="editorContainer"
+      class="monaco-container"
+      v-if="!editorStore.isDiffMode"
+    ></div>
+
+    <!-- Diff Editor 容器 -->
+    <div ref="diffContainer" class="monaco-container diff-mode" v-else>
+      <div class="diff-toolbar">
+        <span class="diff-title">{{ editorStore.diffInfo?.path }}</span>
+        <div class="diff-actions">
+          <button @click="toggleDiffMode" class="diff-btn">
+            切换到普通视图
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- 空状态 -->
     <div v-if="editorStore.tabs.length === 0" class="empty-state">
@@ -84,7 +100,9 @@ import Breadcrumb from "../Breadcrumb.vue";
 const editorStore = useEditorStore();
 const message = useMessage();
 const editorContainer = ref<HTMLElement | null>(null);
+const diffContainer = ref<HTMLElement | null>(null);
 let editor: monaco.editor.IStandaloneCodeEditor | null = null;
+let diffEditor: monaco.editor.IStandaloneDiffEditor | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
 // 监听跳转事件
@@ -258,11 +276,23 @@ onMounted(async () => {
 watch(
   () => editorStore.activeEditor,
   async (newTabId) => {
-    if (newTabId && editor) {
+    if (newTabId && editor && !editorStore.isDiffMode) {
       const tab = editorStore.tabs.find((t) => t.id === newTabId);
       if (tab) {
         await loadFileIntoEditor(tab);
       }
+    }
+  },
+);
+
+// 监听 Diff 模式变化
+watch(
+  () => editorStore.isDiffMode,
+  async (isDiff) => {
+    if (isDiff) {
+      await initDiffEditor();
+    } else {
+      disposeDiffEditor();
     }
   },
 );
@@ -306,6 +336,64 @@ async function handleSave(tabId: string) {
   } catch (error) {
     message.error(`保存失败: ${error}`);
   }
+}
+
+// 初始化 Diff 编辑器
+async function initDiffEditor() {
+  if (!diffContainer.value || diffEditor) return;
+
+  await nextTick();
+
+  diffEditor = monaco.editor.createDiffEditor(diffContainer.value, {
+    theme: "vs-dark",
+    automaticLayout: true,
+    renderSideBySide: true,
+    readOnly: true,
+  });
+
+  const info = editorStore.diffInfo;
+  if (info) {
+    const originalModel = monaco.editor.createModel(
+      info.oldContent,
+      getLanguage(info.path),
+    );
+    const modifiedModel = monaco.editor.createModel(
+      info.newContent,
+      getLanguage(info.path),
+    );
+    diffEditor.setModel({
+      original: originalModel,
+      modified: modifiedModel,
+    });
+  }
+}
+
+function disposeDiffEditor() {
+  if (diffEditor) {
+    diffEditor.dispose();
+    diffEditor = null;
+  }
+}
+
+function toggleDiffMode() {
+  editorStore.setDiffMode(false);
+}
+
+function getLanguage(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase();
+  const map: Record<string, string> = {
+    ts: "typescript",
+    js: "javascript",
+    vue: "vue",
+    go: "go",
+    py: "python",
+    java: "java",
+    html: "html",
+    css: "css",
+    json: "json",
+    md: "markdown",
+  };
+  return map[ext || ""] || "plaintext";
 }
 
 // 清理
@@ -425,6 +513,32 @@ onUnmounted(() => {
   flex: 1;
   overflow: hidden;
   background-color: #1e1e1e;
+}
+
+.diff-mode {
+  display: flex;
+  flex-direction: column;
+}
+
+.diff-toolbar {
+  height: 30px;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #252526;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #cccccc;
+}
+
+.diff-btn {
+  background: transparent;
+  border: 1px solid #454545;
+  color: #cccccc;
+  padding: 2px 8px;
+  cursor: pointer;
+  border-radius: 2px;
 }
 
 /* Monaco Editor 内部样式调整 - 强制内容靠左 */

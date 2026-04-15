@@ -1,4 +1,9 @@
 // Type declarations for Wails bindings
+// Support for @wails/runtime/runtime path (Wails v3 runtime)
+declare module "@wails/runtime/runtime" {
+  export * from "@wailsio/runtime";
+}
+
 // Support for @wails/go/backend/App path (used in most files)
 declare module "@wails/go/backend/App" {
   import { SearchOptions, SearchResult } from "@wails/go/backend/models";

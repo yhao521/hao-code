@@ -76,7 +76,7 @@ import {
   TimeOutline,
 } from "@vicons/ionicons5";
 import { useEditorStore } from "@/stores/editor";
-import * as wailsRuntime from "@wails/runtime/runtime";
+import { Events, Window, Application } from "@wailsio/runtime";
 import { ListDir, OpenFolderDialog } from "@wails/backend/appservice";
 import RecentFilesDropdown from "./RecentFilesDropdown.vue";
 
@@ -106,7 +106,7 @@ onMounted(() => {
   // 可以在这里添加窗口状态监听
 
   // 监听菜单事件：打开最近文件
-  wailsRuntime.EventsOn("menu:open-recent", () => {
+  Events.On("menu:open-recent", () => {
     handleShowRecentFiles();
   });
 });
@@ -174,16 +174,16 @@ async function handleOpenFolder() {
 
 // 窗口控制函数
 function minimizeWindow() {
-  wailsRuntime.WindowMinimise();
+  Window.Minimise();
 }
 
 function maximizeWindow() {
-  wailsRuntime.WindowToggleMaximise();
+  Window.ToggleMaximise();
   isMaximized.value = !isMaximized.value;
 }
 
 function closeWindow() {
-  wailsRuntime.Quit();
+  Application.Quit();
 }
 </script>
 

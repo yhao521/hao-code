@@ -20,6 +20,12 @@ export interface Tab {
   language?: string;
 }
 
+export interface DiffInfo {
+  path: string;
+  oldContent: string;
+  newContent: string;
+}
+
 export type SidebarView = "explorer" | "search" | "git" | "extensions";
 
 export const useEditorStore = defineStore("editor", () => {
@@ -32,6 +38,8 @@ export const useEditorStore = defineStore("editor", () => {
   const autoSave = ref(true); // 自动保存状态
   const autoSaveDelay = ref(1000); // 自动保存延迟（毫秒）
   const recentFiles = ref<string[]>([]); // 最近打开的文件
+  const isDiffMode = ref(false);
+  const diffInfo = ref<DiffInfo | null>(null);
 
   // 自动保存定时器
   let autoSaveTimer: NodeJS.Timeout | null = null;
@@ -210,6 +218,13 @@ export const useEditorStore = defineStore("editor", () => {
     sidebarVisible.value = true;
   }
 
+  function setDiffMode(enabled: boolean, info?: DiffInfo) {
+    isDiffMode.value = enabled;
+    if (info) {
+      diffInfo.value = info;
+    }
+  }
+
   function getLanguageFromPath(path: string): string {
     const ext = path.split(".").pop()?.toLowerCase();
     const langMap: Record<string, string> = {
@@ -245,6 +260,8 @@ export const useEditorStore = defineStore("editor", () => {
     autoSave,
     autoSaveDelay,
     recentFiles,
+    isDiffMode,
+    diffInfo,
     // Getters
     activeTab,
     dirtyTabs,
@@ -261,5 +278,6 @@ export const useEditorStore = defineStore("editor", () => {
     setSidebarView,
     setWorkspace,
     clearWorkspace,
+    setDiffMode,
   };
 });

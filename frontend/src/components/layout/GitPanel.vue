@@ -41,7 +41,11 @@
         <div class="changes-section" v-if="gitStore.changes.length > 0">
           <div class="section-title">更改 ({{ gitStore.changes.length }})</div>
           <NList hoverable size="small">
-            <NListItem v-for="change in gitStore.changes" :key="change.path">
+            <NListItem
+              v-for="change in gitStore.changes"
+              :key="change.path"
+              @click="handleFileClick(change.path)"
+            >
               <div class="file-item">
                 <span class="file-status" :class="change.status">{{
                   getStatusIcon(change.status)
@@ -126,6 +130,7 @@ import { ref, computed, onMounted } from "vue";
 import { NIcon, NInput, NButton, NSpin, NEmpty, useMessage } from "naive-ui";
 import { GitBranchOutline, RefreshOutline } from "@vicons/ionicons5";
 import { useGitStore } from "@/stores/git";
+import { useEditorStore } from "@/stores/editor";
 import {
   OpenRepository,
   GetGitStatus,
@@ -133,10 +138,12 @@ import {
   GitGetBranches,
   GitGetLog,
   GetGitGraph,
+  GetFileDiff,
 } from "@wails/backend/appservice";
 import GitGraph from "./GitGraph.vue";
 
 const gitStore = useGitStore();
+const editorStore = useEditorStore();
 const recentCommits = ref<any[]>([]);
 const graphNodes = ref<any[]>([]);
 const message = useMessage();
@@ -267,6 +274,25 @@ function getCommitColor(index: number): string {
 function handleCommitClick(commit: any) {
   message.info(`查看提交详情: ${commit.shortHash}`);
   // TODO: 实现点击跳转至 Diff 视图或 Commit 详情页
+}
+
+async function handleFileClick(filePath: string) {
+  try {
+    const projectRoot = await import("@wails/backend/appservice").then((m) =>
+      m.GetProjectRoot(),
+    );
+    const diff = await GetFileDiff(projectRoot, filePath);
+    if (diff) {
+      editorStore.setDiffMode(true, {
+        path: diff.path,
+        oldContent: diff.oldContent,
+        newContent: diff.newContent,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to get file diff:", error);
+    message.error("获取差异失败");
+  }
 }
 
 onMounted(() => {
