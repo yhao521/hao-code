@@ -12,7 +12,7 @@
           <n-icon :component="SearchIcon" />
         </template>
       </NInput>
-      
+
       <div class="search-options">
         <NCheckbox v-model:checked="caseSensitive" size="small">
           区分大小写
@@ -21,13 +21,13 @@
           使用正则
         </NCheckbox>
       </div>
-      
-      <NButton 
-        size="small" 
-        type="primary" 
+
+      <NButton
+        size="small"
+        type="primary"
         @click="handleSearch"
         :loading="searching"
-        style="width: 100%; margin-top: 8px;"
+        style="width: 100%; margin-top: 8px"
       >
         搜索
       </NButton>
@@ -39,21 +39,25 @@
         <span>找到 {{ results.length }} 个结果</span>
         <NButton size="tiny" text @click="clearResults">清除</NButton>
       </div>
-      
+
       <div class="results-list">
-        <div 
-          v-for="(result, index) in results" 
+        <div
+          v-for="(result, index) in results"
           :key="`${result.filePath}:${result.lineNumber}`"
           class="result-item"
           @click="openFile(result)"
         >
           <div class="file-info">
             <n-icon :component="FileIcon" size="14" />
-            <span class="file-path">{{ getRelativePath(result.filePath) }}</span>
+            <span class="file-path">{{
+              getRelativePath(result.filePath)
+            }}</span>
           </div>
           <div class="line-info">
             <span class="line-number">第 {{ result.lineNumber }} 行</span>
-            <span class="line-content">{{ truncateLine(result.lineContent) }}</span>
+            <span class="line-content">{{
+              truncateLine(result.lineContent)
+            }}</span>
           </div>
         </div>
       </div>
@@ -75,47 +79,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NInput, NCheckbox, NButton, NIcon } from 'naive-ui'
-import { Search as SearchIcon, Document as FileIcon, Sad as EmptyIcon } from '@vicons/ionicons5'
+import { ref } from "vue";
+import { NInput, NCheckbox, NButton, NIcon } from "naive-ui";
+import {
+  Search as SearchIcon,
+  Document as FileIcon,
+  Sad as EmptyIcon,
+} from "@vicons/ionicons5";
 // TODO: 需要重新生成 Wails 绑定后启用
 // import { SearchInFiles } from '@wails/go/backend/App'
-import { useEditorStore } from '@/stores/editor'
-import { useMessage } from 'naive-ui'
+import { useEditorStore } from "@/stores/editor";
+import { useMessage } from "naive-ui";
 
-const editorStore = useEditorStore()
-const message = useMessage()
+const editorStore = useEditorStore();
+const message = useMessage();
 
 // 搜索状态
-const searchText = ref('')
-const caseSensitive = ref(false)
-const useRegex = ref(false)
-const searching = ref(false)
-const searched = ref(false)
+const searchText = ref("");
+const caseSensitive = ref(false);
+const useRegex = ref(false);
+const searching = ref(false);
+const searched = ref(false);
 
 interface SearchResult {
-  filePath: string
-  lineNumber: number
-  lineContent: string
+  filePath: string;
+  lineNumber: number;
+  lineContent: string;
 }
 
-const results = ref<SearchResult[]>([])
+const results = ref<SearchResult[]>([]);
 
 // 执行搜索
 async function handleSearch() {
   if (!searchText.value.trim()) {
-    message.warning('请输入搜索关键词')
-    return
+    message.warning("请输入搜索关键词");
+    return;
   }
 
   if (!editorStore.workspace) {
-    message.warning('请先打开一个文件夹')
-    return
+    message.warning("请先打开一个文件夹");
+    return;
   }
 
-  searching.value = true
-  searched.value = true
-  
+  searching.value = true;
+  searched.value = true;
+
   try {
     // TODO: 重新生成 Wails 绑定后启用真实搜索
     // const workspacePath = editorStore.workspace.path
@@ -127,71 +135,73 @@ async function handleSearch() {
     //   maxResults
     // )
     // results.value = searchResults || []
-    
+
     // 临时模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500));
     results.value = [
       {
-        filePath: editorStore.workspace.path + '/example.ts',
+        filePath: editorStore.workspace.path + "/example.ts",
         lineNumber: 10,
-        lineContent: 'const example = "search result";'
+        lineContent: 'const example = "search result";',
       },
       {
-        filePath: editorStore.workspace.path + '/test.go',
+        filePath: editorStore.workspace.path + "/test.go",
         lineNumber: 25,
-        lineContent: 'fmt.Println("search result")'
-      }
-    ]
-    
+        lineContent: 'fmt.Println("search result")',
+      },
+    ];
+
     if (results.value.length === 0) {
-      message.info('未找到匹配的结果')
+      message.info("未找到匹配的结果");
     } else {
-      message.success(`找到 ${results.value.length} 个结果（演示模式）`)
+      message.success(`找到 ${results.value.length} 个结果（演示模式）`);
     }
   } catch (error) {
-    console.error('Search failed:', error)
-    message.error('搜索失败: ' + (error instanceof Error ? error.message : String(error)))
-    results.value = []
+    console.error("Search failed:", error);
+    message.error(
+      "搜索失败: " + (error instanceof Error ? error.message : String(error)),
+    );
+    results.value = [];
   } finally {
-    searching.value = false
+    searching.value = false;
   }
 }
 
 // 清除结果
 function clearResults() {
-  results.value = []
-  searched.value = false
-  searchText.value = ''
+  results.value = [];
+  searched.value = false;
+  searchText.value = "";
 }
 
 // 打开文件并跳转到指定行
 function openFile(result: SearchResult) {
   // TODO: 需要实现跳转到指定行的功能
   // 目前先打开文件
-  editorStore.openFile(result.filePath, '')
-  message.success(`已打开: ${getFileName(result.filePath)}`)
+  editorStore.openFile(result.filePath, "");
+  message.success(`已打开: ${getFileName(result.filePath)}`);
 }
 
 // 获取相对路径
 function getRelativePath(filePath: string): string {
-  if (!editorStore.workspace) return filePath
-  
-  const workspacePath = editorStore.workspace.path
+  if (!editorStore.workspace) return filePath;
+
+  const workspacePath = editorStore.workspace.path;
   if (filePath.startsWith(workspacePath)) {
-    return filePath.substring(workspacePath.length + 1)
+    return filePath.substring(workspacePath.length + 1);
   }
-  return filePath
+  return filePath;
 }
 
 // 获取文件名
 function getFileName(filePath: string): string {
-  return filePath.split('/').pop() || filePath
+  return filePath.split("/").pop() || filePath;
 }
 
 // 截断行内容
 function truncateLine(content: string, maxLength: number = 100): string {
-  if (content.length <= maxLength) return content
-  return content.substring(0, maxLength) + '...'
+  if (content.length <= maxLength) return content;
+  return content.substring(0, maxLength) + "...";
 }
 </script>
 
@@ -201,12 +211,12 @@ function truncateLine(content: string, maxLength: number = 100): string {
   display: flex;
   flex-direction: column;
   background-color: #252526;
-  color: #CCCCCC;
+  color: #cccccc;
 }
 
 .search-input-section {
   padding: 12px;
-  border-bottom: 1px solid #3E3E42;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .search-options {
@@ -229,7 +239,7 @@ function truncateLine(content: string, maxLength: number = 100): string {
   padding: 8px;
   font-size: 12px;
   color: #858585;
-  border-bottom: 1px solid #3E3E42;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .results-list {
@@ -245,7 +255,7 @@ function truncateLine(content: string, maxLength: number = 100): string {
 }
 
 .result-item:hover {
-  background-color: #2A2D2E;
+  background-color: #2a2d2e;
 }
 
 .file-info {
@@ -257,7 +267,7 @@ function truncateLine(content: string, maxLength: number = 100): string {
 }
 
 .file-path {
-  color: #4EC9B0;
+  color: #4ec9b0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -275,7 +285,7 @@ function truncateLine(content: string, maxLength: number = 100): string {
 }
 
 .line-content {
-  color: #CCCCCC;
+  color: #cccccc;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -2,8 +2,8 @@
   <div class="sidebar">
     <!-- 活动栏（垂直图标） -->
     <div class="activity-bar">
-      <div 
-        v-for="item in activityItems" 
+      <div
+        v-for="item in activityItems"
         :key="item.id"
         class="activity-item"
         :class="{ active: activeView === item.id }"
@@ -13,7 +13,7 @@
         <NIcon :component="item.icon" :size="24" />
       </div>
     </div>
-    
+
     <!-- 侧边栏内容 -->
     <div class="sidebar-content">
       <FileExplorer v-if="activeView === 'explorer'" />
@@ -25,53 +25,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NIcon } from 'naive-ui'
-import type { Component } from 'vue'
-import { 
-  FolderOutline, 
-  SearchOutline, 
+import { ref } from "vue";
+import { NIcon } from "naive-ui";
+import type { Component } from "vue";
+import {
+  FolderOutline,
+  SearchOutline,
   GitBranchOutline,
-  CubeOutline
-} from '@vicons/ionicons5'
-import FileExplorer from './FileExplorer.vue'
-import SearchPanel from '../SearchPanel.vue'
-import GitPanel from './GitPanel.vue'
-import ExtensionsPanel from './ExtensionsPanel.vue'
+  CubeOutline,
+} from "@vicons/ionicons5";
+import FileExplorer from "./FileExplorer.vue";
+import SearchPanel from "../SearchPanel.vue";
+import GitPanel from "./GitPanel.vue";
+import ExtensionsPanel from "./ExtensionsPanel.vue";
 
 interface ActivityItem {
-  id: string
-  title: string
-  icon: Component
+  id: string;
+  title: string;
+  icon: Component;
 }
 
-const activeView = ref('explorer')
+const activeView = ref("explorer");
 
 const activityItems: ActivityItem[] = [
   {
-    id: 'explorer',
-    title: '资源管理器',
-    icon: FolderOutline
+    id: "explorer",
+    title: "资源管理器",
+    icon: FolderOutline,
   },
   {
-    id: 'search',
-    title: '搜索',
-    icon: SearchOutline
+    id: "search",
+    title: "搜索",
+    icon: SearchOutline,
   },
   {
-    id: 'git',
-    title: '源代码管理',
-    icon: GitBranchOutline
+    id: "git",
+    title: "源代码管理",
+    icon: GitBranchOutline,
   },
   {
-    id: 'extensions',
-    title: '扩展',
-    icon: CubeOutline
-  }
-]
+    id: "extensions",
+    title: "扩展",
+    icon: CubeOutline,
+  },
+];
 
 function handleViewChange(id: string) {
-  activeView.value = activeView.value === id ? '' : id
+  activeView.value = activeView.value === id ? "" : id;
 }
 </script>
 
@@ -79,7 +79,7 @@ function handleViewChange(id: string) {
 .sidebar {
   display: flex;
   height: 100%;
-  background-color: #2C2C2C;
+  background-color: #2c2c2c;
 }
 
 /* 活动栏样式 */
@@ -91,7 +91,7 @@ function handleViewChange(id: string) {
   align-items: center;
   padding: 4px 0;
   background-color: #333333;
-  border-right: 1px solid #3E3E42;
+  border-right: 1px solid #3e3e42;
 }
 
 .activity-item {
@@ -107,22 +107,22 @@ function handleViewChange(id: string) {
 }
 
 .activity-item:hover {
-  color: #CCCCCC;
-  background-color: #2A2D2E;
+  color: #cccccc;
+  background-color: #2a2d2e;
 }
 
 .activity-item.active {
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .activity-item.active::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
   width: 2px;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 }
 
 /* 侧边栏内容 */

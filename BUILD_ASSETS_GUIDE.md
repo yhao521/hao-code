@@ -52,6 +52,7 @@ build/
 这是 Wails v3 的核心构建配置文件，使用 [Task](https://taskfile.dev/) 工具。
 
 **主要任务**:
+
 - `go:mod:tidy` - 运行 `go mod tidy`
 - `install:frontend:deps` - 安装前端依赖
 - `build:frontend` - 构建前端项目
@@ -59,6 +60,7 @@ build/
 - `build` - 完整构建应用
 
 **使用方法**:
+
 ```bash
 # 安装 Task 工具
 go install github.com/go-task/task/v3/cmd/task@latest
@@ -78,6 +80,7 @@ task dev
 包含应用信息和开发模式配置。
 
 **关键配置**:
+
 ```yaml
 version: "3"
 info:
@@ -95,12 +98,14 @@ dev_mode:
 ### 3. 平台特定配置
 
 #### macOS (darwin/)
+
 - **Info.plist**: 应用元数据（名称、版本、权限等）
 - **Info.dev.plist**: 开发模式配置（启用调试等）
 - **icons.icns**: macOS 多尺寸图标
 - **Assets.car**: 编译后的资源文件
 
 #### Windows (windows/)
+
 - **icon.ico**: Windows 应用图标
 - **info.json**: 应用详细信息（用于安装程序和属性）
 - **wails.exe.manifest**: Windows 清单文件（UAC、DPI 等）
@@ -109,9 +114,10 @@ dev_mode:
 - **msix/**: MSIX 应用包配置
 
 #### Linux (linux/)
+
 - **desktop**: Desktop Entry 文件
 - **appimage/**: AppImage 打包配置
-- **nfpm/**: 
+- **nfpm/**:
   - deb/ - Debian/Ubuntu 包配置
   - rpm/ - RedHat/Fedora 包配置
 
@@ -196,7 +202,8 @@ wails3 build -platform windows/amd64
 wails3 build -platform windows/amd64 -nsis
 ```
 
-**输出**: 
+**输出**:
+
 - `build/bin/hao-code.exe` - 可执行文件
 - `build/bin/hao-code-installer.exe` - 安装程序（如果使用 -nsis）
 
@@ -217,6 +224,7 @@ wails3 build -platform linux/amd64 -appimage
 ```
 
 **输出**:
+
 - `build/bin/hao-code` - 可执行文件
 - `build/bin/hao-code.deb` - Debian 包
 - `build/bin/hao-code.rpm` - RedHat 包
@@ -234,6 +242,7 @@ wails3 build -platform linux/amd64 -appimage
    - 透明背景
 
 2. **替换文件**:
+
    ```bash
    cp your-icon.png build/appicon.png
    ```
@@ -307,6 +316,7 @@ Categories=Development;IDE;
 ### Q1: Task 命令找不到？
 
 **A**: 安装 Task 工具：
+
 ```bash
 go install github.com/go-task/task/v3/cmd/task@latest
 ```
@@ -314,6 +324,7 @@ go install github.com/go-task/task/v3/cmd/task@latest
 ### Q2: 构建失败，提示缺少依赖？
 
 **A**: 确保已安装所有依赖：
+
 ```bash
 # Go 依赖
 go mod tidy
@@ -325,6 +336,7 @@ cd frontend && npm install
 ### Q3: 如何减小最终二进制文件大小？
 
 **A**: 使用 UPX 压缩：
+
 ```bash
 # 安装 UPX
 brew install upx        # macOS
@@ -338,13 +350,15 @@ wails3 build -upx
 ### Q4: 如何在构建时嵌入环境变量？
 
 **A**: 在 Taskfile.yml 中添加：
+
 ```yaml
 env:
-  VERSION: '1.0.0'
+  VERSION: "1.0.0"
   BUILD_TIME: '{{now | date "2006-01-02T15:04:05Z07:00"}}'
 ```
 
 然后在 Go 代码中使用：
+
 ```go
 var Version = os.Getenv("VERSION")
 var BuildTime = os.Getenv("BUILD_TIME")
@@ -356,13 +370,13 @@ var BuildTime = os.Getenv("BUILD_TIME")
 
 根据当前配置，预期的构建产物大小：
 
-| 平台 | 未压缩 | UPX 压缩 | 减少比例 |
-|------|--------|----------|----------|
-| macOS (Universal) | ~25 MB | ~8 MB | 68% |
-| Windows x64 | ~22 MB | ~7 MB | 68% |
-| Linux x64 | ~20 MB | ~6 MB | 70% |
+| 平台              | 未压缩 | UPX 压缩 | 减少比例 |
+| ----------------- | ------ | -------- | -------- |
+| macOS (Universal) | ~25 MB | ~8 MB    | 68%      |
+| Windows x64       | ~22 MB | ~7 MB    | 68%      |
+| Linux x64         | ~20 MB | ~6 MB    | 70%      |
 
-*注: 实际大小取决于应用功能和依赖*
+_注: 实际大小取决于应用功能和依赖_
 
 ---
 
