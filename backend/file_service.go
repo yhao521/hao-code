@@ -1,151 +1,93 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // FileSystemService 文件系统服务实现
-type FileSystemService struct{}
+type FileSystemService struct {
+	ctx context.Context
+}
 
 // NewFileSystemService 创建文件系统服务
 func NewFileSystemService() *FileSystemService {
 	return &FileSystemService{}
 }
 
-// OpenFolderDialog 打开文件夹选择对话框（跨平台）
+// SetContext 设置上下文（由适配器调用）
+func (f *FileSystemService) SetContext(ctx context.Context) {
+	f.ctx = ctx
+}
+
+// OpenFolderDialog 打开文件夹选择对话框（使用 Wails 原生 API）
 func (f *FileSystemService) OpenFolderDialog() (string, error) {
-	var cmd *exec.Cmd
-	
-	switch runtime.GOOS {
-	case "darwin": // macOS
-		// 使用 osascript 打开文件夹选择对话框
-		cmd = exec.Command("osascript", "-e", `
-			tell application "System Events"
-				set theFolder to choose folder with prompt "选择项目文件夹"
-				return POSIX path of theFolder
-			end tell
-		`)
-	case "windows":
-		// Windows 使用 PowerShell
-		cmd = exec.Command("powershell", "-Command", `
-			Add-Type -AssemblyName System.Windows.Forms
-			$folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
-			$folderBrowser.Description = "选择项目文件夹"
-			$result = $folderBrowser.ShowDialog()
-			if ($result -eq "OK") {
-				return $folderBrowser.SelectedPath
-			}
-			return ""
-		`)
-	case "linux":
-		// Linux 使用 zenity（如果可用）
-		cmd = exec.Command("zenity", "--file-selection", "--directory", "--title=选择项目文件夹")
-	default:
-		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	if f.ctx == nil {
+		return "", fmt.Errorf("context not initialized")
 	}
-	
-	output, err := cmd.Output()
+
+	// 使用 Wails 原生的目录选择对话框
+	path, err := runtime.OpenDirectoryDialog(f.ctx, runtime.OpenDialogOptions{
+		Title: "选择项目文件夹",
+	})
+
 	if err != nil {
 		return "", err
 	}
-	
-	path := strings.TrimSpace(string(output))
+
+	// 用户取消时返回空字符串
 	if path == "" {
 		return "", fmt.Errorf("user cancelled")
 	}
-	
+
 	return path, nil
 }
 
-// OpenFileDialog 打开文件选择对话框（跨平台）
+// OpenFileDialog 打开文件选择对话框（使用 Wails 原生 API）
 func (f *FileSystemService) OpenFileDialog() (string, error) {
-	var cmd *exec.Cmd
-	
-	switch runtime.GOOS {
-	case "darwin": // macOS
-		cmd = exec.Command("osascript", "-e", `
-			tell application "System Events"
-				set theFile to choose file with prompt "选择文件"
-				return POSIX path of theFile
-			end tell
-		`)
-	case "windows":
-		cmd = exec.Command("powershell", "-Command", `
-			Add-Type -AssemblyName System.Windows.Forms
-			$openFileDialog = New-Object System.Windows.Forms.OpenFileDialog
-			$openFileDialog.Title = "选择文件"
-			$openFileDialog.Filter = "All Files (*.*)|*.*"
-			$result = $openFileDialog.ShowDialog()
-			if ($result -eq "OK") {
-				return $openFileDialog.FileName
-			}
-			return ""
-		`)
-	case "linux":
-		cmd = exec.Command("zenity", "--file-selection", "--title=选择文件")
-	default:
-		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	if f.ctx == nil {
+		return "", fmt.Errorf("context not initialized")
 	}
-	
-	output, err := cmd.Output()
+
+	path, err := runtime.OpenFileDialog(f.ctx, runtime.OpenDialogOptions{
+		Title: "选择文件",
+	})
+
 	if err != nil {
 		return "", err
 	}
-	
-	path := strings.TrimSpace(string(output))
+
 	if path == "" {
 		return "", fmt.Errorf("user cancelled")
 	}
-	
+
 	return path, nil
 }
 
-// SaveFileDialog 保存文件对话框（跨平台）
+// SaveFileDialog 保存文件对话框（使用 Wails 原生 API）
 func (f *FileSystemService) SaveFileDialog() (string, error) {
-	var cmd *exec.Cmd
-	
-	switch runtime.GOOS {
-	case "darwin": // macOS
-		cmd = exec.Command("osascript", "-e", `
-			tell application "System Events"
-				set theFile to choose file name default name "untitled" with prompt "保存文件"
-				return POSIX path of theFile
-			end tell
-		`)
-	case "windows":
-		cmd = exec.Command("powershell", "-Command", `
-			Add-Type -AssemblyName System.Windows.Forms
-			$saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
-			$saveFileDialog.Title = "保存文件"
-			$saveFileDialog.Filter = "All Files (*.*)|*.*"
-			$result = $saveFileDialog.ShowDialog()
-			if ($result -eq "OK") {
-				return $saveFileDialog.FileName
-			}
-			return ""
-		`)
-	case "linux":
-		cmd = exec.Command("zenity", "--file-selection", "--save", "--confirm-overwrite", "--title=保存文件")
-	default:
-		return "", fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	if f.ctx == nil {
+		return "", fmt.Errorf("context not initialized")
 	}
-	
-	output, err := cmd.Output()
+
+	path, err := runtime.SaveFileDialog(f.ctx, runtime.SaveDialogOptions{
+		Title: "保存文件",
+	})
+
 	if err != nil {
 		return "", err
 	}
-	
-	path := strings.TrimSpace(string(output))
+
 	if path == "" {
 		return "", fmt.Errorf("user cancelled")
 	}
-	
+
 	return path, nil
 }
 

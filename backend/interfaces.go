@@ -126,6 +126,11 @@ func NewWailsV2Adapter() *WailsV2Adapter {
 // Startup Wails v2 启动钩子
 func (w *WailsV2Adapter) Startup(ctx context.Context) {
 	w.ctx = ctx
+	
+	// 将 context 注入到需要 runtime API 的服务中
+	if fs, ok := w.services.FileSystem.(*FileSystemService); ok {
+		fs.SetContext(ctx)
+	}
 }
 
 // ==================== 暴露给前端的方法（通过 Wails Bridge）====================

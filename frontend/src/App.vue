@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import {
   NConfigProvider,
   NMessageProvider,
@@ -44,6 +44,12 @@ import {
 const editorStore = useEditorStore();
 const message = useMessage();
 const dialog = useDialog();
+
+// 检测是否为 macOS
+const isMacOS = computed(() => {
+  const platform = navigator.platform.toLowerCase();
+  return platform.includes("mac");
+});
 
 // 新建文件对话框
 const showNewFileModal = ref(false);
@@ -381,11 +387,11 @@ onMounted(() => {
       <NNotificationProvider>
         <NDialogProvider>
           <div class="app-container">
-            <!-- 标题栏（所有平台显示） -->
-            <TitleBar />
+            <!-- 标题栏（仅 Windows/Linux 显示，macOS 使用系统标题栏） -->
+            <TitleBar v-if="!isMacOS" />
 
             <!-- 主内容区 - 可拖拽分割 -->
-            <div class="main-content">
+            <div class="main-content" :class="{ 'macos-content': isMacOS }">
               <ResizableSplit
                 :min="180"
                 :max="500"
@@ -444,6 +450,11 @@ body {
   flex: 1;
   overflow: hidden;
   background-color: #1e1e1e;
+}
+
+/* macOS: 没有自定义标题栏，内容区域需要额外的顶部内边距以避免被交通灯按钮遮挡 */
+.macos-content {
+  padding-top: 20px;
 }
 
 .main-split {
