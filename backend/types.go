@@ -63,3 +63,13 @@ type SearchResult struct {
 	LineNumber  int    `json:"lineNumber"`
 	LineContent string `json:"lineContent"`
 }
+
+// SearchOptions 搜索选项
+type SearchOptions struct {
+	RootPath       string `json:"rootPath"`
+	Query          string `json:"query"`
+	CaseSensitive  bool   `json:"caseSensitive"`
+	MatchWholeWord bool   `json:"matchWholeWord"`
+	UseRegex       bool   `json:"useRegex"`
+	Exclude        string `json:"exclude"` // 排除的文件模式，如 "*.log,node_modules"
+}

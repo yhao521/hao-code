@@ -86,8 +86,7 @@ import {
   Document as FileIcon,
   Sad as EmptyIcon,
 } from "@vicons/ionicons5";
-// TODO: 需要重新生成 Wails 绑定后启用
-// import { SearchInFiles } from '@wails/go/backend/App'
+import { SearchInFiles, type SearchOptions } from "@wails/go/backend/App";
 import { useEditorStore } from "@/stores/editor";
 import { useMessage } from "naive-ui";
 
@@ -125,36 +124,22 @@ async function handleSearch() {
   searched.value = true;
 
   try {
-    // TODO: 重新生成 Wails 绑定后启用真实搜索
-    // const workspacePath = editorStore.workspace.path
-    // const maxResults = 100
-    // const searchResults = await SearchInFiles(
-    //   workspacePath,
-    //   searchText.value,
-    //   caseSensitive.value,
-    //   maxResults
-    // )
-    // results.value = searchResults || []
-
-    // 临时模拟数据
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    results.value = [
-      {
-        filePath: editorStore.workspace.path + "/example.ts",
-        lineNumber: 10,
-        lineContent: 'const example = "search result";',
-      },
-      {
-        filePath: editorStore.workspace.path + "/test.go",
-        lineNumber: 25,
-        lineContent: 'fmt.Println("search result")',
-      },
-    ];
+    const workspacePath = editorStore.workspace.path;
+    const opts: SearchOptions = {
+      rootPath: workspacePath,
+      query: searchText.value,
+      caseSensitive: caseSensitive.value,
+      matchWholeWord: false,
+      useRegex: useRegex.value,
+      exclude: "node_modules,.git",
+    };
+    const searchResults = await SearchInFiles(opts);
+    results.value = searchResults || [];
 
     if (results.value.length === 0) {
       message.info("未找到匹配的结果");
     } else {
-      message.success(`找到 ${results.value.length} 个结果（演示模式）`);
+      message.success(`找到 ${results.value.length} 个结果`);
     }
   } catch (error) {
     console.error("Search failed:", error);
@@ -176,10 +161,13 @@ function clearResults() {
 
 // 打开文件并跳转到指定行
 function openFile(result: SearchResult) {
-  // TODO: 需要实现跳转到指定行的功能
-  // 目前先打开文件
   editorStore.openFile(result.filePath, "");
-  message.success(`已打开: ${getFileName(result.filePath)}`);
+  // 触发跳转事件，由 EditorArea 监听处理
+  window.dispatchEvent(
+    new CustomEvent("editor:jump-to-line", {
+      detail: { path: result.filePath, line: result.lineNumber },
+    }),
+  );
 }
 
 // 获取相对路径

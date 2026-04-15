@@ -200,20 +200,34 @@ func (a *AppService) ClearRecentFolders() error {
 }
 
 // SearchInFiles 在所有文件中搜索文本
-func (a *AppService) SearchInFiles(rootPath, searchText string, caseSensitive bool, maxResults int) ([]SearchResult, error) {
+func (a *AppService) SearchInFiles(opts SearchOptions) ([]SearchResult, error) {
 	var results []SearchResult
+	rootPath := opts.RootPath
+	searchText := opts.Query
+	caseSensitive := opts.CaseSensitive
 
 	err := filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
-		if err != nil || len(results) >= maxResults {
+		if err != nil || len(results) >= 100 { // 限制最大结果数
 			return nil
 		}
 
 		// 跳过隐藏文件和 node_modules
-		if strings.HasPrefix(entry.Name(), ".") || entry.Name() == "node_modules" {
+		name := entry.Name()
+		if strings.HasPrefix(name, ".") || name == "node_modules" || name == ".git" {
 			if entry.IsDir() {
 				return filepath.SkipDir
 			}
 			return nil
+		}
+
+		// 排除特定模式 (简单实现)
+		if opts.Exclude != "" {
+			for _, pattern := range strings.Split(opts.Exclude, ",") {
+				pattern = strings.TrimSpace(pattern)
+				if matched, _ := filepath.Match(pattern, name); matched {
+					return nil
+				}
+			}
 		}
 
 		// 只搜索文本文件
@@ -240,7 +254,7 @@ func (a *AppService) SearchInFiles(rootPath, searchText string, caseSensitive bo
 							LineContent: line,
 						})
 
-						if len(results) >= maxResults {
+						if len(results) >= 100 {
 							break
 						}
 					}

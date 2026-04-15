@@ -322,6 +322,15 @@ onMounted(() => {
   EventsOn("menu:open-process-explorer", () => {
     message.info("进程资源管理器功能开发中...");
   });
+
+  // ==================== 快捷键绑定 ====================
+  window.addEventListener("keydown", (e) => {
+    // Ctrl+Shift+F: 全局搜索
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
+      e.preventDefault();
+      editorStore.setSidebarView("search");
+    }
+  });
 });
 
 // 处理新建文件

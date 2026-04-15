@@ -87,6 +87,24 @@ const editorContainer = ref<HTMLElement | null>(null);
 let editor: monaco.editor.IStandaloneCodeEditor | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
+// 监听跳转事件
+onMounted(() => {
+  window.addEventListener("editor:jump-to-line", handleJumpToLine as any);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);
+});
+
+function handleJumpToLine(event: CustomEvent) {
+  const { path, line } = event.detail;
+  if (editor && editorStore.activeTab?.path === path) {
+    editor.revealLineInCenter(line);
+    editor.setPosition({ lineNumber: line, column: 1 });
+    editor.focus();
+  }
+}
+
 // 获取文件图标（简单实现）
 function getFileIcon(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase();
@@ -230,6 +248,9 @@ onMounted(async () => {
         handleSave(editorStore.activeEditor);
       }
     });
+
+    // 监听跳转事件（确保编辑器实例存在后也能响应）
+    window.addEventListener("editor:jump-to-line", handleJumpToLine as any);
   }
 });
 
@@ -289,6 +310,7 @@ async function handleSave(tabId: string) {
 
 // 清理
 onUnmounted(() => {
+  window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
