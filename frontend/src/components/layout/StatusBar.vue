@@ -15,7 +15,7 @@
       </span>
       <span class="status-item" v-if="activeEditor"> Spaces: 2 </span>
       <span class="status-item" v-if="activeEditor"> UTF-8 </span>
-      <span class="status-item" v-if="activeEditor">
+      <span class="status-item" v-if="activeEditor" @click="changeLanguage">
         {{ languageName }}
       </span>
       <span class="status-item">
@@ -45,6 +45,14 @@ const changeCount = computed(() => gitStore.changes.length);
 const cursorLine = ref(1);
 const cursorCol = ref(1);
 
+// 监听编辑器光标变化（通过自定义事件或 Store）
+window.addEventListener("editor:cursor-change", (e: any) => {
+  if (e.detail) {
+    cursorLine.value = e.detail.line;
+    cursorCol.value = e.detail.col;
+  }
+});
+
 const languageName = computed(() => {
   if (!activeEditor.value) return "Plain Text";
   const langMap: Record<string, string> = {
@@ -64,6 +72,10 @@ const languageName = computed(() => {
 function showGitInfo() {
   // TODO: 显示 Git 详细信息
   console.log("Show Git info");
+}
+
+function changeLanguage() {
+  console.log("Change language mode");
 }
 </script>
 

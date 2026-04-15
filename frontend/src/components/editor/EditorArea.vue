@@ -12,8 +12,12 @@
         v-for="tab in editorStore.tabs"
         :key="tab.id"
         class="tab"
+        draggable="true"
         :class="{ active: editorStore.activeEditor === tab.id }"
         @click="handleTabChange(tab.id)"
+        @dragstart="handleDragStart($event, tab.id)"
+        @dragover.prevent
+        @drop="handleDrop($event, tab.id)"
       >
         <span class="tab-icon">{{ getFileIcon(tab.name) }}</span>
         <span class="tab-name" :class="{ dirty: tab.dirty }">{{
@@ -172,11 +176,42 @@ onMounted(async () => {
     // 等待容器完全渲染
     await nextTick();
 
+    // 确保容器有正确的尺寸
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+
+    // 调试信息：检查容器尺寸
+    console.log("Editor container size before create:", {
+      width: editorContainer.value.offsetWidth,
+      height: editorContainer.value.offsetHeight,
+      clientWidth: editorContainer.value.clientWidth,
+      clientHeight: editorContainer.value.clientHeight,
+      computedStyle: window.getComputedStyle(editorContainer.value),
+    });
+
+    // 如果容器尺寸为 0，等待更长时间
+    if (
+      editorContainer.value.offsetWidth === 0 ||
+      editorContainer.value.offsetHeight === 0
+    ) {
+      console.warn("Editor container has zero size, waiting longer...");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      console.log("Editor container size after waiting:", {
+        width: editorContainer.value.offsetWidth,
+        height: editorContainer.value.offsetHeight,
+      });
+    }
+
     editor = monaco.editor.create(editorContainer.value, {
       value: "// Welcome to Hao-Code Editor\n",
       language: "typescript",
       theme: "vs-dark",
-      automaticLayout: false, // 禁用自动布局，改为手动控制
+      automaticLayout: true, // 启用自动布局，让编辑器自动适应容器大小
       fontSize: 14,
       lineHeight: 22, // 增加行高，提升可读性
       fontFamily:
@@ -236,7 +271,15 @@ onMounted(async () => {
 
     // 初始布局
     await nextTick();
+
+    // 多次调用 layout 确保尺寸正确
     editor.layout();
+    setTimeout(() => {
+      editor?.layout();
+    }, 100);
+    setTimeout(() => {
+      editor?.layout();
+    }, 300);
 
     // 使用 ResizeObserver 监听容器尺寸变化
     resizeObserver = new ResizeObserver((entries) => {
@@ -350,6 +393,32 @@ async function loadFileIntoEditor(tab: any) {
 // 处理标签页切换
 function handleTabChange(tabId: string) {
   editorStore.activeEditor = tabId;
+}
+
+// 拖拽排序逻辑
+let draggedTabId: string | null = null;
+
+function handleDragStart(e: DragEvent, tabId: string) {
+  draggedTabId = tabId;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = "move";
+  }
+}
+
+function handleDrop(e: DragEvent, targetTabId: string) {
+  e.preventDefault();
+  if (!draggedTabId || draggedTabId === targetTabId) return;
+
+  const fromIndex = editorStore.tabs.findIndex((t) => t.id === draggedTabId);
+  const toIndex = editorStore.tabs.findIndex((t) => t.id === targetTabId);
+
+  if (fromIndex !== -1 && toIndex !== -1) {
+    const newTabs = [...editorStore.tabs];
+    const [movedTab] = newTabs.splice(fromIndex, 1);
+    newTabs.splice(toIndex, 0, movedTab);
+    editorStore.tabs = newTabs;
+  }
+  draggedTabId = null;
 }
 
 // 保存文件
@@ -488,7 +557,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   background-color: #1e1e1e;
+  overflow: hidden;
+  position: relative;
 }
 
 /* VSCode 风格标签页 */
@@ -588,6 +662,9 @@ onUnmounted(() => {
   flex: 1;
   overflow: hidden;
   background-color: #1e1e1e;
+  position: relative;
+  width: 100%;
+  min-height: 0;
 }
 
 .diff-mode {
@@ -616,40 +693,9 @@ onUnmounted(() => {
   border-radius: 2px;
 }
 
-/* Monaco Editor 内部样式调整 - 强制内容靠左 */
+/* Monaco Editor 内部样式调整 - 让 Monaco 自己管理布局 */
 .monaco-container :deep(.monaco-editor) {
-  /* 减少编辑器左侧的额外边距 */
-  .margin {
-    width: auto !important;
-    min-width: fit-content !important;
-  }
-
-  /* 调整行号区域 */
-  .line-numbers {
-    padding-right: 4px !important; /* 进一步减少行号右侧内边距 */
-  }
-
-  /* 强制内容区域靠左 */
-  .overflow-guard {
-    .view-lines {
-      left: 0 !important; /* 强制代码内容从左侧开始 */
-    }
-
-    .view-overlays {
-      .current-line {
-        border-width: 0 !important; /* 移除当前行左边框 */
-      }
-    }
-  }
-
-  /* 调整内容边距 */
-  .monaco-scrollable-element {
-    .scrollbar {
-      &.vertical {
-        right: 0 !important;
-      }
-    }
-  }
+  /* Monaco Editor 会自动计算布局，不需要手动干预 */
 }
 
 /* 空状态 */

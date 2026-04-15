@@ -19,6 +19,9 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useEditorStore } from "@/stores/editor";
+
+const editorStore = useEditorStore();
 
 const props = defineProps<{
   path: string;
@@ -48,8 +51,10 @@ const segments = computed(() => {
 });
 
 function navigateTo(path: string) {
-  // TODO: 实现导航到父目录的功能
-  console.log("Navigate to:", path);
+  // 尝试在文件树中展开并选中该路径
+  window.dispatchEvent(
+    new CustomEvent("breadcrumb:navigate", { detail: { path } }),
+  );
 }
 </script>
 
@@ -64,6 +69,7 @@ function navigateTo(path: string) {
   min-height: 22px;
   overflow-x: auto;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .breadcrumb-segment {

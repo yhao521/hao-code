@@ -10,7 +10,7 @@
         @click="handleViewChange(item.id)"
         :title="item.title"
       >
-        <NIcon :component="item.icon" :size="24" />
+        <component :is="item.icon" class="activity-icon" />
       </div>
     </div>
 
@@ -103,8 +103,14 @@ function handleViewChange(id: string) {
   justify-content: center;
   cursor: pointer;
   color: #858585;
-  transition: color 0.2s;
+  transition: all 0.2s;
   position: relative;
+}
+
+.activity-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
 }
 
 .activity-item:hover {
@@ -122,7 +128,7 @@ function handleViewChange(id: string) {
   top: 0;
   bottom: 0;
   width: 2px;
-  background-color: #ffffff;
+  background-color: #007acc;
 }
 
 /* 侧边栏内容区域 */

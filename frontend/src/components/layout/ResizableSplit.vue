@@ -91,6 +91,7 @@ const panel2Style = computed(() => {
     return {
       flex: 1,
       minWidth: 0,
+      width: 0,
       overflow: "hidden",
       order: 1,
     };
@@ -98,6 +99,7 @@ const panel2Style = computed(() => {
   return {
     flex: 1,
     minWidth: 0,
+    width: 0,
     overflow: "hidden",
     order: 2,
   };
@@ -161,6 +163,20 @@ defineExpose({
 }
 
 .panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-1 {
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.panel-2 {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 

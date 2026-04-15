@@ -510,7 +510,9 @@ async function handleCreateFile() {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: 100vw;
   background-color: #1e1e1e;
+  overflow: hidden;
 }
 
 .main-content {
@@ -547,12 +549,14 @@ async function handleCreateFile() {
 
 .center-area {
   display: flex;
+  flex: 1;
   height: 100%;
   width: 100%;
   overflow: hidden;
 }
 
 .editor-container {
+  flex: 1;
   height: 100%;
   background-color: #1e1e1e;
   overflow: hidden;
