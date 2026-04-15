@@ -22,6 +22,7 @@ import RightPanel from "./components/layout/RightPanel.vue";
 import BottomPanel from "./components/layout/BottomPanel.vue";
 import ResizableSplit from "./components/layout/ResizableSplit.vue";
 import RecentFilesModal from "./components/RecentFilesModal.vue";
+import CommandPalette from "./components/CommandPalette.vue";
 import { useEditorStore } from "./stores/editor";
 import { useLayoutStore } from "./stores/layout";
 import {
@@ -58,6 +59,9 @@ const newFileName = ref("");
 
 // 最近文件模态框引用
 const recentFilesModalRef = ref<any>(null);
+
+// 命令面板引用
+const commandPaletteRef = ref<any>(null);
 
 onMounted(() => {
   // ==================== 文件菜单事件监听 ====================
@@ -271,7 +275,7 @@ onMounted(() => {
 
   // 显示所有命令
   EventsOn("menu:show-all-commands", () => {
-    message.info("命令面板功能开发中...");
+    commandPaletteRef.value?.show();
   });
 
   // 文档
@@ -462,6 +466,9 @@ async function handleCreateFile() {
 
     <!-- 最近文件模态框 -->
     <RecentFilesModal ref="recentFilesModalRef" />
+
+    <!-- 命令面板 -->
+    <CommandPalette ref="commandPaletteRef" />
 
     <!-- 新建文件对话框 -->
     <NModal v-model:show="showNewFileModal" preset="dialog" title="新建文件">
