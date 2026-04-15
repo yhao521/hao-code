@@ -49,7 +49,7 @@
 ### 3. 后端服务适配
 
 - ✅ 移除 `FileSystemService` 中的 context 依赖
-- ✅ 标记对话框方法为 TODO（需要重新实现）
+- ✅ **实现对话框功能**（OpenFolderDialog、OpenFileDialog、SaveFileDialog）
 - ✅ 保留 `WailsV2Adapter` 作为兼容层
 
 ### 4. 配置文件
@@ -65,25 +65,16 @@
 
 #### 1. 对话框功能实现
 
-**状态**: ❌ 临时禁用  
-**影响**: 用户无法通过 UI 打开/保存文件
+**状态**: ✅ **已完成**  
+**影响**: 无 - 所有对话框功能已正常工作
 
-当前在 `backend/file_service.go` 中标记为 TODO：
+已实现的对话框：
 
-```go
-func (f *FileSystemService) OpenFolderDialog() (string, error) {
-    // TODO: 实现 Wails v3 的目录选择对话框
-    return "", fmt.Errorf("OpenFolderDialog not yet implemented for Wails v3")
-}
-```
+- ✅ OpenFolderDialog - 打开文件夹选择对话框
+- ✅ OpenFileDialog - 打开文件选择对话框
+- ✅ SaveFileDialog - 保存文件对话框
 
-**解决方案**: 需要使用 Wails v3 的新对话框 API：
-
-```go
-// Wails v3 示例
-dialog := wailsApp.Dialog.OpenFile()
-result, err := dialog.PromptForSingleSelection()
-```
+实现细节请参考 [DIALOG_IMPLEMENTATION.md](./DIALOG_IMPLEMENTATION.md)
 
 #### 2. 前端 TypeScript 绑定重新生成
 
