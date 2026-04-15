@@ -453,53 +453,78 @@ onUnmounted(() => {
 .empty-content {
   text-align: center;
   color: #858585;
+  max-width: 500px;
+  padding: 40px;
 }
 
 .empty-content h2 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 300;
   color: #cccccc;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
 }
 
-.empty-content p {
+.subtitle {
   font-size: 14px;
   color: #858585;
+  margin-bottom: 32px;
 }
 
 .shortcuts {
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+  text-align: left;
 }
 
-.shortcuts div {
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 13px;
   color: #858585;
 }
 
 kbd {
   background-color: #3c3c3c;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 3px;
   border: 1px solid #555;
-  font-family: monospace;
+  font-family: "Consolas", "Monaco", monospace;
   font-size: 12px;
-  margin: 0 2px;
   color: #cccccc;
+  min-width: 80px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.tab-label {
+.start-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.action-button {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: #0e639c;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.dirty-indicator {
-  color: #4ec9b0;
+.action-button:hover {
+  background-color: #1177bb;
+}
+
+.action-button span {
   font-size: 16px;
-  line-height: 1;
 }
 </style>
