@@ -26,6 +26,13 @@ export interface DiffInfo {
   newContent: string;
 }
 
+export interface Breakpoint {
+  id: number;
+  path: string;
+  line: number;
+  verified: boolean;
+}
+
 export type SidebarView = "explorer" | "search" | "git" | "extensions";
 
 export const useEditorStore = defineStore("editor", () => {
@@ -40,6 +47,8 @@ export const useEditorStore = defineStore("editor", () => {
   const recentFiles = ref<string[]>([]); // 最近打开的文件
   const isDiffMode = ref(false);
   const diffInfo = ref<DiffInfo | null>(null);
+  const breakpoints = ref<Map<string, Set<number>>>(new Map());
+  const currentDebugLine = ref<{ path: string; line: number } | null>(null);
 
   // 自动保存定时器
   let autoSaveTimer: NodeJS.Timeout | null = null;
@@ -225,6 +234,26 @@ export const useEditorStore = defineStore("editor", () => {
     }
   }
 
+  function toggleBreakpoint(path: string, line: number) {
+    if (!breakpoints.value.has(path)) {
+      breakpoints.value.set(path, new Set());
+    }
+    const lines = breakpoints.value.get(path)!;
+    if (lines.has(line)) {
+      lines.delete(line);
+    } else {
+      lines.add(line);
+    }
+  }
+
+  function hasBreakpoint(path: string, line: number): boolean {
+    return breakpoints.value.get(path)?.has(line) || false;
+  }
+
+  function setCurrentDebugLine(path: string, line: number) {
+    currentDebugLine.value = { path, line };
+  }
+
   function getLanguageFromPath(path: string): string {
     const ext = path.split(".").pop()?.toLowerCase();
     const langMap: Record<string, string> = {
@@ -279,5 +308,10 @@ export const useEditorStore = defineStore("editor", () => {
     setWorkspace,
     clearWorkspace,
     setDiffMode,
+    toggleBreakpoint,
+    hasBreakpoint,
+    setCurrentDebugLine,
+    breakpoints,
+    currentDebugLine,
   };
 });

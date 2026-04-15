@@ -286,6 +286,17 @@ onMounted(async () => {
 
     // 监听跳转事件（确保编辑器实例存在后也能响应）
     window.addEventListener("editor:jump-to-line", handleJumpToLine as any);
+
+    // 监听断点点击事件
+    editor.onMouseDown((e) => {
+      if (e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
+        const lineNumber = e.target.position?.lineNumber;
+        if (lineNumber && editorStore.activeTab) {
+          editorStore.toggleBreakpoint(editorStore.activeTab.path, lineNumber);
+          updateBreakpointDecorations();
+        }
+      }
+    });
   }
 });
 
@@ -412,6 +423,53 @@ function getLanguage(path: string): string {
   };
   return map[ext || ""] || "plaintext";
 }
+
+// 更新断点装饰器
+let breakpointDecorations: string[] = [];
+function updateBreakpointDecorations() {
+  if (!editor || !editorStore.activeTab) return;
+
+  const path = editorStore.activeTab.path;
+  const lines = editorStore.breakpoints.get(path) || new Set();
+
+  const newDecorations = Array.from(lines).map((line) => ({
+    range: new monaco.Range(line, 1, line, 1),
+    options: {
+      isWholeLine: true,
+      className: "breakpoint-line",
+      glyphMarginClassName: "breakpoint-glyph",
+    },
+  }));
+
+  // 添加当前调试行高亮
+  if (editorStore.currentDebugLine?.path === path) {
+    newDecorations.push({
+      range: new monaco.Range(
+        editorStore.currentDebugLine.line,
+        1,
+        editorStore.currentDebugLine.line,
+        1,
+      ),
+      options: {
+        isWholeLine: true,
+        className: "debug-current-line",
+        glyphMarginClassName: "debug-current-glyph",
+      },
+    });
+  }
+
+  breakpointDecorations = editor.deltaDecorations(
+    breakpointDecorations,
+    newDecorations,
+  );
+}
+
+// 监听断点和调试行变化
+watch(
+  () => [editorStore.breakpoints, editorStore.currentDebugLine],
+  () => updateBreakpointDecorations(),
+  { deep: true },
+);
 
 // 清理
 onUnmounted(() => {
@@ -679,5 +737,30 @@ kbd {
 
 .action-button span {
   font-size: 16px;
+}
+
+/* 断点样式 */
+.breakpoint-glyph {
+  background-color: #e51400;
+  border-radius: 50%;
+  width: 8px !important;
+  height: 8px !important;
+  margin: 4px !important;
+}
+
+.breakpoint-line {
+  background-color: rgba(229, 20, 0, 0.1);
+}
+
+.debug-current-glyph {
+  background-color: #ffcc00;
+  border-radius: 50%;
+  width: 8px !important;
+  height: 8px !important;
+  margin: 4px !important;
+}
+
+.debug-current-line {
+  background-color: rgba(255, 204, 0, 0.2);
 }
 </style>
