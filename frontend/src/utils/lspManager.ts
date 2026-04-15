@@ -13,7 +13,7 @@ export class LSPManager {
 
   async ensureInitialized(languageId: string, rootPath: string) {
     if (this.initializedLanguages.has(languageId)) return;
-    
+
     try {
       await InitializeLSP(languageId, rootPath);
       this.initializedLanguages.add(languageId);
@@ -23,7 +23,12 @@ export class LSPManager {
     }
   }
 
-  async getCompletions(languageId: string, uri: string, line: number, col: number) {
+  async getCompletions(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
     try {
       const result = await GetCompletions(languageId, uri, line, col);
       return result || [];

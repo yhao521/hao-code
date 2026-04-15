@@ -98,8 +98,10 @@ import {
   WriteFile,
   OpenFileDialog,
   OpenFolderDialog,
-} from "@wails/backend/appservice";
+  GetProjectRoot,
+} from "@wails/backend/appservice.js";
 import Breadcrumb from "../Breadcrumb.vue";
+import { LSPManager } from "@/utils/lspManager";
 
 const editorStore = useEditorStore();
 const message = useMessage();
@@ -280,6 +282,9 @@ onMounted(async () => {
     setTimeout(() => {
       editor?.layout();
     }, 300);
+
+    // 初始化 LSP
+    await initLSP();
 
     // 使用 ResizeObserver 监听容器尺寸变化
     resizeObserver = new ResizeObserver((entries) => {
@@ -539,6 +544,63 @@ watch(
   () => updateBreakpointDecorations(),
   { deep: true },
 );
+
+// LSP 自动补全集成
+let lspManager: LSPManager | null = null;
+
+async function initLSP() {
+  if (!lspManager) {
+    lspManager = LSPManager.getInstance();
+  }
+
+  if (editorStore.activeTab) {
+    const rootPath = await GetProjectRoot();
+    const langId = getLanguage(editorStore.activeTab.path);
+    // 映射 Monaco 语言 ID 到 LSP 语言 ID
+    const lspLangId =
+      langId === "typescript" || langId === "javascript"
+        ? langId
+        : langId === "go"
+          ? "go"
+          : "";
+    if (lspLangId) {
+      await lspManager.ensureInitialized(lspLangId, rootPath);
+    }
+  }
+}
+
+// 注册自定义补全提供者
+monaco.languages.registerCompletionItemProvider("*", {
+  provideCompletionItems: async (model, position) => {
+    if (!editorStore.activeTab || !lspManager) return { suggestions: [] };
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const line = position.lineNumber - 1;
+    const col = position.column - 1;
+
+    try {
+      const items = await lspManager.getCompletions(langId, uri, line, col);
+
+      return {
+        suggestions: items.map((item: any) => ({
+          label: item.label || item.insertText || "Unknown",
+          kind: monaco.languages.CompletionItemKind.Text,
+          insertText: item.insertText || item.label,
+          detail: item.detail,
+          range: new monaco.Range(
+            position.lineNumber,
+            position.column,
+            position.lineNumber,
+            position.column,
+          ),
+        })),
+      };
+    } catch (e) {
+      return { suggestions: [] };
+    }
+  },
+});
 
 // 清理
 onUnmounted(() => {
