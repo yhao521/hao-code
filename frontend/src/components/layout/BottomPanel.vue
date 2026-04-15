@@ -21,50 +21,37 @@
           title="关闭面板"
         >
           <template #icon>
-            <span style="font-size: 14px;">✕</span>
+            <span style="font-size: 14px">✕</span>
           </template>
         </NButton>
       </div>
     </div>
-    
+
     <!-- 面板内容 -->
     <div class="panel-content">
       <!-- 终端面板 -->
-      <div v-if="layoutStore.activeBottomPanel === 'terminal'" class="panel-section">
-        <div class="terminal-container">
-          <div class="terminal-header">
-            <span class="terminal-title">💻 终端</span>
-            <div class="terminal-actions">
-              <NButton size="tiny" quaternary @click="clearTerminal" title="清空终端">
-                <template #icon>
-                  <span>🗑️</span>
-                </template>
-              </NButton>
-              <NButton size="tiny" quaternary @click="addNewTerminal" title="新建终端">
-                <template #icon>
-                  <span>➕</span>
-                </template>
-              </NButton>
-            </div>
-          </div>
-          <div class="terminal-body">
-            <div class="terminal-line">
-              <span class="terminal-prompt">➜</span>
-              <span class="terminal-path">~</span>
-              <span class="terminal-cursor">█</span>
-            </div>
-          </div>
-        </div>
+      <div
+        v-if="layoutStore.activeBottomPanel === 'terminal'"
+        class="panel-section"
+      >
+        <Terminal />
       </div>
-      
+
       <!-- 输出面板 -->
-      <div v-else-if="layoutStore.activeBottomPanel === 'output'" class="panel-section">
+      <div
+        v-else-if="layoutStore.activeBottomPanel === 'output'"
+        class="panel-section"
+      >
         <div class="output-container">
           <div class="output-header">
             <span class="output-title">📄 输出</span>
           </div>
           <div class="output-body">
-            <div class="output-line" v-for="(line, index) in outputLines" :key="index">
+            <div
+              class="output-line"
+              v-for="(line, index) in outputLines"
+              :key="index"
+            >
               <span class="output-time">{{ line.time }}</span>
               <span class="output-message">{{ line.message }}</span>
             </div>
@@ -74,17 +61,26 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 问题面板 -->
-      <div v-else-if="layoutStore.activeBottomPanel === 'problems'" class="panel-section">
+      <div
+        v-else-if="layoutStore.activeBottomPanel === 'problems'"
+        class="panel-section"
+      >
         <div class="problems-container">
           <div class="problems-header">
             <span class="problems-title">⚠️ 问题</span>
             <span class="problems-count">{{ problems.length }}</span>
           </div>
           <div class="problems-body">
-            <div class="problem-item" v-for="(problem, index) in problems" :key="index">
-              <span class="problem-icon">{{ problem.type === 'error' ? '❌' : '⚠️' }}</span>
+            <div
+              class="problem-item"
+              v-for="(problem, index) in problems"
+              :key="index"
+            >
+              <span class="problem-icon">{{
+                problem.type === "error" ? "❌" : "⚠️"
+              }}</span>
               <span class="problem-message">{{ problem.message }}</span>
               <span class="problem-location">{{ problem.location }}</span>
             </div>
@@ -94,9 +90,12 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 调试控制台面板 -->
-      <div v-else-if="layoutStore.activeBottomPanel === 'debug'" class="panel-section">
+      <div
+        v-else-if="layoutStore.activeBottomPanel === 'debug'"
+        class="panel-section"
+      >
         <div class="debug-container">
           <div class="debug-header">
             <span class="debug-title">🐛 调试控制台</span>
@@ -113,47 +112,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NButton } from 'naive-ui'
-import { useLayoutStore } from '@/stores/layout'
+import { ref } from "vue";
+import { useLayoutStore } from "@/stores/layout";
+import Terminal from "../BottomPanel/Terminal.vue";
 
-const layoutStore = useLayoutStore()
+const layoutStore = useLayoutStore();
 
 // 终端相关
 function clearTerminal() {
-  console.log('清空终端')
+  console.log("清空终端");
 }
 
 function addNewTerminal() {
-  console.log('新建终端')
+  console.log("新建终端");
 }
 
 // 输出相关
 interface OutputLine {
-  time: string
-  message: string
+  time: string;
+  message: string;
 }
 
 const outputLines = ref<OutputLine[]>([
-  { time: '10:30:15', message: '应用启动成功' },
-  { time: '10:30:16', message: '加载工作区: /Users/yanghao/Desktop/wails3-vue3-naviteui-test' },
-  { time: '10:30:17', message: '初始化编辑器完成' }
-])
+  { time: "10:30:15", message: "应用启动成功" },
+  {
+    time: "10:30:16",
+    message: "加载工作区: /Users/yanghao/Desktop/wails3-vue3-naviteui-test",
+  },
+  { time: "10:30:17", message: "初始化编辑器完成" },
+]);
 
 // 问题相关
 interface Problem {
-  type: 'error' | 'warning'
-  message: string
-  location: string
+  type: "error" | "warning";
+  message: string;
+  location: string;
 }
 
 const problems = ref<Problem[]>([
   {
-    type: 'warning',
-    message: '未使用的变量 \'temp\'',
-    location: 'main.go:15'
-  }
-])
+    type: "warning",
+    message: "未使用的变量 'temp'",
+    location: "main.go:15",
+  },
+]);
 </script>
 
 <style scoped>
@@ -162,14 +164,14 @@ const problems = ref<Problem[]>([
   flex-direction: column;
   height: 100%;
   background-color: #252526;
-  border-top: 1px solid #3E3E42;
+  border-top: 1px solid #3e3e42;
 }
 
 .panel-tabs {
   display: flex;
   align-items: center;
   background-color: #252526;
-  border-bottom: 1px solid #3E3E42;
+  border-bottom: 1px solid #3e3e42;
   min-height: 35px;
 }
 
@@ -186,14 +188,14 @@ const problems = ref<Problem[]>([
 }
 
 .panel-tab:hover {
-  background-color: #2A2D2E;
-  color: #CCCCCC;
+  background-color: #2a2d2e;
+  color: #cccccc;
 }
 
 .panel-tab.active {
-  background-color: #1E1E1E;
-  color: #FFFFFF;
-  border-bottom-color: #007ACC;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border-bottom-color: #007acc;
 }
 
 .tab-icon {
@@ -211,7 +213,7 @@ const problems = ref<Problem[]>([
 .panel-content {
   flex: 1;
   overflow: hidden;
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
 }
 
 .panel-section {
@@ -239,7 +241,7 @@ const problems = ref<Problem[]>([
   justify-content: space-between;
   padding: 8px 12px;
   background-color: #252526;
-  border-bottom: 1px solid #3E3E42;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .terminal-title,
@@ -248,7 +250,7 @@ const problems = ref<Problem[]>([
 .debug-title {
   font-size: 12px;
   font-weight: 600;
-  color: #CCCCCC;
+  color: #cccccc;
 }
 
 .terminal-actions {
@@ -263,24 +265,24 @@ const problems = ref<Problem[]>([
   flex: 1;
   padding: 12px;
   overflow-y: auto;
-  font-family: 'Consolas', 'Courier New', monospace;
+  font-family: "Consolas", "Courier New", monospace;
 }
 
 .terminal-line {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #CCCCCC;
+  color: #cccccc;
   font-size: 13px;
 }
 
 .terminal-prompt {
-  color: #4EC9B0;
+  color: #4ec9b0;
   font-weight: bold;
 }
 
 .terminal-path {
-  color: #569CD6;
+  color: #569cd6;
 }
 
 .terminal-cursor {
@@ -288,8 +290,14 @@ const problems = ref<Problem[]>([
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* 输出样式 */
@@ -298,7 +306,7 @@ const problems = ref<Problem[]>([
   gap: 12px;
   padding: 4px 0;
   font-size: 12px;
-  color: #CCCCCC;
+  color: #cccccc;
 }
 
 .output-time {
@@ -314,8 +322,8 @@ const problems = ref<Problem[]>([
 .problems-count {
   margin-left: 8px;
   padding: 2px 6px;
-  background-color: #0E639C;
-  color: #FFFFFF;
+  background-color: #0e639c;
+  color: #ffffff;
   border-radius: 10px;
   font-size: 11px;
 }
@@ -326,10 +334,10 @@ const problems = ref<Problem[]>([
   gap: 8px;
   padding: 6px 8px;
   margin-bottom: 4px;
-  background-color: #2A2D2E;
+  background-color: #2a2d2e;
   border-radius: 4px;
   font-size: 12px;
-  color: #CCCCCC;
+  color: #cccccc;
 }
 
 .problem-icon {

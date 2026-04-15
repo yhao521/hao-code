@@ -1,9 +1,11 @@
 package backend
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // AppService 应用主服务，组合所有子服务
@@ -100,6 +102,19 @@ func (a *AppService) GetGitGraph(path string, maxCommits int) ([]GitGraphNode, e
 // GetFileDiff 获取文件差异
 func (a *AppService) GetFileDiff(path, filePath string) (*FileDiff, error) {
 	return a.git.GetFileDiff(path, filePath)
+}
+
+// StartTerminal 启动终端会话（返回会话 ID）
+var terminalSessions = make(map[string]*TerminalSession)
+
+func (a *AppService) StartTerminal() (string, error) {
+	session, err := NewTerminalSession()
+	if err != nil {
+		return "", err
+	}
+	id := fmt.Sprintf("term_%d", time.Now().UnixNano())
+	terminalSessions[id] = session
+	return id, nil
 }
 
 // CreateFile 创建新文件
