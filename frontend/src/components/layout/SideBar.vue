@@ -35,7 +35,7 @@ import {
   CubeOutline
 } from '@vicons/ionicons5'
 import FileExplorer from './FileExplorer.vue'
-import SearchPanel from './SearchPanel.vue'
+import SearchPanel from '../SearchPanel.vue'
 import GitPanel from './GitPanel.vue'
 import ExtensionsPanel from './ExtensionsPanel.vue'
 
