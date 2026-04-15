@@ -31,7 +31,7 @@ echo "🏗️  Building and running backend..."
 echo ""
 
 # 编译并运行 Go 后端
-go run main.go
+wails3 dev
 
 echo ""
 echo "👋 Application closed."
