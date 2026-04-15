@@ -1,0 +1,48 @@
+# Wails v3 配置文件
+version: "3"
+
+# 应用信息
+info:
+  companyName: "Hao-Code Team"
+  productName: "Hao-Code Editor"
+  productIdentifier: "com.haocode.editor"
+  description: "基于 Wails v3 + Vue 3 构建的跨平台代码编辑器"
+  copyright: "(c) 2026, Hao-Code Team"
+  version: "0.1.0"
+
+# 开发模式配置
+dev_mode:
+  root_path: .
+  log_level: info
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - node_modules
+      - frontend/dist
+      - build/bin
+    file:
+      - .DS_Store
+      - .gitignore
+    watched_extension:
+      - "*.go"
+    git_ignore: true
+  executes:
+    - cmd: npm install
+      type: once
+      working_directory: frontend
+    - cmd: npm run dev
+      type: background
+      working_directory: frontend
+    - cmd: go mod tidy
+      type: blocking
+    - cmd: go build -o build/bin/hao-code
+      type: blocking
+    - cmd: ./build/bin/hao-code
+      type: primary
+
+# 文件关联（可选）
+fileAssociations: []
+
+# 自定义协议
+protocols: []

@@ -1,19 +1,18 @@
 package backend
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // FileSystemService 文件系统服务实现
 type FileSystemService struct {
-	ctx context.Context
+	// Wails v3 中使用 application.Get() 获取全局应用实例
 }
 
 // NewFileSystemService 创建文件系统服务
@@ -21,74 +20,85 @@ func NewFileSystemService() *FileSystemService {
 	return &FileSystemService{}
 }
 
-// SetContext 设置上下文（由适配器调用）
-func (f *FileSystemService) SetContext(ctx context.Context) {
-	f.ctx = ctx
-}
-
-// OpenFolderDialog 打开文件夹选择对话框（使用 Wails 原生 API）
+// OpenFolderDialog 打开文件夹选择对话框（Wails v3）
 func (f *FileSystemService) OpenFolderDialog() (string, error) {
-	if f.ctx == nil {
-		return "", fmt.Errorf("context not initialized")
+	// 使用 Wails v3 的全局应用实例
+	app := application.Get()
+	if app == nil {
+		return "", fmt.Errorf("application not initialized")
 	}
 
-	// 使用 Wails 原生的目录选择对话框
-	path, err := runtime.OpenDirectoryDialog(f.ctx, runtime.OpenDialogOptions{
-		Title: "选择项目文件夹",
-	})
+	// 使用 Wails v3 的对话框 API
+	dialog := app.Dialog.OpenFile()
+	dialog.SetTitle("选择项目文件夹")
+	dialog.CanChooseFiles(false)
+	dialog.CanChooseDirectories(true)
+	dialog.CanCreateDirectories(true)
 
+	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		return "", err
 	}
 
 	// 用户取消时返回空字符串
-	if path == "" {
+	if result == "" {
 		return "", fmt.Errorf("user cancelled")
 	}
 
-	return path, nil
+	return result, nil
 }
 
-// OpenFileDialog 打开文件选择对话框（使用 Wails 原生 API）
+// OpenFileDialog 打开文件选择对话框（Wails v3）
 func (f *FileSystemService) OpenFileDialog() (string, error) {
-	if f.ctx == nil {
-		return "", fmt.Errorf("context not initialized")
+	// 使用 Wails v3 的全局应用实例
+	app := application.Get()
+	if app == nil {
+		return "", fmt.Errorf("application not initialized")
 	}
 
-	path, err := runtime.OpenFileDialog(f.ctx, runtime.OpenDialogOptions{
-		Title: "选择文件",
-	})
+	// 使用 Wails v3 的对话框 API
+	dialog := app.Dialog.OpenFile()
+	dialog.SetTitle("选择文件")
+	dialog.CanChooseFiles(true)
+	dialog.CanChooseDirectories(false)
+	dialog.CanCreateDirectories(true)
 
+	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		return "", err
 	}
 
-	if path == "" {
+	if result == "" {
 		return "", fmt.Errorf("user cancelled")
 	}
 
-	return path, nil
+	return result, nil
 }
 
-// SaveFileDialog 保存文件对话框（使用 Wails 原生 API）
+// SaveFileDialog 保存文件对话框（Wails v3）
 func (f *FileSystemService) SaveFileDialog() (string, error) {
-	if f.ctx == nil {
-		return "", fmt.Errorf("context not initialized")
+	// 使用 Wails v3 的全局应用实例
+	app := application.Get()
+	if app == nil {
+		return "", fmt.Errorf("application not initialized")
 	}
 
-	path, err := runtime.SaveFileDialog(f.ctx, runtime.SaveDialogOptions{
-		Title: "保存文件",
-	})
+	// 使用 Wails v3 的对话框 API
+	dialog := app.Dialog.SaveFile()
+	dialog.SetMessage("保存文件")
+	dialog.SetButtonText("保存")
+	dialog.CanCreateDirectories(true)
 
+	result, err := dialog.PromptForSingleSelection()
 	if err != nil {
 		return "", err
 	}
 
-	if path == "" {
+	if result == "" {
 		return "", fmt.Errorf("user cancelled")
 	}
 
-	return path, nil
+	return result, nil
 }
 
 // ReadFile 读取文件内容
@@ -107,7 +117,7 @@ func (f *FileSystemService) WriteFile(path string, content string) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory: %v", err)
 	}
-	
+
 	return os.WriteFile(path, []byte(content), 0644)
 }
 
@@ -155,7 +165,7 @@ func (f *FileSystemService) SetProjectRoot(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return fmt.Errorf("path does not exist: %s", path)
 	}
-	
+
 	// 切换到该目录
 	return os.Chdir(path)
 }
@@ -264,7 +274,7 @@ func (f *FileSystemService) GetFileStats(path string) (*FileInfo, error) {
 // SearchFiles 在目录中搜索文件（支持关键词过滤）
 func (f *FileSystemService) SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error) {
 	var results []FileInfo
-	
+
 	err := filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return nil // 跳过错误
@@ -293,7 +303,7 @@ func (f *FileSystemService) SearchFiles(rootPath, keyword string, maxResults int
 			}
 
 			results = append(results, info)
-			
+
 			// 限制结果数量
 			if len(results) >= maxResults {
 				return filepath.SkipDir
@@ -314,12 +324,12 @@ func (f *FileSystemService) ReadFileWithEncoding(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// 检查是否包含 BOM 并移除
 	if len(content) >= 3 && content[0:3] == "\xef\xbb\xbf" {
 		content = content[3:]
 	}
-	
+
 	return content, nil
 }
 
@@ -331,7 +341,7 @@ func (f *FileSystemService) GetFileExtension(path string) string {
 // IsTextFile 判断是否为文本文件
 func (f *FileSystemService) IsTextFile(path string) bool {
 	ext := strings.ToLower(f.GetFileExtension(path))
-	
+
 	// 常见的文本文件扩展名
 	textExtensions := map[string]bool{
 		"txt": true, "md": true, "json": true, "xml": true, "html": true, "htm": true,
@@ -342,23 +352,23 @@ func (f *FileSystemService) IsTextFile(path string) bool {
 		"log": true, "cfg": true, "ini": true, "conf": true, "env": true,
 		"gitignore": true, "dockerfile": true, "makefile": true,
 	}
-	
+
 	return textExtensions[ext]
 }
 
 // BackupFile 备份文件（添加 .bak 后缀）
 func (f *FileSystemService) BackupFile(path string) error {
 	backupPath := path + ".bak"
-	
+
 	// 如果备份文件已存在，先删除
 	os.Remove(backupPath)
-	
+
 	// 复制文件
 	content, err := f.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	
+
 	return f.WriteFile(backupPath, content)
 }
 
@@ -372,7 +382,7 @@ func (f *FileSystemService) CopyFileOrDirectory(sourcePath, targetPath string) e
 	if sourceInfo.IsDir() {
 		return f.copyDirectory(sourcePath, targetPath)
 	}
-	
+
 	return f.copyFile(sourcePath, targetPath)
 }
 

@@ -1,18 +1,11 @@
 package main
 
 import (
-	"context"
 	"embed"
 	goruntime "runtime" // 重命名标准库 runtime 避免冲突
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/menu"
-	"github.com/wailsapp/wails/v2/pkg/menu/keys"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"github.com/wailsapp/wails/v2/pkg/options/mac"
-	"github.com/wailsapp/wails/v2/pkg/options/windows"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"hao-code/backend"
 )
@@ -20,247 +13,262 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-// 全局上下文变量，用于菜单回调
-var appCtx context.Context
+// 全局应用实例，用于菜单回调
+var wailsApp *application.App
+var mainWindow *application.WebviewWindow
 
-func createMenu(isMacOS bool) *menu.Menu {
-	appMenu := menu.NewMenu()
+func createMenu(app *application.App, isMacOS bool) {
+	// 创建应用菜单
+	appMenu := app.NewMenu()
 
-	// macOS 系统菜单
 	if isMacOS {
-		// 添加 macOS 特有的应用菜单（Hao-Code Editor 菜单）
-		appMenu.Append(menu.AppMenu())
-
+		// macOS 系统菜单结构
 		// 文件菜单
 		fileMenu := appMenu.AddSubmenu("文件")
 
 		// 新建相关
-		fileMenu.AddText("新建文本文件", keys.CmdOrCtrl("n"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:new-text-file")
+		fileMenu.Add("新建文本文件").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:new-text-file")
 		})
-		fileMenu.AddText("新建文件...", keys.Combo("n", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:new-file")
+		fileMenu.Add("新建文件...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:new-file")
 		})
 		fileMenu.AddSeparator()
 
 		// 打开相关
-		fileMenu.AddText("打开...", keys.CmdOrCtrl("o"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-file")
+		fileMenu.Add("打开...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-file")
 		})
-		fileMenu.AddText("打开文件夹...", keys.Combo("o", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-folder")
+		fileMenu.Add("打开文件夹...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-folder")
 		})
-		fileMenu.AddText("打开最近的文件", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-recent")
+		fileMenu.Add("打开最近的文件").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-recent")
 		})
 		fileMenu.AddSeparator()
 
 		// 保存相关
-		fileMenu.AddText("保存", keys.CmdOrCtrl("s"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:save")
+		fileMenu.Add("保存").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:save")
 		})
-		fileMenu.AddText("另存为...", keys.Combo("s", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:save-as")
+		fileMenu.Add("另存为...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:save-as")
 		})
-		fileMenu.AddText("全部保存", keys.Combo("s", keys.CmdOrCtrlKey, keys.OptionOrAltKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:save-all")
+		fileMenu.Add("全部保存").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:save-all")
 		})
 		fileMenu.AddSeparator()
 
 		// 自动保存
-		fileMenu.AddCheckbox("自动保存", true, nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:toggle-auto-save")
+		fileMenu.AddCheckbox("自动保存", true).OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:toggle-auto-save")
 		})
 		fileMenu.AddSeparator()
 
 		// 关闭相关
-		fileMenu.AddText("关闭编辑器", keys.CmdOrCtrl("w"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:close-editor")
+		fileMenu.Add("关闭编辑器").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:close-editor")
 		})
-		fileMenu.AddText("关闭文件夹", keys.Combo("k", keys.CmdOrCtrlKey, keys.ControlKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:close-folder")
+		fileMenu.Add("关闭文件夹").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:close-folder")
 		})
-		fileMenu.AddText("关闭窗口", keys.Combo("w", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.Quit(appCtx)
+		fileMenu.Add("关闭窗口").OnClick(func(ctx *application.Context) {
+			app.Quit()
 		})
 
-		// 编辑菜单
-		appMenu.Append(menu.EditMenu())
+		// 编辑菜单（使用系统默认）
+		editMenu := appMenu.AddSubmenu("编辑")
+		editMenu.Add("撤销").SetAccelerator("CmdOrCtrl+Z")
+		editMenu.Add("重做").SetAccelerator("CmdOrCtrl+Shift+Z")
+		editMenu.AddSeparator()
+		editMenu.Add("剪切").SetAccelerator("CmdOrCtrl+X")
+		editMenu.Add("复制").SetAccelerator("CmdOrCtrl+C")
+		editMenu.Add("粘贴").SetAccelerator("CmdOrCtrl+V")
 
 		// 帮助菜单
 		helpMenu := appMenu.AddSubmenu("帮助")
-		helpMenu.AddText("欢迎", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:welcome")
+		helpMenu.Add("欢迎").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:welcome")
 		})
-		helpMenu.AddText("显示所有命令", keys.Combo("p", keys.ShiftKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:show-all-commands")
-		})
-		helpMenu.AddSeparator()
-		helpMenu.AddText("文档", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:documentation")
-		})
-		helpMenu.AddText("视频教程", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:video-tutorials")
+		helpMenu.Add("显示所有命令").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:show-all-commands")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("键盘快捷方式参考", keys.Combo("k", keys.CmdOrCtrlKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:keyboard-shortcuts")
+		helpMenu.Add("文档").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:documentation")
+		})
+		helpMenu.Add("视频教程").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:video-tutorials")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("搜索功能请求", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:search-feature-requests")
-		})
-		helpMenu.AddText("使用英文报告问题", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:report-issues")
+		helpMenu.Add("键盘快捷方式参考").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:keyboard-shortcuts")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("查看许可证", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:view-license")
+		helpMenu.Add("搜索功能请求").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:search-feature-requests")
 		})
-		helpMenu.AddText("隐私声明", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:privacy-statement")
+		helpMenu.Add("使用英文报告问题").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:report-issues")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("切换开发人员工具", keys.CmdOrCtrl("i"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:toggle-devtools")
+		helpMenu.Add("查看许可证").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:view-license")
 		})
-		helpMenu.AddText("打开进程资源管理器", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-process-explorer")
+		helpMenu.Add("隐私声明").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:privacy-statement")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.Add("切换开发人员工具").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:toggle-devtools")
+		})
+		helpMenu.Add("打开进程资源管理器").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-process-explorer")
 		})
 
 		// 窗口菜单
-		appMenu.Append(menu.WindowMenu())
+		windowMenu := appMenu.AddSubmenu("窗口")
+		windowMenu.Add("最小化").SetAccelerator("CmdOrCtrl+M")
+		windowMenu.Add("缩放")
+		windowMenu.AddSeparator()
+		windowMenu.Add("前置全部窗口")
 	} else {
-		// Windows/Linux 也需要菜单
+		// Windows/Linux 菜单
 		fileMenu := appMenu.AddSubmenu("文件")
 
-		fileMenu.AddText("新建文本文件", keys.CmdOrCtrl("n"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:new-text-file")
+		fileMenu.Add("新建文本文件").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:new-text-file")
 		})
-		fileMenu.AddText("新建文件...", keys.Combo("n", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:new-file")
-		})
-		fileMenu.AddSeparator()
-		fileMenu.AddText("打开...", keys.CmdOrCtrl("o"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-file")
-		})
-		fileMenu.AddText("打开文件夹...", keys.Combo("o", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-folder")
-		})
-		fileMenu.AddText("打开最近的文件", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-recent")
+		fileMenu.Add("新建文件...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:new-file")
 		})
 		fileMenu.AddSeparator()
-		fileMenu.AddText("保存", keys.CmdOrCtrl("s"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:save")
+		fileMenu.Add("打开...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-file")
 		})
-		fileMenu.AddText("另存为...", keys.Combo("s", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:save-as")
+		fileMenu.Add("打开文件夹...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-folder")
+		})
+		fileMenu.Add("打开最近的文件").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-recent")
 		})
 		fileMenu.AddSeparator()
-		fileMenu.AddCheckbox("自动保存", true, nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:toggle-auto-save")
+		fileMenu.Add("保存").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:save")
+		})
+		fileMenu.Add("另存为...").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:save-as")
 		})
 		fileMenu.AddSeparator()
-		fileMenu.AddText("关闭文件夹", keys.Combo("k", keys.CmdOrCtrlKey, keys.ControlKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:close-folder")
+		fileMenu.AddCheckbox("自动保存", true).OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:toggle-auto-save")
 		})
-		fileMenu.AddText("关闭窗口", keys.CmdOrCtrl("w"), func(_ *menu.CallbackData) {
-			runtime.Quit(appCtx)
+		fileMenu.AddSeparator()
+		fileMenu.Add("关闭文件夹").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:close-folder")
+		})
+		fileMenu.Add("关闭窗口").OnClick(func(ctx *application.Context) {
+			app.Quit()
 		})
 
-		appMenu.Append(menu.EditMenu())
+		// 编辑菜单
+		editMenu := appMenu.AddSubmenu("编辑")
+		editMenu.Add("撤销").SetAccelerator("Ctrl+Z")
+		editMenu.Add("重做").SetAccelerator("Ctrl+Shift+Z")
+		editMenu.AddSeparator()
+		editMenu.Add("剪切").SetAccelerator("Ctrl+X")
+		editMenu.Add("复制").SetAccelerator("Ctrl+C")
+		editMenu.Add("粘贴").SetAccelerator("Ctrl+V")
 
 		// 帮助菜单
 		helpMenu := appMenu.AddSubmenu("帮助")
-		helpMenu.AddText("欢迎", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:welcome")
+		helpMenu.Add("欢迎").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:welcome")
 		})
-		helpMenu.AddText("显示所有命令", keys.Combo("p", keys.ShiftKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:show-all-commands")
-		})
-		helpMenu.AddSeparator()
-		helpMenu.AddText("文档", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:documentation")
-		})
-		helpMenu.AddText("视频教程", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:video-tutorials")
+		helpMenu.Add("显示所有命令").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:show-all-commands")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("键盘快捷方式参考", keys.Combo("k", keys.CmdOrCtrlKey, keys.CmdOrCtrlKey), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:keyboard-shortcuts")
+		helpMenu.Add("文档").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:documentation")
+		})
+		helpMenu.Add("视频教程").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:video-tutorials")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("搜索功能请求", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:search-feature-requests")
-		})
-		helpMenu.AddText("使用英文报告问题", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:report-issues")
+		helpMenu.Add("键盘快捷方式参考").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:keyboard-shortcuts")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("查看许可证", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:view-license")
+		helpMenu.Add("搜索功能请求").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:search-feature-requests")
 		})
-		helpMenu.AddText("隐私声明", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:privacy-statement")
+		helpMenu.Add("使用英文报告问题").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:report-issues")
 		})
 		helpMenu.AddSeparator()
-		helpMenu.AddText("切换开发人员工具", keys.CmdOrCtrl("i"), func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:toggle-devtools")
+		helpMenu.Add("查看许可证").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:view-license")
 		})
-		helpMenu.AddText("打开进程资源管理器", nil, func(_ *menu.CallbackData) {
-			runtime.EventsEmit(appCtx, "menu:open-process-explorer")
+		helpMenu.Add("隐私声明").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:privacy-statement")
+		})
+		helpMenu.AddSeparator()
+		helpMenu.Add("切换开发人员工具").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:toggle-devtools")
+		})
+		helpMenu.Add("打开进程资源管理器").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-process-explorer")
 		})
 	}
 
-	return appMenu
+	// 设置应用菜单
+	wailsApp.Menu.Set(appMenu)
 }
 
 func main() {
-	// Create an instance of the app structure
-	// App 内部使用了分层架构和接口解耦设计，便于未来迁移到 Wails v3
-	app := backend.NewApp()
-
-	// 根据操作系统配置不同的选项
+	// 根据操作系统配置
 	isMacOS := goruntime.GOOS == "darwin"
 
-	// Create application with options
-	err := wails.Run(&options.App{
-		Title:  "Hao-Code Editor",
-		Width:  1280,
-		Height: 800,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
+	// 创建 Wails v3 应用实例
+	wailsApp = application.New(application.Options{
+		Name:        "Hao-Code Editor",
+		Description: "基于 Wails v3 + Vue 3 构建的跨平台代码编辑器",
+		Services: []application.Service{
+			// 注册后端服务容器（WailsV2Adapter 也兼容 v3）
+			application.NewService(backend.NewWailsV2Adapter()),
 		},
-		BackgroundColour: &options.RGBA{R: 30, G: 30, B: 30, A: 1}, // VSCode 深色背景
-		OnStartup: func(ctx context.Context) {
-			// 保存上下文供菜单使用
-			appCtx = ctx
-			// 初始化 app
-			app.Startup(ctx)
+		Assets: application.AssetOptions{
+			Handler: application.BundledAssetFileServer(assets),
 		},
-		Menu: createMenu(isMacOS), // 设置系统菜单
-		Bind: []any{
-			app, // 绑定 App 实例，暴露方法给前端
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		// macOS: 有边框窗口 + 系统菜单栏 + 系统交通灯按钮
-		Mac: &mac.Options{
-			TitleBar: mac.TitleBarDefault(), // 使用默认标题栏（有边框）
-			About: &mac.AboutInfo{
-				Title:   "Hao-Code Editor",
-				Message: "© 2026 Hao-Code Team\n基于 Wails v2 + Vue 3 构建的跨平台代码编辑器",
-			},
-		},
-		// Windows: 无边框窗口 + 系统菜单栏 + 前端自定义窗口控制按钮
-		Windows: &windows.Options{
-			WebviewIsTransparent:              false,
-			WindowIsTranslucent:               false,
-			DisableFramelessWindowDecorations: true, // 无边框窗口
-		},
-		// macOS: false（有边框）, Windows: true（无边框）
-		Frameless: !isMacOS,
 	})
 
+	// 创建主窗口
+	mainWindow = wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:            "Hao-Code Editor",
+		URL:              "/",
+		Width:            1280,
+		Height:           800,
+		MinWidth:         800,
+		MinHeight:        600,
+		DevToolsEnabled:  true,
+		Frameless:        !isMacOS,                             // macOS 使用有边框窗口，Windows 使用无边框
+		BackgroundColour: application.NewRGBA(30, 30, 30, 255), // VSCode 深色背景
+	})
+
+	// 监听窗口运行时就绪事件
+	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
+		// Wails v3 中服务会自动初始化，无需手动调用 Startup
+	})
+
+	// 创建系统菜单
+	createMenu(wailsApp, isMacOS)
+
+	// 运行应用
+	err := wailsApp.Run()
 	if err != nil {
 		println("Error:", err.Error())
 	}

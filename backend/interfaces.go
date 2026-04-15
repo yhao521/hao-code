@@ -92,13 +92,13 @@ type IGitService interface {
 type IAppService interface {
 	// 基础问候方法
 	Greet(name string) string
-	
+
 	// 文件系统服务
 	IFileSystemService
-	
+
 	// Git 服务
 	IGitService
-	
+
 	// 配置服务
 	IConfigService
 }
@@ -116,19 +116,19 @@ type ServiceContainer struct {
 // NewServiceContainer 创建服务容器
 func NewServiceContainer() *ServiceContainer {
 	container := &ServiceContainer{}
-	
+
 	// 初始化具体服务实现
 	fileSystemService := NewFileSystemService()
 	gitService := NewGitService()
 	configService := NewConfigManager()
 	appService := NewAppService(fileSystemService, gitService, configService)
-	
+
 	// 注入到容器
 	container.FileSystem = fileSystemService
 	container.Git = gitService
 	container.Config = configService
 	container.App = appService
-	
+
 	return container
 }
 
@@ -138,7 +138,7 @@ func NewServiceContainer() *ServiceContainer {
 // 这个结构体实现了 Wails v2 需要的方法签名
 // 当迁移到 v3 时，只需修改此适配器，业务逻辑无需改动
 type WailsV2Adapter struct {
-	ctx     context.Context
+	ctx      context.Context
 	services *ServiceContainer
 }
 
@@ -149,14 +149,10 @@ func NewWailsV2Adapter() *WailsV2Adapter {
 	}
 }
 
-// Startup Wails v2 启动钩子
+// Startup Wails v2 启动钩子（Wails v3 中不再需要）
 func (w *WailsV2Adapter) Startup(ctx context.Context) {
 	w.ctx = ctx
-	
-	// 将 context 注入到需要 runtime API 的服务中
-	if fs, ok := w.services.FileSystem.(*FileSystemService); ok {
-		fs.SetContext(ctx)
-	}
+	// Wails v3 中 FileSystemService 不再需要 context
 }
 
 // ==================== 暴露给前端的方法（通过 Wails Bridge）====================
