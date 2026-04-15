@@ -243,7 +243,9 @@ onMounted(async () => {
       for (const entry of entries) {
         // 使用 requestAnimationFrame 确保在下一帧更新
         requestAnimationFrame(() => {
-          editor?.layout();
+          if (editor) {
+            editor.layout();
+          }
         });
       }
     });
@@ -251,6 +253,21 @@ onMounted(async () => {
     if (editorContainer.value) {
       resizeObserver.observe(editorContainer.value);
     }
+
+    // 监听窗口大小变化
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        if (editor) {
+          editor.layout();
+        }
+      });
+    };
+    window.addEventListener("resize", handleResize);
+
+    // 存储清理函数
+    (editor as any)._cleanupResize = () => {
+      window.removeEventListener("resize", handleResize);
+    };
 
     // 监听内容变化
     editor.onDidChangeModelContent(() => {

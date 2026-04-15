@@ -524,6 +524,8 @@ async function handleCreateFile() {
 /* macOS: 没有自定义标题栏，内容区域需要额外的顶部内边距以避免被交通灯按钮遮挡 */
 .macos-content {
   padding-top: 20px;
+  box-sizing: border-box;
+  height: calc(100vh - 20px);
 }
 
 .main-split {
