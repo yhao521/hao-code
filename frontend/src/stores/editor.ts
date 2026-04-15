@@ -1,4 +1,8 @@
-import { WriteFile, AddRecentFile, AddRecentFolder } from "@wails/go/backend/App";
+import {
+  WriteFile,
+  AddRecentFile,
+  AddRecentFolder,
+} from "@wails/go/backend/App";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
@@ -26,7 +30,11 @@ export const useEditorStore = defineStore("editor", () => {
   const sidebarView = ref<SidebarView>("explorer");
   const workspace = ref<Workspace | null>(null);
   const autoSave = ref(true); // 自动保存状态
+  const autoSaveDelay = ref(1000); // 自动保存延迟（毫秒）
   const recentFiles = ref<string[]>([]); // 最近打开的文件
+
+  // 自动保存定时器
+  let autoSaveTimer: NodeJS.Timeout | null = null;
 
   // Getters
   const activeTab = computed(() =>
@@ -42,9 +50,9 @@ export const useEditorStore = defineStore("editor", () => {
     // 清空 tabs
     tabs.value = [];
     activeEditor.value = null;
-    
+
     // 调用后端 API 记录最近文件夹
-    AddRecentFolder(path).catch(error => {
+    AddRecentFolder(path).catch((error) => {
       console.error("Failed to add recent folder:", error);
     });
   }
@@ -77,9 +85,9 @@ export const useEditorStore = defineStore("editor", () => {
 
     // 添加到最近文件（后端持久化）
     addToRecentFiles(path);
-    
+
     // 调用后端 API 记录最近文件
-    AddRecentFile(path).catch(error => {
+    AddRecentFile(path).catch((error) => {
       console.error("Failed to add recent file:", error);
     });
   }
@@ -145,6 +153,41 @@ export const useEditorStore = defineStore("editor", () => {
 
   function toggleAutoSave() {
     autoSave.value = !autoSave.value;
+    if (autoSave.value) {
+      startAutoSave();
+    } else {
+      stopAutoSave();
+    }
+  }
+
+  function startAutoSave() {
+    // 清除现有定时器
+    if (autoSaveTimer) {
+      clearInterval(autoSaveTimer);
+    }
+
+    // 启动新的定时器
+    autoSaveTimer = setInterval(async () => {
+      const dirtyTabsList = dirtyTabs.value;
+      if (dirtyTabsList.length > 0) {
+        console.log(`Auto-saving ${dirtyTabsList.length} file(s)...`);
+        for (const tab of dirtyTabsList) {
+          await saveFile(tab.id);
+        }
+      }
+    }, autoSaveDelay.value);
+  }
+
+  function stopAutoSave() {
+    if (autoSaveTimer) {
+      clearInterval(autoSaveTimer);
+      autoSaveTimer = null;
+    }
+  }
+
+  // 初始化时启动自动保存
+  if (autoSave.value) {
+    startAutoSave();
   }
 
   function addToRecentFiles(path: string) {
@@ -200,6 +243,7 @@ export const useEditorStore = defineStore("editor", () => {
     sidebarView,
     workspace,
     autoSave,
+    autoSaveDelay,
     recentFiles,
     // Getters
     activeTab,

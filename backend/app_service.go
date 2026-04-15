@@ -1,5 +1,11 @@
 package backend
 
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
+
 // AppService 应用主服务，组合所有子服务
 type AppService struct {
 	fileSystem IFileSystemService
@@ -191,4 +197,59 @@ func (a *AppService) ClearRecentFiles() error {
 // ClearRecentFolders 清空最近文件夹列表
 func (a *AppService) ClearRecentFolders() error {
 	return a.config.ClearRecentFolders()
+}
+
+// SearchInFiles 在所有文件中搜索文本
+func (a *AppService) SearchInFiles(rootPath, searchText string, caseSensitive bool, maxResults int) ([]SearchResult, error) {
+	var results []SearchResult
+
+	err := filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
+		if err != nil || len(results) >= maxResults {
+			return nil
+		}
+
+		// 跳过隐藏文件和 node_modules
+		if strings.HasPrefix(entry.Name(), ".") || entry.Name() == "node_modules" {
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// 只搜索文本文件
+		if !entry.IsDir() && a.fileSystem.IsTextFile(path) {
+			content, _ := a.fileSystem.ReadFile(path)
+
+			var searchFunc func(string, string) bool
+			if caseSensitive {
+				searchFunc = strings.Contains
+			} else {
+				searchFunc = func(s, substr string) bool {
+					return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+				}
+			}
+
+			if searchFunc(content, searchText) {
+				// 找到匹配的行
+				lines := strings.Split(content, "\n")
+				for i, line := range lines {
+					if searchFunc(line, searchText) {
+						results = append(results, SearchResult{
+							FilePath:    path,
+							LineNumber:  i + 1,
+							LineContent: line,
+						})
+
+						if len(results) >= maxResults {
+							break
+						}
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	return results, err
 }

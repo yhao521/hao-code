@@ -231,12 +231,16 @@ func main() {
 	isMacOS := goruntime.GOOS == "darwin"
 
 	// 创建 Wails v3 应用实例
+	// 创建服务容器并直接使用 AppService
+	services := backend.NewServiceContainer()
+
 	wailsApp = application.New(application.Options{
 		Name:        "Hao-Code Editor",
 		Description: "基于 Wails v3 + Vue 3 构建的跨平台代码编辑器",
 		Services: []application.Service{
-			// 注册后端服务容器（WailsV2Adapter 也兼容 v3）
-			application.NewService(backend.NewWailsV2Adapter()),
+			// 直接注册 AppService，无需适配器层
+			// 需要将接口转换为具体类型
+			application.NewService(services.App.(*backend.AppService)),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.BundledAssetFileServer(assets),

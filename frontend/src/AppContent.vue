@@ -93,7 +93,7 @@ onMounted(() => {
 
       editorStore.openFile(selectedPath, content);
       message.success(`已打开: ${selectedPath.split("/").pop()}`);
-      
+
       // 记录到最近文件
       try {
         await AddRecentFile(selectedPath);
@@ -137,7 +137,7 @@ onMounted(() => {
       editorStore.setWorkspace(selectedPath);
       message.destroyAll();
       message.success(`已打开: ${selectedPath.split("/").pop()}`);
-      
+
       // 记录到最近文件夹
       try {
         await AddRecentFolder(selectedPath);
@@ -181,7 +181,7 @@ onMounted(() => {
 
     // 确保 content 不为 undefined
     const content = editorStore.activeTab.content ?? "";
-    
+
     try {
       const savePath = await SaveFileDialog();
       if (!savePath) {
@@ -199,7 +199,8 @@ onMounted(() => {
 
   // 切换自动保存
   EventsOn("menu:toggle-auto-save", () => {
-    message.info("自动保存设置开发中...");
+    editorStore.toggleAutoSave();
+    message.success(editorStore.autoSave ? "自动保存已启用" : "自动保存已禁用");
   });
 
   // 关闭当前编辑器标签
@@ -357,10 +358,10 @@ async function handleCreateFile() {
     <!-- 主内容区 - 可拖拽分割 -->
     <div class="main-content">
       <!-- 主分割：左侧边栏 + 中间区域 -->
-      <ResizableSplit 
+      <ResizableSplit
         v-if="layoutStore.sidebarVisible"
-        :min="180" 
-        :max="500" 
+        :min="180"
+        :max="500"
         :horizontal="true"
         :default-size="layoutStore.sidebarWidth"
         @update:size="layoutStore.sidebarWidth = $event"
@@ -395,7 +396,7 @@ async function handleCreateFile() {
                 </div>
               </template>
             </ResizableSplit>
-            
+
             <!-- 无右侧面板时的编辑器容器 -->
             <div v-else class="editor-container-full">
               <EditorArea />
@@ -403,7 +404,7 @@ async function handleCreateFile() {
           </div>
         </template>
       </ResizableSplit>
-      
+
       <!-- 隐藏侧边栏时的布局 -->
       <div v-else class="main-area-without-sidebar">
         <div class="center-area">
@@ -428,7 +429,7 @@ async function handleCreateFile() {
               </div>
             </template>
           </ResizableSplit>
-          
+
           <div v-else class="editor-container-full">
             <EditorArea />
           </div>
@@ -464,7 +465,11 @@ async function handleCreateFile() {
 
     <!-- 新建文件对话框 -->
     <NModal v-model:show="showNewFileModal" preset="dialog" title="新建文件">
-      <NForm :model="{ name: newFileName }" label-placement="left" label-width="80">
+      <NForm
+        :model="{ name: newFileName }"
+        label-placement="left"
+        label-width="80"
+      >
         <NFormItem label="文件名" path="name">
           <NInput
             v-model:value="newFileName"

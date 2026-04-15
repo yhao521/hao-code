@@ -15,9 +15,9 @@ type FileInfo struct {
 
 // RepoInfo Git 仓库信息
 type RepoInfo struct {
-	Path           string `json:"path"`
-	CurrentBranch  string `json:"currentBranch"`
-	IsRepository   bool   `json:"isRepository"`
+	Path          string `json:"path"`
+	CurrentBranch string `json:"currentBranch"`
+	IsRepository  bool   `json:"isRepository"`
 }
 
 // GitStatus Git 状态
@@ -55,4 +55,11 @@ type RecentItem struct {
 	Path     string `json:"path"`
 	Name     string `json:"name"`
 	OpenedAt string `json:"openedAt"`
+}
+
+// SearchResult 搜索结果
+type SearchResult struct {
+	FilePath    string `json:"filePath"`
+	LineNumber  int    `json:"lineNumber"`
+	LineContent string `json:"lineContent"`
 }
