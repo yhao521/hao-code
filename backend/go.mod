@@ -6,6 +6,7 @@ require (
 	github.com/creack/pty v1.1.24
 	github.com/go-delve/delve v1.26.1
 	github.com/go-git/go-git/v5 v5.17.2
+	github.com/sourcegraph/jsonrpc2 v0.2.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 )
 

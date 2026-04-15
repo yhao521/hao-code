@@ -14,6 +14,7 @@ type AppService struct {
 	git        IGitService
 	config     IConfigService
 	debug      *DebugService
+	lsp        *LSPService
 }
 
 // NewAppService 创建应用服务
@@ -23,6 +24,7 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		git:        git,
 		config:     config,
 		debug:      NewDebugService(),
+		lsp:        NewLSPService(),
 	}
 }
 
