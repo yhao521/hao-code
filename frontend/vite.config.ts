@@ -7,22 +7,22 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@wails': path.resolve(__dirname, 'wailsjs')
-    }
+      "@": path.resolve(__dirname, "src"),
+      "@wails": path.resolve(__dirname, "bindings/hao-code"),
+    },
   },
   optimizeDeps: {
-    include: ['naive-ui']
+    include: ["naive-ui"],
   },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          'naive-ui': ['naive-ui'],
-          'monaco-editor': ['monaco-editor'],
-          'vue-vendor': ['vue', 'pinia']
-        }
-      }
-    }
-  }
-})
+          "naive-ui": ["naive-ui"],
+          "monaco-editor": ["monaco-editor"],
+          "vue-vendor": ["vue", "pinia"],
+        },
+      },
+    },
+  },
+});
