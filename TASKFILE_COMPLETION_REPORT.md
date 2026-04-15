@@ -15,15 +15,15 @@
 
 ### 1. 完整的任务分类
 
-| 类别 | 任务数 | 说明 |
-|------|--------|------|
-| 主要任务 | 4 | dev, build, clean, rebuild |
-| 前端任务 | 4 | install, build, dev, lint |
-| Go 任务 | 4 | tidy, fmt, vet, test |
-| Wails 任务 | 3 | bindings, assets, update |
-| 平台构建 | 4 | macOS, Windows, Linux, Universal |
-| 工具任务 | 4 | help, check, init, rebuild |
-| **总计** | **23** | - |
+| 类别       | 任务数 | 说明                             |
+| ---------- | ------ | -------------------------------- |
+| 主要任务   | 4      | dev, build, clean, rebuild       |
+| 前端任务   | 4      | install, build, dev, lint        |
+| Go 任务    | 4      | tidy, fmt, vet, test             |
+| Wails 任务 | 3      | bindings, assets, update         |
+| 平台构建   | 4      | macOS, Windows, Linux, Universal |
+| 工具任务   | 4      | help, check, init, rebuild       |
+| **总计**   | **23** | -                                |
 
 ### 2. 便捷的别名
 
@@ -38,6 +38,7 @@ task bind   # task wails:bindings
 ### 3. Emoji 图标支持
 
 所有任务描述都包含 Emoji 图标，使输出更直观：
+
 - 🚀 开发模式
 - 📦 生产构建
 - 🧹 清理
@@ -65,7 +66,9 @@ hao-code/
 ### 开发任务
 
 #### `task dev` (别名: `task d`)
+
 启动完整的开发模式，包括：
+
 - 前端构建
 - 后端编译
 - 热重载支持
@@ -77,7 +80,9 @@ task d
 ```
 
 #### `task dev:fast` (别名: `task df`)
+
 快速开发模式，跳过绑定生成：
+
 - 更快的启动速度
 - 适合频繁重启
 
@@ -90,7 +95,9 @@ task df
 ### 构建任务
 
 #### `task build` (别名: `task b`)
+
 生产构建，包括：
+
 - 安装前端依赖
 - 生成 Wails 绑定
 - 构建前端
@@ -103,6 +110,7 @@ task b
 ```
 
 **优化标志**: `-ldflags="-s -w"`
+
 - `-s`: 剥离符号表
 - `-w`: 剥离 DWARF 调试信息
 - 减小二进制文件大小约 30%
@@ -110,7 +118,9 @@ task b
 ### 清理任务
 
 #### `task clean` (别名: `task c`)
+
 清理所有构建产物：
+
 - 前端 dist 目录
 - 后端 bin 目录
 - Wails 绑定文件
@@ -137,6 +147,7 @@ task build:macos:universal
 ```
 
 **Universal Binary 特点**:
+
 - 同时支持 Intel 和 Apple Silicon
 - 使用 `lipo` 工具合并
 - 文件大小约为单架构的 2 倍
@@ -148,6 +159,7 @@ task build:windows
 ```
 
 自动设置环境变量：
+
 - `GOOS=windows`
 - `GOARCH=amd64`
 
@@ -158,6 +170,7 @@ task build:linux
 ```
 
 自动设置环境变量：
+
 - `GOOS=linux`
 - `GOARCH=amd64`
 
@@ -166,6 +179,7 @@ task build:linux
 ## 🛠️ 工具任务
 
 ### `task help`
+
 显示所有可用任务列表
 
 ```bash
@@ -173,6 +187,7 @@ task help
 ```
 
 输出示例：
+
 ```
 task: Available tasks for this project:
 * build:                       📦 Build for production      (aliases: b)
@@ -182,7 +197,9 @@ task: Available tasks for this project:
 ```
 
 ### `task check`
+
 检查开发环境，显示：
+
 - Go 版本
 - Node 版本
 - npm 版本
@@ -194,7 +211,9 @@ task check
 ```
 
 ### `task init`
+
 初始化新项目：
+
 - 运行 `go mod tidy`
 - 安装前端依赖
 - 生成 Wails 绑定
@@ -204,7 +223,9 @@ task init
 ```
 
 ### `task rebuild`
+
 完整重建：
+
 - 先清理
 - 再构建
 
@@ -216,15 +237,15 @@ task rebuild
 
 ## 📊 与之前方案的对比
 
-| 特性 | 之前 (dev.sh) | 现在 (Taskfile) |
-|------|---------------|-----------------|
-| 任务管理 | ❌ 单一脚本 | ✅ 23个任务 |
-| 依赖管理 | ❌ 手动 | ✅ 自动 |
-| 跨平台 | ⚠️ 部分 | ✅ 完整支持 |
-| 别名支持 | ❌ 无 | ✅ 有 |
-| 文档 | ⚠️ 简单 | ✅ 详细 |
-| 可扩展性 | ⚠️ 低 | ✅ 高 |
-| 社区标准 | ❌ 自定义 | ✅ Task 标准 |
+| 特性     | 之前 (dev.sh) | 现在 (Taskfile) |
+| -------- | ------------- | --------------- |
+| 任务管理 | ❌ 单一脚本   | ✅ 23个任务     |
+| 依赖管理 | ❌ 手动       | ✅ 自动         |
+| 跨平台   | ⚠️ 部分       | ✅ 完整支持     |
+| 别名支持 | ❌ 无         | ✅ 有           |
+| 文档     | ⚠️ 简单       | ✅ 详细         |
+| 可扩展性 | ⚠️ 低         | ✅ 高           |
+| 社区标准 | ❌ 自定义     | ✅ Task 标准    |
 
 ---
 
@@ -285,6 +306,7 @@ task init
 **症状**: `command not found: task`
 
 **解决**:
+
 ```bash
 # macOS
 brew install go-task
@@ -298,6 +320,7 @@ task --version
 **症状**: `Permission denied: ./dev.sh`
 
 **解决**:
+
 ```bash
 chmod +x dev.sh
 ```
@@ -307,6 +330,7 @@ chmod +x dev.sh
 **症状**: Wails 绑定相关错误
 
 **解决**:
+
 ```bash
 task wails:bindings
 ```
@@ -316,6 +340,7 @@ task wails:bindings
 **症状**: npm 相关错误
 
 **解决**:
+
 ```bash
 task frontend:install
 ```
@@ -337,39 +362,43 @@ task frontend:install
 ### YAML 语法注意事项
 
 1. **字符串引用**
+
    ```yaml
    # 正确 - 包含特殊字符时使用引号
    cmds:
      - "echo \"Hello World\""
-   
+
    # 错误 - 缺少引号
    cmds:
      - echo "Hello World"
    ```
 
 2. **任务调用**
+
    ```yaml
    # 正确 - 作为命令字符串
    cmds:
      - "task other-task"
-   
+
    # 或使用 deps
    deps:
      - other-task
    ```
 
 3. **变量替换**
+
    ```yaml
    vars:
      APP_NAME: myapp
-   
+
    cmds:
-     - "echo {{.APP_NAME}}"  # 正确
+     - "echo {{.APP_NAME}}" # 正确
    ```
 
 ### Task 最佳实践
 
 1. **使用别名提高效率**
+
    ```bash
    task d    # 而不是 task dev
    task b    # 而不是 task build
@@ -392,21 +421,25 @@ task frontend:install
 ## 🏆 成果总结
 
 ✅ **创建了完整的 Taskfile 配置**
+
 - 23 个精心设计的任务
 - 覆盖开发、构建、测试全流程
 - 符合 Wails v3 最佳实践
 
 ✅ **提供了详细的文档**
+
 - TASKFILE_GUIDE.md 使用指南
 - 每个任务都有清晰说明
 - 故障排除章节
 
 ✅ **改进了开发体验**
+
 - 简化的命令（别名）
 - 直观的 Emoji 图标
 - 自动化的依赖管理
 
 ✅ **支持跨平台开发**
+
 - macOS / Windows / Linux
 - Universal Binary 支持
 - 环境变量自动配置
