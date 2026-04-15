@@ -2,7 +2,7 @@ import {
   WriteFile,
   AddRecentFile,
   AddRecentFolder,
-} from "@wails/go/backend/App";
+} from "@wails/backend/appservice";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 

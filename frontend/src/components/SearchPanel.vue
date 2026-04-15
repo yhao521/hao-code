@@ -86,7 +86,8 @@ import {
   Document as FileIcon,
   Sad as EmptyIcon,
 } from "@vicons/ionicons5";
-import { SearchInFiles, type SearchOptions } from "@wails/go/backend/App";
+import { SearchInFiles } from "@wails/backend/appservice";
+import { SearchResult, SearchOptions } from "@wails/backend/models";
 import { useEditorStore } from "@/stores/editor";
 import { useMessage } from "naive-ui";
 
@@ -99,12 +100,6 @@ const caseSensitive = ref(false);
 const useRegex = ref(false);
 const searching = ref(false);
 const searched = ref(false);
-
-interface SearchResult {
-  filePath: string;
-  lineNumber: number;
-  lineContent: string;
-}
 
 const results = ref<SearchResult[]>([]);
 

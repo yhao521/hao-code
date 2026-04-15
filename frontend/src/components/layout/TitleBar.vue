@@ -77,7 +77,7 @@ import {
 } from "@vicons/ionicons5";
 import { useEditorStore } from "@/stores/editor";
 import * as wailsRuntime from "@wails/runtime/runtime";
-import { ListDir, OpenFolderDialog } from "@wails/go/backend/App";
+import { ListDir, OpenFolderDialog } from "@wails/backend/appservice";
 import RecentFilesDropdown from "./RecentFilesDropdown.vue";
 
 const editorStore = useEditorStore();

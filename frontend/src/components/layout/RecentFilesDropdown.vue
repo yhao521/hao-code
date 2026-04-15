@@ -65,7 +65,7 @@ import {
   ClearRecentFolders,
   ReadFile,
   ListDir,
-} from "@wails/go/backend/App";
+} from "@wails/backend/appservice";
 import { useEditorStore } from "@/stores/editor";
 
 interface Props {

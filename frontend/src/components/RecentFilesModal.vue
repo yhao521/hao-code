@@ -90,7 +90,7 @@ import {
   ClearRecentFolders,
   ReadFile,
   ListDir,
-} from "@wails/go/backend/App";
+} from "@wails/backend/appservice";
 import { useEditorStore } from "@/stores/editor";
 
 const editorStore = useEditorStore();
@@ -205,25 +205,25 @@ function formatTime(timeStr: string): string {
     const date = new Date(timeStr);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     // 小于1小时
     if (diff < 3600000) {
       const minutes = Math.floor(diff / 60000);
       return `${minutes}分钟前`;
     }
-    
+
     // 小于24小时
     if (diff < 86400000) {
       const hours = Math.floor(diff / 3600000);
       return `${hours}小时前`;
     }
-    
+
     // 小于7天
     if (diff < 604800000) {
       const days = Math.floor(diff / 86400000);
       return `${days}天前`;
     }
-    
+
     // 显示具体日期
     return date.toLocaleDateString("zh-CN");
   } catch {
@@ -257,13 +257,13 @@ defineExpose({
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #3E3E42;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .section-title {
   font-size: 14px;
   font-weight: 600;
-  color: #BBBBBB;
+  color: #bbbbbb;
 }
 
 .item-list {
@@ -283,7 +283,7 @@ defineExpose({
 }
 
 .item:hover {
-  background-color: #2A2D2E;
+  background-color: #2a2d2e;
 }
 
 .item-icon {
@@ -299,7 +299,7 @@ defineExpose({
 .item-name {
   font-size: 13px;
   font-weight: 500;
-  color: #CCCCCC;
+  color: #cccccc;
   margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;

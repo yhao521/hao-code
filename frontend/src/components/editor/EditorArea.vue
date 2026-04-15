@@ -78,7 +78,7 @@ import {
   WriteFile,
   OpenFileDialog,
   OpenFolderDialog,
-} from "@wails/go/backend/App";
+} from "@wails/backend/appservice";
 import Breadcrumb from "../Breadcrumb.vue";
 
 const editorStore = useEditorStore();

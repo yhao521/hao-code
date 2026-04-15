@@ -79,19 +79,34 @@
           <GitGraph :nodes="graphNodes" />
         </div>
 
-        <!-- 最近提交 -->
-        <div class="recent-commits" v-if="recentCommits.length > 0">
-          <div class="section-title">最近提交</div>
-          <NList hoverable size="small">
-            <NListItem v-for="commit in recentCommits" :key="commit.hash">
-              <div class="commit-item">
-                <span class="commit-hash">{{ commit.shortHash }}</span>
-                <span class="commit-message">{{
-                  commit.message.split("\n")[0]
-                }}</span>
+        <!-- 提交历史时间线 -->
+        <div class="history-timeline" v-if="recentCommits.length > 0">
+          <div class="section-title">提交历史 ({{ recentCommits.length }})</div>
+          <div class="timeline-list">
+            <div
+              v-for="(commit, index) in recentCommits"
+              :key="commit.hash"
+              class="timeline-item"
+              @click="handleCommitClick(commit)"
+            >
+              <div
+                class="timeline-line"
+                :style="{ backgroundColor: getCommitColor(index) }"
+              ></div>
+              <div class="timeline-content">
+                <div class="commit-header">
+                  <span class="commit-hash">{{ commit.shortHash }}</span>
+                  <span class="commit-time">{{
+                    formatTime(commit.timestamp)
+                  }}</span>
+                </div>
+                <div class="commit-message">
+                  {{ commit.message.split("\n")[0] }}
+                </div>
+                <div class="commit-author">{{ commit.author }}</div>
               </div>
-            </NListItem>
-          </NList>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -108,15 +123,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import {
-  NIcon,
-  NList,
-  NListItem,
-  NInput,
-  NButton,
-  NSpin,
-  NEmpty,
-} from "naive-ui";
+import { NIcon, NInput, NButton, NSpin, NEmpty, useMessage } from "naive-ui";
 import { GitBranchOutline, RefreshOutline } from "@vicons/ionicons5";
 import { useGitStore } from "@/stores/git";
 import {
@@ -126,19 +133,20 @@ import {
   GitGetBranches,
   GitGetLog,
   GetGitGraph,
-} from "@wails/go/backend/App";
+} from "@wails/backend/appservice";
 import GitGraph from "./GitGraph.vue";
 
 const gitStore = useGitStore();
 const recentCommits = ref<any[]>([]);
 const graphNodes = ref<any[]>([]);
+const message = useMessage();
 
 const hasChanges = computed(
   () => gitStore.changes.length > 0 || gitStore.stagedChanges.length > 0,
 );
 
 async function loadGitInfo() {
-  const projectRoot = await import("@wails/go/backend/App").then((m) =>
+  const projectRoot = await import("@wails/backend/appservice").then((m) =>
     m.GetProjectRoot(),
   );
 
@@ -239,6 +247,28 @@ function getStatusIcon(status: string): string {
   return icons[status] || "?";
 }
 
+function formatTime(timestamp: number): string {
+  if (!timestamp) return "";
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+
+  if (diff < 60000) return "刚刚";
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`;
+  return date.toLocaleDateString();
+}
+
+function getCommitColor(index: number): string {
+  const colors = ["#E57373", "#64B5F6", "#81C784", "#FFD54F", "#BA68C8"];
+  return colors[index % colors.length];
+}
+
+function handleCommitClick(commit: any) {
+  message.info(`查看提交详情: ${commit.shortHash}`);
+  // TODO: 实现点击跳转至 Diff 视图或 Commit 详情页
+}
+
 onMounted(() => {
   loadGitInfo();
 });
@@ -327,14 +357,48 @@ onMounted(() => {
   border-top: 1px solid #3e3e42;
 }
 
-.recent-commits {
+.history-timeline {
   margin-top: 16px;
 }
 
-.commit-item {
+.timeline-list {
+  position: relative;
+  padding-left: 12px;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 8px 0 8px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.timeline-item:hover {
+  background-color: #2a2d2e;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.timeline-content {
+  padding-left: 8px;
+}
+
+.commit-header {
   display: flex;
-  gap: 8px;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 2px;
+}
+
+.commit-time {
+  font-size: 11px;
+  color: #858585;
 }
 
 .commit-hash {
@@ -347,10 +411,13 @@ onMounted(() => {
 .commit-message {
   font-size: 12px;
   color: #cccccc;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 2px 0;
+}
+
+.commit-author {
+  font-size: 11px;
+  color: #858585;
+  margin-top: 2px;
 }
 
 .no-repo {

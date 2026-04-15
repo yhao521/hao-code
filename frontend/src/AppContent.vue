@@ -10,7 +10,8 @@ import {
   useMessage,
   useDialog,
 } from "naive-ui";
-import { EventsOn } from "@wails/runtime/runtime";
+import { Events } from "@wailsio/runtime";
+const EventsOn = Events.On;
 
 // 导入组件
 import TitleBar from "./components/layout/TitleBar.vue";
@@ -40,7 +41,7 @@ import {
   WriteFile,
   AddRecentFile,
   AddRecentFolder,
-} from "@wails/go/backend/App";
+} from "@wails/backend/appservice";
 
 const editorStore = useEditorStore();
 const layoutStore = useLayoutStore();
