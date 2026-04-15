@@ -54,6 +54,26 @@ type IFileSystemService interface {
 	TouchFile(path string) error
 }
 
+// IConfigService 配置服务接口
+type IConfigService interface {
+	// 添加最近打开的文件
+	AddRecentFile(path string) error
+	// 添加最近打开的文件夹
+	AddRecentFolder(path string) error
+	// 获取最近打开的文件列表
+	GetRecentFiles() []RecentItem
+	// 获取最近打开的文件夹列表
+	GetRecentFolders() []RecentItem
+	// 从最近文件列表中移除指定文件
+	RemoveRecentFile(path string) error
+	// 从最近文件夹列表中移除指定文件夹
+	RemoveRecentFolder(path string) error
+	// 清空最近文件列表
+	ClearRecentFiles() error
+	// 清空最近文件夹列表
+	ClearRecentFolders() error
+}
+
 // IGitService Git 服务接口
 type IGitService interface {
 	// 打开 Git 仓库
@@ -78,6 +98,9 @@ type IAppService interface {
 	
 	// Git 服务
 	IGitService
+	
+	// 配置服务
+	IConfigService
 }
 
 // ==================== 依赖注入容器 ====================
@@ -86,6 +109,7 @@ type IAppService interface {
 type ServiceContainer struct {
 	FileSystem IFileSystemService
 	Git        IGitService
+	Config     IConfigService
 	App        IAppService
 }
 
@@ -96,11 +120,13 @@ func NewServiceContainer() *ServiceContainer {
 	// 初始化具体服务实现
 	fileSystemService := NewFileSystemService()
 	gitService := NewGitService()
-	appService := NewAppService(fileSystemService, gitService)
+	configService := NewConfigManager()
+	appService := NewAppService(fileSystemService, gitService, configService)
 	
 	// 注入到容器
 	container.FileSystem = fileSystemService
 	container.Git = gitService
+	container.Config = configService
 	container.App = appService
 	
 	return container
@@ -268,4 +294,46 @@ func (w *WailsV2Adapter) GitGetBranches(path string) (*BranchInfo, error) {
 // GitGetLog 获取 Git 日志
 func (w *WailsV2Adapter) GitGetLog(path string, maxCommits int) ([]CommitInfo, error) {
 	return w.services.App.GitGetLog(path, maxCommits)
+}
+
+// ==================== 配置服务方法 ====================
+
+// AddRecentFile 添加最近打开的文件
+func (w *WailsV2Adapter) AddRecentFile(path string) error {
+	return w.services.App.AddRecentFile(path)
+}
+
+// AddRecentFolder 添加最近打开的文件夹
+func (w *WailsV2Adapter) AddRecentFolder(path string) error {
+	return w.services.App.AddRecentFolder(path)
+}
+
+// GetRecentFiles 获取最近打开的文件列表
+func (w *WailsV2Adapter) GetRecentFiles() []RecentItem {
+	return w.services.App.GetRecentFiles()
+}
+
+// GetRecentFolders 获取最近打开的文件夹列表
+func (w *WailsV2Adapter) GetRecentFolders() []RecentItem {
+	return w.services.App.GetRecentFolders()
+}
+
+// RemoveRecentFile 从最近文件列表中移除指定文件
+func (w *WailsV2Adapter) RemoveRecentFile(path string) error {
+	return w.services.App.RemoveRecentFile(path)
+}
+
+// RemoveRecentFolder 从最近文件夹列表中移除指定文件夹
+func (w *WailsV2Adapter) RemoveRecentFolder(path string) error {
+	return w.services.App.RemoveRecentFolder(path)
+}
+
+// ClearRecentFiles 清空最近文件列表
+func (w *WailsV2Adapter) ClearRecentFiles() error {
+	return w.services.App.ClearRecentFiles()
+}
+
+// ClearRecentFolders 清空最近文件夹列表
+func (w *WailsV2Adapter) ClearRecentFolders() error {
+	return w.services.App.ClearRecentFolders()
 }

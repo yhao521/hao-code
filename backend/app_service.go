@@ -4,13 +4,15 @@ package backend
 type AppService struct {
 	fileSystem IFileSystemService
 	git        IGitService
+	config     IConfigService
 }
 
 // NewAppService 创建应用服务
-func NewAppService(fs IFileSystemService, git IGitService) *AppService {
+func NewAppService(fs IFileSystemService, git IGitService, config IConfigService) *AppService {
 	return &AppService{
 		fileSystem: fs,
 		git:        git,
+		config:     config,
 	}
 }
 
@@ -147,4 +149,46 @@ func (a *AppService) BackupFile(path string) error {
 // TouchFile Touch 文件
 func (a *AppService) TouchFile(path string) error {
 	return a.fileSystem.TouchFile(path)
+}
+
+// ==================== 配置服务方法 ====================
+
+// AddRecentFile 添加最近打开的文件
+func (a *AppService) AddRecentFile(path string) error {
+	return a.config.AddRecentFile(path)
+}
+
+// AddRecentFolder 添加最近打开的文件夹
+func (a *AppService) AddRecentFolder(path string) error {
+	return a.config.AddRecentFolder(path)
+}
+
+// GetRecentFiles 获取最近打开的文件列表
+func (a *AppService) GetRecentFiles() []RecentItem {
+	return a.config.GetRecentFiles()
+}
+
+// GetRecentFolders 获取最近打开的文件夹列表
+func (a *AppService) GetRecentFolders() []RecentItem {
+	return a.config.GetRecentFolders()
+}
+
+// RemoveRecentFile 从最近文件列表中移除指定文件
+func (a *AppService) RemoveRecentFile(path string) error {
+	return a.config.RemoveRecentFile(path)
+}
+
+// RemoveRecentFolder 从最近文件夹列表中移除指定文件夹
+func (a *AppService) RemoveRecentFolder(path string) error {
+	return a.config.RemoveRecentFolder(path)
+}
+
+// ClearRecentFiles 清空最近文件列表
+func (a *AppService) ClearRecentFiles() error {
+	return a.config.ClearRecentFiles()
+}
+
+// ClearRecentFolders 清空最近文件夹列表
+func (a *AppService) ClearRecentFolders() error {
+	return a.config.ClearRecentFolders()
 }

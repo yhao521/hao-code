@@ -1,4 +1,4 @@
-import { WriteFile } from "@wails/go/backend/App";
+import { WriteFile, AddRecentFile, AddRecentFolder } from "@wails/go/backend/App";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
@@ -42,6 +42,11 @@ export const useEditorStore = defineStore("editor", () => {
     // 清空 tabs
     tabs.value = [];
     activeEditor.value = null;
+    
+    // 调用后端 API 记录最近文件夹
+    AddRecentFolder(path).catch(error => {
+      console.error("Failed to add recent folder:", error);
+    });
   }
 
   function clearWorkspace() {
@@ -70,8 +75,13 @@ export const useEditorStore = defineStore("editor", () => {
     tabs.value.push(tab);
     activeEditor.value = tab.id;
 
-    // 添加到最近文件
+    // 添加到最近文件（后端持久化）
     addToRecentFiles(path);
+    
+    // 调用后端 API 记录最近文件
+    AddRecentFile(path).catch(error => {
+      console.error("Failed to add recent file:", error);
+    });
   }
 
   function closeTab(id: string) {

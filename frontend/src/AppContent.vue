@@ -21,6 +21,7 @@ import LayoutToolbar from "./components/layout/LayoutToolbar.vue";
 import RightPanel from "./components/layout/RightPanel.vue";
 import BottomPanel from "./components/layout/BottomPanel.vue";
 import ResizableSplit from "./components/layout/ResizableSplit.vue";
+import RecentFilesModal from "./components/RecentFilesModal.vue";
 import { useEditorStore } from "./stores/editor";
 import { useLayoutStore } from "./stores/layout";
 import {
@@ -36,6 +37,8 @@ import {
   OpenFolderDialog,
   SaveFileDialog,
   WriteFile,
+  AddRecentFile,
+  AddRecentFolder,
 } from "@wails/go/backend/App";
 
 const editorStore = useEditorStore();
@@ -52,6 +55,9 @@ const isMacOS = computed(() => {
 // 新建文件对话框
 const showNewFileModal = ref(false);
 const newFileName = ref("");
+
+// 最近文件模态框引用
+const recentFilesModalRef = ref<any>(null);
 
 onMounted(() => {
   // ==================== 文件菜单事件监听 ====================
@@ -87,6 +93,13 @@ onMounted(() => {
 
       editorStore.openFile(selectedPath, content);
       message.success(`已打开: ${selectedPath.split("/").pop()}`);
+      
+      // 记录到最近文件
+      try {
+        await AddRecentFile(selectedPath);
+      } catch (error) {
+        console.error("Failed to add recent file:", error);
+      }
     } catch (error) {
       message.destroyAll();
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -124,6 +137,13 @@ onMounted(() => {
       editorStore.setWorkspace(selectedPath);
       message.destroyAll();
       message.success(`已打开: ${selectedPath.split("/").pop()}`);
+      
+      // 记录到最近文件夹
+      try {
+        await AddRecentFolder(selectedPath);
+      } catch (error) {
+        console.error("Failed to add recent folder:", error);
+      }
     } catch (error) {
       message.destroyAll();
       console.error("Failed to open folder:", error);
@@ -134,6 +154,11 @@ onMounted(() => {
         message.info("已取消选择");
       }
     }
+  });
+
+  // 打开最近的文件
+  EventsOn("menu:open-recent", () => {
+    recentFilesModalRef.value?.show();
   });
 
   // 保存
@@ -433,6 +458,9 @@ async function handleCreateFile() {
 
     <!-- 状态栏 -->
     <StatusBar />
+
+    <!-- 最近文件模态框 -->
+    <RecentFilesModal ref="recentFilesModalRef" />
 
     <!-- 新建文件对话框 -->
     <NModal v-model:show="showNewFileModal" preset="dialog" title="新建文件">

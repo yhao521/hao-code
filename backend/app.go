@@ -282,3 +282,45 @@ func (a *App) GitPull(path, remote, branch string) (string, error) {
 func (a *App) GitPush(path, remote, branch string) (string, error) {
 	return a.adapter.GitPush(path, remote, branch)
 }
+
+// ==================== 配置服务方法 ====================
+
+// AddRecentFile 添加最近打开的文件
+func (a *App) AddRecentFile(path string) error {
+	return a.adapter.AddRecentFile(path)
+}
+
+// AddRecentFolder 添加最近打开的文件夹
+func (a *App) AddRecentFolder(path string) error {
+	return a.adapter.AddRecentFolder(path)
+}
+
+// GetRecentFiles 获取最近打开的文件列表
+func (a *App) GetRecentFiles() []RecentItem {
+	return a.adapter.GetRecentFiles()
+}
+
+// GetRecentFolders 获取最近打开的文件夹列表
+func (a *App) GetRecentFolders() []RecentItem {
+	return a.adapter.GetRecentFolders()
+}
+
+// RemoveRecentFile 从最近文件列表中移除指定文件
+func (a *App) RemoveRecentFile(path string) error {
+	return a.adapter.RemoveRecentFile(path)
+}
+
+// RemoveRecentFolder 从最近文件夹列表中移除指定文件夹
+func (a *App) RemoveRecentFolder(path string) error {
+	return a.adapter.RemoveRecentFolder(path)
+}
+
+// ClearRecentFiles 清空最近文件列表
+func (a *App) ClearRecentFiles() error {
+	return a.adapter.ClearRecentFiles()
+}
+
+// ClearRecentFolders 清空最近文件夹列表
+func (a *App) ClearRecentFolders() error {
+	return a.adapter.ClearRecentFolders()
+}

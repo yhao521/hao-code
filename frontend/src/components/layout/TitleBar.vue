@@ -19,6 +19,21 @@
         </template>
       </NButton>
 
+      <!-- macOS: 添加最近文件下拉按钮 -->
+      <NButton
+        v-if="isMacOS"
+        text
+        circle
+        size="tiny"
+        @click="handleShowRecentFiles"
+        title="打开最近的文件"
+        ref="recentFilesBtnRef"
+      >
+        <template #icon>
+          <NIcon><TimeOutline /></NIcon>
+        </template>
+      </NButton>
+
       <!-- Windows: 自定义窗口控制按钮 -->
       <div v-if="!isMacOS" class="window-controls">
         <div
@@ -40,25 +55,42 @@
         </div>
       </div>
     </div>
+
+    <!-- 最近文件下拉面板 -->
+    <RecentFilesDropdown
+      v-model:visible="showRecentFiles"
+      :position="dropdownPosition"
+      ref="recentFilesDropdownRef"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, nextTick } from "vue";
 import { NButton, NIcon, useMessage } from "naive-ui";
 import {
   FolderOpenOutline,
   RemoveOutline,
   SquareOutline,
   CloseOutline,
+  TimeOutline,
 } from "@vicons/ionicons5";
 import { useEditorStore } from "@/stores/editor";
 import * as wailsRuntime from "@wails/runtime/runtime";
 import { ListDir, OpenFolderDialog } from "@wails/go/backend/App";
+import RecentFilesDropdown from "./RecentFilesDropdown.vue";
 
 const editorStore = useEditorStore();
 const message = useMessage();
 const isMaximized = ref(false);
+
+// 最近文件相关
+const showRecentFiles = ref(false);
+const dropdownPosition = ref({ x: 0, y: 0 });
+const recentFilesBtnRef = ref<HTMLElement | null>(null);
+const recentFilesDropdownRef = ref<InstanceType<
+  typeof RecentFilesDropdown
+> | null>(null);
 
 // 检测是否为 macOS
 const isMacOS = computed(() => {
@@ -72,7 +104,30 @@ const workspaceName = computed(
 
 onMounted(() => {
   // 可以在这里添加窗口状态监听
+
+  // 监听菜单事件：打开最近文件
+  wailsRuntime.EventsOn("menu:open-recent", () => {
+    handleShowRecentFiles();
+  });
 });
+
+// 显示最近文件下拉菜单
+async function handleShowRecentFiles() {
+  if (!recentFilesBtnRef.value) return;
+
+  // 获取按钮位置
+  const rect = recentFilesBtnRef.value.getBoundingClientRect();
+  dropdownPosition.value = {
+    x: rect.left,
+    y: rect.bottom + 4,
+  };
+
+  showRecentFiles.value = true;
+
+  // 等待 DOM 更新后加载数据
+  await nextTick();
+  recentFilesDropdownRef.value?.loadData();
+}
 
 // 打开文件夹
 async function handleOpenFolder() {

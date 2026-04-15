@@ -50,6 +50,9 @@ func createMenu(isMacOS bool) *menu.Menu {
 		fileMenu.AddText("打开文件夹...", keys.Combo("o", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
 			runtime.EventsEmit(appCtx, "menu:open-folder")
 		})
+		fileMenu.AddText("打开最近的文件", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:open-recent")
+		})
 		fileMenu.AddSeparator()
 
 		// 保存相关
@@ -143,6 +146,9 @@ func createMenu(isMacOS bool) *menu.Menu {
 		})
 		fileMenu.AddText("打开文件夹...", keys.Combo("o", keys.CmdOrCtrlKey, keys.ShiftKey), func(_ *menu.CallbackData) {
 			runtime.EventsEmit(appCtx, "menu:open-folder")
+		})
+		fileMenu.AddText("打开最近的文件", nil, func(_ *menu.CallbackData) {
+			runtime.EventsEmit(appCtx, "menu:open-recent")
 		})
 		fileMenu.AddSeparator()
 		fileMenu.AddText("保存", keys.CmdOrCtrl("s"), func(_ *menu.CallbackData) {

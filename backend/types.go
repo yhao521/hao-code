@@ -49,3 +49,10 @@ type CommitInfo struct {
 	Email     string `json:"email"`
 	Timestamp string `json:"timestamp"`
 }
+
+// RecentItem 最近打开的项目（文件或文件夹）
+type RecentItem struct {
+	Path     string `json:"path"`
+	Name     string `json:"name"`
+	OpenedAt string `json:"openedAt"`
+}
