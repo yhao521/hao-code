@@ -3,3 +3,4 @@ node_modules
 frontend/dist
 hao-code*
 frontend/wailsjs
+frontend/bindings

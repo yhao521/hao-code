@@ -1,227 +1,63 @@
-# Wails v3 Taskfile Configuration
-# https://taskfile.dev/
 version: "3"
 
-# 包含 build 目录的 Taskfile
 includes:
-  build: ./build/Taskfile.yml
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+  darwin: ./build/darwin/Taskfile.yml
+  linux: ./build/linux/Taskfile.yml
+  ios: ./build/ios/Taskfile.yml
+  android: ./build/android/Taskfile.yml
 
-# 变量定义
 vars:
-  APP_NAME: hao-code
-  BUILD_DIR: build/bin
-  FRONTEND_DIR: frontend
+  APP_NAME: "haoyun-code"
+  BIN_DIR: "bin"
+  VITE_PORT: "{{.WAILS_VITE_PORT | default 9245}}"
+  _APP_NAME: "haoyun-code"
+  VERSION_1: "0"
+  VERSION_2: "0"
 
-# 任务定义
 tasks:
-  # ==================== 主要任务 ====================
-
-  # 默认任务 - 开发模式
-  default:
-    desc: Start development mode
-    cmds:
-      - task: dev
-
-  # 开发模式
-  dev:
-    desc: "🚀 Start development mode with hot reload"
-    aliases: [d]
-    cmds:
-      - ./dev.sh
-
-  # 快速开发模式（跳过绑定生成）
-  dev:fast:
-    desc: "⚡ Fast development mode (skip bindings generation)"
-    aliases: [df]
-    cmds:
-      - "cd {{.FRONTEND_DIR}} && npm run build"
-      - go run main.go
-
-  # 生产构建
   build:
-    desc: "📦 Build for production"
-    aliases: [b]
+    summary: Builds the application
     cmds:
-      - "task build:install:frontend:deps"
-      - "task build:generate:bindings"
-      - "task build:build:frontend DEV=false"
-      - 'go build -ldflags="-s -w" -o {{.BUILD_DIR}}/{{.APP_NAME}} main.go'
-      - 'echo "✅ Production build complete: {{.BUILD_DIR}}/{{.APP_NAME}}"'
+      - task: "{{OS}}:build"
 
-  # 清理构建产物
-  clean:
-    desc: "🧹 Clean build artifacts"
-    aliases: [c]
+  package:
+    summary: Packages a production build of the application
     cmds:
-      - "rm -rf {{.FRONTEND_DIR}}/dist"
-      - "rm -rf {{.BUILD_DIR}}/*"
-      - "rm -rf {{.FRONTEND_DIR}}/bindings"
-      - go clean
-      - 'echo "✅ Cleaned build artifacts"'
+      - task: "{{OS}}:package"
 
-  # ==================== 前端任务 ====================
-
-  # 安装前端依赖
-  frontend:install:
-    desc: "📥 Install frontend dependencies"
-    dir: "{{.FRONTEND_DIR}}"
+  run:
+    summary: Runs the application
     cmds:
-      - npm install
+      - task: "{{OS}}:run"
 
-  # 构建前端
-  frontend:build:
-    desc: "🔨 Build frontend for production"
-    dir: "{{.FRONTEND_DIR}}"
-    deps:
-      - frontend:install
+  dev:
+    summary: Runs the application in development mode
     cmds:
-      - npm run build
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
-  # 前端开发服务器
-  frontend:dev:
-    desc: "🌐 Start frontend dev server"
-    dir: "{{.FRONTEND_DIR}}"
+  setup:docker:
+    summary: Builds Docker image for cross-compilation (~800MB download)
     cmds:
-      - npm run dev
+      - task: common:setup:docker
 
-  # 前端代码检查
-  frontend:lint:
-    desc: "🔍 Lint frontend code"
-    dir: "{{.FRONTEND_DIR}}"
+  build:server:
+    summary: Builds the application in server mode (no GUI, HTTP server only)
     cmds:
-      - "npm run lint || true"
+      - task: common:build:server
 
-  # ==================== Go 任务 ====================
-
-  # Go 模块整理
-  go:tidy:
-    desc: "📋 Run go mod tidy"
+  run:server:
+    summary: Runs the application in server mode
     cmds:
-      - go mod tidy
+      - task: common:run:server
 
-  # Go 代码格式化
-  go:fmt:
-    desc: "✨ Format Go code"
+  build:docker:
+    summary: Builds a Docker image for server mode deployment
     cmds:
-      - go fmt ./...
+      - task: common:build:docker
 
-  # Go 代码检查
-  go:vet:
-    desc: "🔍 Run go vet"
+  run:docker:
+    summary: Builds and runs the Docker image
     cmds:
-      - go vet ./...
-
-  # Go 测试
-  go:test:
-    desc: "🧪 Run Go tests"
-    cmds:
-      - go test -v ./...
-
-  # ==================== Wails 任务 ====================
-
-  # 生成 Wails 绑定
-  wails:bindings:
-    desc: "🔗 Generate Wails bindings"
-    aliases: [bind]
-    cmds:
-      - wails3 generate bindings -clean=true
-
-  # 生成构建资源
-  wails:assets:
-    desc: "🎨 Generate build assets"
-    dir: build
-    cmds:
-      - wails3 generate build-assets
-
-  # 更新 Wails
-  wails:update:
-    desc: "⬆️ Update Wails to latest version"
-    cmds:
-      - go get -u github.com/wailsapp/wails/v3@latest
-      - go mod tidy
-
-  # ==================== 平台特定构建 ====================
-
-  # macOS 构建
-  build:macos:
-    desc: "🍎 Build for macOS"
-    deps:
-      - build
-    cmds:
-      - 'echo "✅ macOS build complete"'
-
-  # macOS Universal Binary
-  build:macos:universal:
-    desc: "🍎 Build macOS Universal Binary (Intel + Apple Silicon)"
-    cmds:
-      - task: build
-      - 'GOARCH=amd64 go build -ldflags="-s -w" -o {{.BUILD_DIR}}/{{.APP_NAME}}-intel main.go'
-      - 'GOARCH=arm64 go build -ldflags="-s -w" -o {{.BUILD_DIR}}/{{.APP_NAME}}-arm64 main.go'
-      - "lipo -create -output {{.BUILD_DIR}}/{{.APP_NAME}}-universal {{.BUILD_DIR}}/{{.APP_NAME}}-intel {{.BUILD_DIR}}/{{.APP_NAME}}-arm64"
-      - "rm {{.BUILD_DIR}}/{{.APP_NAME}}-intel {{.BUILD_DIR}}/{{.APP_NAME}}-arm64"
-      - 'echo "✅ Universal Binary created: {{.BUILD_DIR}}/{{.APP_NAME}}-universal"'
-
-  # Windows 构建
-  build:windows:
-    desc: "🪟 Build for Windows"
-    env:
-      GOOS: windows
-      GOARCH: amd64
-    cmds:
-      - task: build
-      - 'echo "✅ Windows build complete"'
-
-  # Linux 构建
-  build:linux:
-    desc: "🐧 Build for Linux"
-    env:
-      GOOS: linux
-      GOARCH: amd64
-    cmds:
-      - task: build
-      - 'echo "✅ Linux build complete"'
-
-  # ==================== 工具任务 ====================
-
-  # 查看所有任务
-  help:
-    desc: "📖 Show available tasks"
-    cmds:
-      - task --list
-
-  # 检查环境
-  check:
-    desc: "🔧 Check development environment"
-    cmds:
-      - 'echo "Checking development environment..."'
-      - 'echo ""'
-      - 'echo "Go version:"'
-      - go version
-      - 'echo ""'
-      - 'echo "Node version:"'
-      - 'node --version || echo "Node not installed"'
-      - 'echo ""'
-      - 'echo "npm version:"'
-      - 'npm --version || echo "npm not installed"'
-      - 'echo ""'
-      - 'echo "Wails version:"'
-      - 'wails3 version || echo "Wails v3 not installed"'
-      - 'echo ""'
-      - 'echo "Task version:"'
-      - 'task --version || echo "Task not installed"'
-
-  # 初始化项目
-  init:
-    desc: "🎯 Initialize project"
-    cmds:
-      - task: go:tidy
-      - task: frontend:install
-      - task: wails:bindings
-      - 'echo "✅ Project initialized"'
-
-  # 完整重建
-  rebuild:
-    desc: "🔄 Clean and rebuild"
-    cmds:
-      - task: clean
-      - task: build
+      - task: common:run:docker
