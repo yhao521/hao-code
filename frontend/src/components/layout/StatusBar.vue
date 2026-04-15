@@ -3,7 +3,7 @@
     <div class="statusbar-left">
       <span class="status-item" @click="showGitInfo">
         <NIcon><GitBranchOutline /></NIcon>
-        {{ currentBranch || 'No Repository' }}
+        {{ currentBranch || "No Repository" }}
       </span>
       <span class="status-item" v-if="hasChanges">
         {{ changeCount }} changes
@@ -13,61 +13,57 @@
       <span class="status-item" v-if="activeEditor">
         Ln {{ cursorLine }}, Col {{ cursorCol }}
       </span>
-      <span class="status-item" v-if="activeEditor">
-        Spaces: 2
-      </span>
-      <span class="status-item" v-if="activeEditor">
-        UTF-8
-      </span>
+      <span class="status-item" v-if="activeEditor"> Spaces: 2 </span>
+      <span class="status-item" v-if="activeEditor"> UTF-8 </span>
       <span class="status-item" v-if="activeEditor">
         {{ languageName }}
       </span>
       <span class="status-item">
-        <NIcon><CheckmarkCircleOutline /></NIcon>
-        Prettier
+        <NIcon><NotificationsOutline /></NIcon>
+        0
       </span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { NIcon } from 'naive-ui'
-import { GitBranchOutline, CheckmarkCircleOutline } from '@vicons/ionicons5'
-import { useEditorStore } from '@/stores/editor'
-import { useGitStore } from '@/stores/git'
+import { computed, ref } from "vue";
+import { NIcon } from "naive-ui";
+import { GitBranchOutline, NotificationsOutline } from "@vicons/ionicons5";
+import { useEditorStore } from "@/stores/editor";
+import { useGitStore } from "@/stores/git";
 
-const editorStore = useEditorStore()
-const gitStore = useGitStore()
+const editorStore = useEditorStore();
+const gitStore = useGitStore();
 
-const activeEditor = computed(() => editorStore.activeTab)
-const currentBranch = computed(() => gitStore.currentBranch)
-const hasChanges = computed(() => gitStore.changes.length > 0)
-const changeCount = computed(() => gitStore.changes.length)
+const activeEditor = computed(() => editorStore.activeTab);
+const currentBranch = computed(() => gitStore.currentBranch);
+const hasChanges = computed(() => gitStore.changes.length > 0);
+const changeCount = computed(() => gitStore.changes.length);
 
 // 模拟光标位置（实际应该从 Monaco Editor 获取）
-const cursorLine = ref(1)
-const cursorCol = ref(1)
+const cursorLine = ref(1);
+const cursorCol = ref(1);
 
 const languageName = computed(() => {
-  if (!activeEditor.value) return 'Plain Text'
+  if (!activeEditor.value) return "Plain Text";
   const langMap: Record<string, string> = {
-    'typescript': 'TypeScript',
-    'javascript': 'JavaScript',
-    'python': 'Python',
-    'go': 'Go',
-    'java': 'Java',
-    'html': 'HTML',
-    'css': 'CSS',
-    'json': 'JSON',
-    'markdown': 'Markdown'
-  }
-  return langMap[activeEditor.value.language || ''] || 'Plain Text'
-})
+    typescript: "TypeScript",
+    javascript: "JavaScript",
+    python: "Python",
+    go: "Go",
+    java: "Java",
+    html: "HTML",
+    css: "CSS",
+    json: "JSON",
+    markdown: "Markdown",
+  };
+  return langMap[activeEditor.value.language || ""] || "Plain Text";
+});
 
 function showGitInfo() {
   // TODO: 显示 Git 详细信息
-  console.log('Show Git info')
+  console.log("Show Git info");
 }
 </script>
 
@@ -77,10 +73,10 @@ function showGitInfo() {
   justify-content: space-between;
   align-items: center;
   height: 22px;
-  background-color: #007ACC;
+  background-color: #007acc;
   color: white;
   font-size: 12px;
-  padding: 0 12px;
+  padding: 0 10px;
   user-select: none;
 }
 
@@ -88,7 +84,7 @@ function showGitInfo() {
 .statusbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .status-item {
@@ -96,13 +92,14 @@ function showGitInfo() {
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 2px 6px;
   border-radius: 3px;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s;
+  height: 22px;
 }
 
 .status-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 .status-item .n-icon {

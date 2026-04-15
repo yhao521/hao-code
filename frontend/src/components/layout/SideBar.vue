@@ -79,19 +79,20 @@ function handleViewChange(id: string) {
 .sidebar {
   display: flex;
   height: 100%;
-  background-color: #2c2c2c;
+  background-color: #252526;
 }
 
-/* 活动栏样式 */
+/* Activity Bar - 左侧图标栏 */
 .activity-bar {
   width: 48px;
   min-width: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px 0;
+  padding-top: 10px;
   background-color: #333333;
-  border-right: 1px solid #3e3e42;
+  border-right: 1px solid #1e1e1e;
+  flex-shrink: 0;
 }
 
 .activity-item {
@@ -102,13 +103,12 @@ function handleViewChange(id: string) {
   justify-content: center;
   cursor: pointer;
   color: #858585;
-  transition: all 0.2s;
+  transition: color 0.2s;
   position: relative;
 }
 
 .activity-item:hover {
-  color: #cccccc;
-  background-color: #2a2d2e;
+  color: #ffffff;
 }
 
 .activity-item.active {
@@ -125,12 +125,12 @@ function handleViewChange(id: string) {
   background-color: #ffffff;
 }
 
-/* 侧边栏内容 */
+/* 侧边栏内容区域 */
 .sidebar-content {
   flex: 1;
-  width: 240px;
-  min-width: 170px;
-  overflow-y: auto;
-  background-color: #252526;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* 防止内容溢出 */
 }
 </style>
