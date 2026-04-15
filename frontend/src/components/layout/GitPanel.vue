@@ -8,7 +8,7 @@
         </template>
       </NButton>
     </div>
-    
+
     <NSpin :show="gitStore.isLoading">
       <div class="git-content" v-if="gitStore.repository">
         <!-- 分支信息 -->
@@ -16,33 +16,42 @@
           <NIcon><GitBranchOutline /></NIcon>
           <span class="branch-name">{{ gitStore.currentBranch }}</span>
         </div>
-        
+
         <!-- 暂存的更改 -->
         <div class="changes-section" v-if="gitStore.stagedChanges.length > 0">
-          <div class="section-title">已暂存的更改 ({{ gitStore.stagedChanges.length }})</div>
+          <div class="section-title">
+            已暂存的更改 ({{ gitStore.stagedChanges.length }})
+          </div>
           <NList hoverable size="small">
-            <NListItem v-for="change in gitStore.stagedChanges" :key="change.path">
+            <NListItem
+              v-for="change in gitStore.stagedChanges"
+              :key="change.path"
+            >
               <div class="file-item">
-                <span class="file-status" :class="change.status">{{ getStatusIcon(change.status) }}</span>
+                <span class="file-status" :class="change.status">{{
+                  getStatusIcon(change.status)
+                }}</span>
                 <span class="file-path">{{ change.path }}</span>
               </div>
             </NListItem>
           </NList>
         </div>
-        
+
         <!-- 未暂存的更改 -->
         <div class="changes-section" v-if="gitStore.changes.length > 0">
           <div class="section-title">更改 ({{ gitStore.changes.length }})</div>
           <NList hoverable size="small">
             <NListItem v-for="change in gitStore.changes" :key="change.path">
               <div class="file-item">
-                <span class="file-status" :class="change.status">{{ getStatusIcon(change.status) }}</span>
+                <span class="file-status" :class="change.status">{{
+                  getStatusIcon(change.status)
+                }}</span>
                 <span class="file-path">{{ change.path }}</span>
               </div>
             </NListItem>
           </NList>
         </div>
-        
+
         <!-- 提交区域 -->
         <div class="commit-section" v-if="hasChanges">
           <NInput
@@ -63,7 +72,13 @@
             提交
           </NButton>
         </div>
-        
+
+        <!-- 分支图谱 -->
+        <div class="graph-section" v-if="graphNodes.length > 0">
+          <div class="section-title">分支图谱</div>
+          <GitGraph :nodes="graphNodes" />
+        </div>
+
         <!-- 最近提交 -->
         <div class="recent-commits" v-if="recentCommits.length > 0">
           <div class="section-title">最近提交</div>
@@ -71,13 +86,15 @@
             <NListItem v-for="commit in recentCommits" :key="commit.hash">
               <div class="commit-item">
                 <span class="commit-hash">{{ commit.shortHash }}</span>
-                <span class="commit-message">{{ commit.message.split('\n')[0] }}</span>
+                <span class="commit-message">{{
+                  commit.message.split("\n")[0]
+                }}</span>
               </div>
             </NListItem>
           </NList>
         </div>
       </div>
-      
+
       <div class="no-repo" v-else>
         <NEmpty description="未检测到 Git 仓库">
           <template #extra>
@@ -90,47 +107,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { 
-  NIcon, NList, NListItem, NInput, NButton, NSpin, NEmpty 
-} from 'naive-ui'
-import { GitBranchOutline, RefreshOutline } from '@vicons/ionicons5'
-import { useGitStore } from '@/stores/git'
-import { 
+import { ref, computed, onMounted } from "vue";
+import {
+  NIcon,
+  NList,
+  NListItem,
+  NInput,
+  NButton,
+  NSpin,
+  NEmpty,
+} from "naive-ui";
+import { GitBranchOutline, RefreshOutline } from "@vicons/ionicons5";
+import { useGitStore } from "@/stores/git";
+import {
   OpenRepository,
-  GetGitStatus, 
+  GetGitStatus,
   GitCommit,
   GitGetBranches,
-  GitGetLog 
-} from '@wails/go/backend/App'
+  GitGetLog,
+  GetGitGraph,
+} from "@wails/go/backend/App";
+import GitGraph from "./GitGraph.vue";
 
-const gitStore = useGitStore()
-const recentCommits = ref<any[]>([])
+const gitStore = useGitStore();
+const recentCommits = ref<any[]>([]);
+const graphNodes = ref<any[]>([]);
 
-const hasChanges = computed(() => 
-  gitStore.changes.length > 0 || gitStore.stagedChanges.length > 0
-)
+const hasChanges = computed(
+  () => gitStore.changes.length > 0 || gitStore.stagedChanges.length > 0,
+);
 
 async function loadGitInfo() {
-  const projectRoot = await import('@wails/go/backend/App').then(m => m.GetProjectRoot())
-  
+  const projectRoot = await import("@wails/go/backend/App").then((m) =>
+    m.GetProjectRoot(),
+  );
+
   try {
-    gitStore.isLoading = true
-    
+    gitStore.isLoading = true;
+
     // 打开仓库
-    const repoInfo = await OpenRepository(projectRoot)
+    const repoInfo = await OpenRepository(projectRoot);
     if (repoInfo) {
       gitStore.repository = {
         path: repoInfo.path,
-        currentBranch: repoInfo.currentBranch
-      }
-      gitStore.currentBranch = repoInfo.currentBranch
-      
+        currentBranch: repoInfo.currentBranch,
+      };
+      gitStore.currentBranch = repoInfo.currentBranch;
+
       // 获取状态
-      await fetchGitStatus()
-      
+      await fetchGitStatus();
+
       // 获取分支列表
-      const branches = await GitGetBranches(projectRoot)
+      const branches = await GitGetBranches(projectRoot);
       if (branches) {
         gitStore.branches = branches.local.map((name: string) => ({
           name,
@@ -138,78 +166,82 @@ async function loadGitInfo() {
           isRemote: false,
           isCurrent: name === repoInfo.currentBranch,
           ahead: 0,
-          behind: 0
-        }))
+          behind: 0,
+        }));
       }
-      
+
       // 获取提交日志
-      const commits = await GitGetLog(projectRoot, 10)
-      recentCommits.value = commits || []
+      const commits = await GitGetLog(projectRoot, 10);
+      recentCommits.value = commits || [];
+
+      // 获取图谱数据
+      const nodes = await GetGitGraph(projectRoot, 50);
+      graphNodes.value = nodes || [];
     }
   } catch (error) {
-    console.log('Not a git repository or failed to open:', error)
-    gitStore.repository = null
+    console.log("Not a git repository or failed to open:", error);
+    gitStore.repository = null;
   } finally {
-    gitStore.isLoading = false
+    gitStore.isLoading = false;
   }
 }
 
 async function fetchGitStatus() {
   try {
-    const status = await GetGitStatus(gitStore.repository!.path)
+    const status = await GetGitStatus(gitStore.repository!.path);
     if (status) {
       // 将后端的 string 类型转换为前端的字面量类型
       gitStore.changes = (status.changes || []).map((c: any) => ({
         ...c,
-        status: c.status as 'modified' | 'added' | 'deleted' | 'renamed'
-      }))
+        status: c.status as "modified" | "added" | "deleted" | "renamed",
+      }));
       gitStore.stagedChanges = (status.stagedChanges || []).map((c: any) => ({
         ...c,
-        status: c.status as 'modified' | 'added' | 'deleted' | 'renamed'
-      }))
+        status: c.status as "modified" | "added" | "deleted" | "renamed",
+      }));
     }
   } catch (error) {
-    console.error('Failed to get git status:', error)
+    console.error("Failed to get git status:", error);
   }
 }
 
 async function handleCommit() {
-  if (!gitStore.commitMessage.trim()) return
-  
+  if (!gitStore.commitMessage.trim()) return;
+
   try {
-    await gitStore.commit(gitStore.commitMessage)
+    await gitStore.commit(gitStore.commitMessage);
     // 刷新状态
-    await fetchGitStatus()
+    await fetchGitStatus();
     // 刷新提交日志
-    const commits = await GitGetLog(gitStore.repository!.path, 10)
-    recentCommits.value = commits || []
+    const commits = await GitGetLog(gitStore.repository!.path, 10);
+    recentCommits.value = commits || [];
   } catch (error) {
-    console.error('Commit failed:', error)
+    console.error("Commit failed:", error);
   }
 }
 
 async function refreshGit() {
-  await loadGitInfo()
+  await loadGitInfo();
 }
 
 async function initRepository() {
   // TODO: 实现初始化仓库功能
-  console.log('Init repository')
+  console.log("Init repository");
 }
 
 function getStatusIcon(status: string): string {
   const icons: Record<string, string> = {
-    'modified': 'M',
-    'added': 'A',
-    'deleted': 'D',
-    'renamed': 'R'
-  }
-  return icons[status] || '?'
+    modified: "M",
+    added: "A",
+    deleted: "D",
+    renamed: "R",
+  };
+  return icons[status] || "?";
 }
 
 onMounted(() => {
-  loadGitInfo()
-})
+  loadGitInfo();
+});
 </script>
 
 <style scoped>
@@ -225,14 +257,14 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #3E3E42;
+  border-bottom: 1px solid #3e3e42;
 }
 
 .git-title {
   font-size: 11px;
   font-weight: bold;
   text-transform: uppercase;
-  color: #BBBBBB;
+  color: #bbbbbb;
 }
 
 .branch-info {
@@ -241,20 +273,20 @@ onMounted(() => {
   gap: 6px;
   margin-bottom: 12px;
   padding: 6px;
-  background-color: #2D2D30;
+  background-color: #2d2d30;
   border-radius: 4px;
 }
 
 .branch-name {
   font-size: 13px;
   font-weight: 500;
-  color: #4EC9B0;
+  color: #4ec9b0;
 }
 
 .section-title {
   font-size: 11px;
   font-weight: bold;
-  color: #BBBBBB;
+  color: #bbbbbb;
   margin: 12px 0 6px 0;
   text-transform: uppercase;
 }
@@ -273,26 +305,26 @@ onMounted(() => {
 }
 
 .file-status.modified {
-  color: #E2C08D;
+  color: #e2c08d;
 }
 
 .file-status.added {
-  color: #81B88B;
+  color: #81b88b;
 }
 
 .file-status.deleted {
-  color: #C74E39;
+  color: #c74e39;
 }
 
 .file-path {
   font-size: 12px;
-  color: #CCCCCC;
+  color: #cccccc;
 }
 
 .commit-section {
   margin-top: 16px;
   padding-top: 12px;
-  border-top: 1px solid #3E3E42;
+  border-top: 1px solid #3e3e42;
 }
 
 .recent-commits {
@@ -308,13 +340,13 @@ onMounted(() => {
 .commit-hash {
   font-family: monospace;
   font-size: 11px;
-  color: #569CD6;
+  color: #569cd6;
   min-width: 50px;
 }
 
 .commit-message {
   font-size: 12px;
-  color: #CCCCCC;
+  color: #cccccc;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -220,6 +220,80 @@ func (g *GitService) GitGetLog(path string, maxCommits int) ([]CommitInfo, error
 	return commits, nil
 }
 
+// GetGitGraph 获取 Git 分支图谱数据
+func (g *GitService) GetGitGraph(path string, maxCommits int) ([]GitGraphNode, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+
+	ref, err := repo.Head()
+	if err != nil {
+		return nil, err
+	}
+
+	commitIter, err := repo.Log(&git.LogOptions{From: ref.Hash()})
+	if err != nil {
+		return nil, err
+	}
+	defer commitIter.Close()
+
+	var nodes []GitGraphNode
+	count := 0
+
+	// 简单的颜色分配逻辑
+	colors := []string{"#E57373", "#64B5F6", "#81C784", "#FFD54F", "#BA68C8"}
+	branchColors := make(map[string]string)
+	colorIdx := 0
+
+	err = commitIter.ForEach(func(c *object.Commit) error {
+		if count >= maxCommits {
+			return nil
+		}
+
+		// 获取该提交所在的分支
+		var branches []string
+		refs, _ := repo.References()
+		refs.ForEach(func(r *plumbing.Reference) error {
+			if r.Hash() == c.Hash && !r.Name().IsRemote() && r.Name().Short() != "HEAD" {
+				branches = append(branches, r.Name().Short())
+			}
+			return nil
+		})
+
+		// 分配颜色
+		mainBranch := "master"
+		if len(branches) > 0 {
+			mainBranch = branches[0]
+		}
+		if _, ok := branchColors[mainBranch]; !ok {
+			branchColors[mainBranch] = colors[colorIdx%len(colors)]
+			colorIdx++
+		}
+
+		var parents []string
+		for _, p := range c.ParentHashes {
+			parents = append(parents, p.String())
+		}
+
+		nodes = append(nodes, GitGraphNode{
+			Hash:      c.Hash.String(),
+			ShortHash: c.Hash.String()[:7],
+			Message:   strings.TrimSpace(c.Message),
+			Author:    c.Author.Name,
+			Timestamp: c.Author.When.Unix(),
+			Branches:  branches,
+			Parents:   parents,
+			Color:     branchColors[mainBranch],
+		})
+
+		count++
+		return nil
+	})
+
+	return nodes, err
+}
+
 func (g *GitService) parseFileStatus(s *git.FileStatus, file string) *Change {
 	var status string
 
@@ -247,7 +321,3 @@ func (g *GitService) parseFileStatus(s *git.FileStatus, file string) *Change {
 		Status: status,
 	}
 }
-
-
-
-

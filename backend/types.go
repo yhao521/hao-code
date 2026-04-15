@@ -73,3 +73,15 @@ type SearchOptions struct {
 	UseRegex       bool   `json:"useRegex"`
 	Exclude        string `json:"exclude"` // 排除的文件模式，如 "*.log,node_modules"
 }
+
+// GitGraphNode Git 图谱节点
+type GitGraphNode struct {
+	Hash      string   `json:"hash"`
+	ShortHash string   `json:"shortHash"`
+	Message   string   `json:"message"`
+	Author    string   `json:"author"`
+	Timestamp int64    `json:"timestamp"`
+	Branches  []string `json:"branches"` // 该节点所在的分支名
+	Parents   []string `json:"parents"`  // 父节点 Hash
+	Color     string   `json:"color"`    // 分支颜色
+}

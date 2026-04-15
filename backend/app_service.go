@@ -92,6 +92,11 @@ func (a *AppService) GitGetLog(path string, maxCommits int) ([]CommitInfo, error
 	return a.git.GitGetLog(path, maxCommits)
 }
 
+// GetGitGraph 获取 Git 图谱数据
+func (a *AppService) GetGitGraph(path string, maxCommits int) ([]GitGraphNode, error) {
+	return a.git.GetGitGraph(path, maxCommits)
+}
+
 // CreateFile 创建新文件
 func (a *AppService) CreateFile(path string) error {
 	return a.fileSystem.CreateFile(path)

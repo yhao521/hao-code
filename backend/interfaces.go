@@ -86,6 +86,8 @@ type IGitService interface {
 	GitGetBranches(path string) (*BranchInfo, error)
 	// 获取提交日志
 	GitGetLog(path string, maxCommits int) ([]CommitInfo, error)
+	// 获取 Git 图谱数据
+	GetGitGraph(path string, maxCommits int) ([]GitGraphNode, error)
 }
 
 // IAppService 应用主服务接口（组合所有服务）
