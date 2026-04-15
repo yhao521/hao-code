@@ -34,18 +34,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 interface Props {
   min?: number
   max?: number
   horizontal?: boolean
+  defaultSize?: number
+  direction?: 'ltr' | 'rtl'  // left-to-right or right-to-left
 }
 
 const props = withDefaults(defineProps<Props>(), {
   min: 150,
   max: 600,
-  horizontal: true
+  horizontal: true,
+  defaultSize: 240,
+  direction: 'ltr'
 })
 
 const emit = defineEmits<{
@@ -53,25 +57,49 @@ const emit = defineEmits<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
-const size = ref(240)
+const size = ref(props.defaultSize)
 const isDragging = ref(false)
 const isHovering = ref(false)
 const startPos = ref(0)
 const startSize = ref(0)
 
+// 监听 defaultSize 变化
+watch(() => props.defaultSize, (newSize) => {
+  size.value = newSize
+})
+
 const panel1Style = computed(() => {
+  // 根据 direction 决定面板顺序
+  if (props.direction === 'rtl') {
+    return {
+      [props.horizontal ? 'width' : 'height']: 'auto',
+      flexShrink: 0,
+      flexGrow: 0,
+      order: 2
+    }
+  }
   return {
     [props.horizontal ? 'width' : 'height']: `${size.value}px`,
     flexShrink: 0,
-    flexGrow: 0
+    flexGrow: 0,
+    order: 1
   }
 })
 
 const panel2Style = computed(() => {
+  if (props.direction === 'rtl') {
+    return {
+      flex: 1,
+      minWidth: 0,
+      overflow: 'hidden',
+      order: 1
+    }
+  }
   return {
     flex: 1,
     minWidth: 0,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    order: 2
   }
 })
 
@@ -90,7 +118,13 @@ function handleResize(e: MouseEvent) {
   if (!isDragging.value) return
   
   const currentPos = props.horizontal ? e.clientX : e.clientY
-  const delta = currentPos - startPos.value
+  let delta = currentPos - startPos.value
+  
+  // RTL 模式下反向计算
+  if (props.direction === 'rtl') {
+    delta = -delta
+  }
+  
   let newSize = startSize.value + delta
   
   // 限制范围

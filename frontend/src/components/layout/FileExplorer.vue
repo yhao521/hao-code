@@ -335,6 +335,7 @@ function convertToTree(files: any[]): ExtendedTreeOption[] {
   
   return sortedFiles.map(file => ({
     key: file.path,
+    path: file.path,
     name: file.name,
     isLeaf: !file.isDir,
     disabled: false,
@@ -353,6 +354,16 @@ async function handleFileSelect(keys: string[]) {
   
   const filePath = keys[0]
   
+  // 查找选中的节点
+  const selectedNode = findNodeByKey(treeData.value, filePath) as ExtendedTreeOption
+  
+  // 如果是文件夹，不做任何操作（NTree 会自动处理展开/折叠）
+  if (selectedNode?.isDir) {
+    console.log('[FileExplorer] Clicked folder:', filePath)
+    return
+  }
+  
+  // 只有文件才打开到编辑器
   try {
     loading.value = true
     console.log('[FileExplorer] Reading file:', filePath)

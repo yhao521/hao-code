@@ -17,8 +17,12 @@ import TitleBar from "./components/layout/TitleBar.vue";
 import SideBar from "./components/layout/SideBar.vue";
 import EditorArea from "./components/editor/EditorArea.vue";
 import StatusBar from "./components/layout/StatusBar.vue";
+import LayoutToolbar from "./components/layout/LayoutToolbar.vue";
+import RightPanel from "./components/layout/RightPanel.vue";
+import BottomPanel from "./components/layout/BottomPanel.vue";
 import ResizableSplit from "./components/layout/ResizableSplit.vue";
 import { useEditorStore } from "./stores/editor";
+import { useLayoutStore } from "./stores/layout";
 import {
   GetProjectRoot,
   ListDir,
@@ -35,6 +39,7 @@ import {
 } from "@wails/go/backend/App";
 
 const editorStore = useEditorStore();
+const layoutStore = useLayoutStore();
 const message = useMessage();
 const dialog = useDialog();
 
@@ -321,21 +326,110 @@ async function handleCreateFile() {
     <!-- 标题栏（仅 Windows/Linux 显示，macOS 使用系统标题栏） -->
     <TitleBar v-if="!isMacOS" />
 
+    <!-- 布局切换工具栏 -->
+    <LayoutToolbar />
+
     <!-- 主内容区 - 可拖拽分割 -->
     <div class="main-content">
-      <ResizableSplit :min="180" :max="500" :horizontal="true" class="main-split">
+      <!-- 主分割：左侧边栏 + 中间区域 -->
+      <ResizableSplit 
+        v-if="layoutStore.sidebarVisible"
+        :min="180" 
+        :max="500" 
+        :horizontal="true"
+        :default-size="layoutStore.sidebarWidth"
+        @update:size="layoutStore.sidebarWidth = $event"
+        class="main-split"
+      >
         <template #1>
           <div class="sidebar-container">
             <SideBar />
           </div>
         </template>
         <template #2>
-          <div class="editor-container">
-            <EditorArea />
+          <!-- 中间区域：编辑器 + 右侧面板 -->
+          <div class="center-area">
+            <ResizableSplit
+              v-if="layoutStore.rightPanelVisible"
+              :min="200"
+              :max="500"
+              :horizontal="true"
+              :default-size="layoutStore.rightPanelWidth"
+              @update:size="layoutStore.rightPanelWidth = $event"
+              class="editor-right-split"
+              direction="rtl"
+            >
+              <template #1>
+                <div class="right-panel-container">
+                  <RightPanel />
+                </div>
+              </template>
+              <template #2>
+                <div class="editor-container">
+                  <EditorArea />
+                </div>
+              </template>
+            </ResizableSplit>
+            
+            <!-- 无右侧面板时的编辑器容器 -->
+            <div v-else class="editor-container-full">
+              <EditorArea />
+            </div>
           </div>
         </template>
       </ResizableSplit>
+      
+      <!-- 隐藏侧边栏时的布局 -->
+      <div v-else class="main-area-without-sidebar">
+        <div class="center-area">
+          <ResizableSplit
+            v-if="layoutStore.rightPanelVisible"
+            :min="200"
+            :max="500"
+            :horizontal="true"
+            :default-size="layoutStore.rightPanelWidth"
+            @update:size="layoutStore.rightPanelWidth = $event"
+            class="editor-right-split"
+            direction="rtl"
+          >
+            <template #1>
+              <div class="right-panel-container">
+                <RightPanel />
+              </div>
+            </template>
+            <template #2>
+              <div class="editor-container">
+                <EditorArea />
+              </div>
+            </template>
+          </ResizableSplit>
+          
+          <div v-else class="editor-container-full">
+            <EditorArea />
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- 下面板 -->
+    <ResizableSplit
+      v-if="layoutStore.bottomPanelVisible"
+      :min="100"
+      :max="600"
+      :horizontal="false"
+      :default-size="layoutStore.bottomPanelHeight"
+      @update:size="layoutStore.bottomPanelHeight = $event"
+      class="bottom-split"
+    >
+      <template #1>
+        <div class="bottom-panel-container">
+          <BottomPanel />
+        </div>
+      </template>
+      <template #2>
+        <div class="bottom-placeholder"></div>
+      </template>
+    </ResizableSplit>
 
     <!-- 状态栏 -->
     <StatusBar />
@@ -373,6 +467,8 @@ async function handleCreateFile() {
   flex: 1;
   overflow: hidden;
   background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
 }
 
 /* macOS: 没有自定义标题栏，内容区域需要额外的顶部内边距以避免被交通灯按钮遮挡 */
@@ -381,8 +477,13 @@ async function handleCreateFile() {
 }
 
 .main-split {
+  flex: 1;
   width: 100%;
-  height: 100%;
+}
+
+.bottom-split {
+  height: auto;
+  width: 100%;
 }
 
 .sidebar-container {
@@ -392,9 +493,52 @@ async function handleCreateFile() {
   overflow: hidden;
 }
 
+.center-area {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 .editor-container {
   height: 100%;
   background-color: #1e1e1e;
   overflow: hidden;
+}
+
+.editor-container-full {
+  flex: 1;
+  height: 100%;
+  background-color: #1e1e1e;
+  overflow: hidden;
+}
+
+.right-panel-container {
+  height: 100%;
+  background-color: #252526;
+  overflow: hidden;
+}
+
+.bottom-panel-container {
+  height: 100%;
+  background-color: #1e1e1e;
+  overflow: hidden;
+}
+
+.bottom-placeholder {
+  flex: 1;
+  background-color: #1e1e1e;
+}
+
+.main-area-without-sidebar {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+.editor-right-split {
+  height: 100%;
+  width: 100%;
 }
 </style>
