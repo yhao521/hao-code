@@ -97,6 +97,11 @@ func (a *AppService) GetGitGraph(path string, maxCommits int) ([]GitGraphNode, e
 	return a.git.GetGitGraph(path, maxCommits)
 }
 
+// GetFileDiff 获取文件差异
+func (a *AppService) GetFileDiff(path, filePath string) (*FileDiff, error) {
+	return a.git.GetFileDiff(path, filePath)
+}
+
 // CreateFile 创建新文件
 func (a *AppService) CreateFile(path string) error {
 	return a.fileSystem.CreateFile(path)

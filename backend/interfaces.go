@@ -88,6 +88,8 @@ type IGitService interface {
 	GitGetLog(path string, maxCommits int) ([]CommitInfo, error)
 	// 获取 Git 图谱数据
 	GetGitGraph(path string, maxCommits int) ([]GitGraphNode, error)
+	// 获取文件差异
+	GetFileDiff(path, filePath string) (*FileDiff, error)
 }
 
 // IAppService 应用主服务接口（组合所有服务）

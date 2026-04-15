@@ -2,6 +2,9 @@ package backend
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -292,6 +295,95 @@ func (g *GitService) GetGitGraph(path string, maxCommits int) ([]GitGraphNode, e
 	})
 
 	return nodes, err
+}
+
+// GetFileDiff 获取文件差异
+func (g *GitService) GetFileDiff(path, filePath string) (*FileDiff, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil, err
+	}
+
+	status, err := worktree.Status()
+	if err != nil {
+		return nil, err
+	}
+
+	fileStatus := status.File(filePath)
+	if fileStatus == nil {
+		return nil, fmt.Errorf("file %s not found in git status", filePath)
+	}
+
+	var oldContent, newContent string
+	var statusStr string
+
+	// 获取工作区内容 (NewContent)
+	fullPath := filepath.Join(path, filePath)
+	data, err := os.ReadFile(fullPath)
+	if err == nil {
+		newContent = string(data)
+	}
+
+	// 获取暂存区或 HEAD 内容 (OldContent)
+	if fileStatus.Staging != git.Unmodified {
+		// 如果已暂存，对比暂存区与 HEAD
+		statusStr = "staged"
+		headRef, err := repo.Head()
+		if err == nil {
+			commit, err := repo.CommitObject(headRef.Hash())
+			if err == nil {
+				tree, err := commit.Tree()
+				if err == nil {
+					file, err := tree.File(filePath)
+					if err == nil {
+						oldContent, _ = file.Contents()
+					}
+				}
+			}
+		}
+	} else {
+		// 如果未暂存，对比工作区与暂存区/HEAD
+		statusStr = "modified"
+		// 尝试从暂存区获取
+		index, _ := repo.Storer.Index()
+		if index != nil {
+			for _, entry := range index.Entries {
+				if entry.Name == filePath {
+					blob, _ := repo.BlobObject(entry.Hash)
+					if blob != nil {
+						reader, _ := blob.Reader()
+						if reader != nil {
+							bytes, _ := io.ReadAll(reader)
+							oldContent = string(bytes)
+						}
+					}
+					break
+				}
+			}
+		}
+		// 如果暂存区也没有，说明是新增文件或者从未提交过
+		if oldContent == "" && fileStatus.Worktree == git.Added {
+			statusStr = "added"
+		}
+	}
+
+	switch fileStatus.Worktree {
+	case git.Deleted:
+		statusStr = "deleted"
+		newContent = ""
+	}
+
+	return &FileDiff{
+		Path:       filePath,
+		OldContent: oldContent,
+		NewContent: newContent,
+		Status:     statusStr,
+	}, nil
 }
 
 func (g *GitService) parseFileStatus(s *git.FileStatus, file string) *Change {

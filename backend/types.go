@@ -85,3 +85,11 @@ type GitGraphNode struct {
 	Parents   []string `json:"parents"`  // 父节点 Hash
 	Color     string   `json:"color"`    // 分支颜色
 }
+
+// FileDiff 文件差异信息
+type FileDiff struct {
+	Path       string `json:"path"`
+	OldContent string `json:"oldContent"`
+	NewContent string `json:"newContent"`
+	Status     string `json:"status"` // added, modified, deleted, renamed
+}
