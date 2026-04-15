@@ -6,3 +6,4 @@ frontend/wailsjs
 frontend/bindings
 .task
 build/darwin/Assets.car
+bin

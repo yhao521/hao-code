@@ -39,6 +39,7 @@ cp -r frontend/bindings/hao-code/backend/* frontend/wailsjs/go/backend/
 ### 步骤 3: 创建兼容层
 
 已创建以下兼容文件：
+
 - `frontend/wailsjs/go/backend/App.js` - JavaScript 兼容层
 - `frontend/wailsjs/go/backend/App.d.ts` - TypeScript 声明
 
@@ -64,14 +65,16 @@ task dev
 ### Wails v3 绑定变化
 
 #### 旧版本 (alpha.74 之前)
+
 ```javascript
 // 直接通过 window.go 访问
 export function OpenFolderDialog() {
-  return window['go']['backend']['App']['OpenFolderDialog']();
+  return window["go"]["backend"]["App"]["OpenFolderDialog"]();
 }
 ```
 
 #### 新版本 (alpha.74+)
+
 ```javascript
 // 使用 @wailsio/runtime
 import { Call as $Call } from "@wailsio/runtime";
@@ -87,18 +90,19 @@ export function OpenFolderDialog() {
 
 ```javascript
 // frontend/wailsjs/go/backend/App.js
-export * from './appservice.js';
+export * from "./appservice.js";
 
 export {
-    BranchInfo,
-    Change,
-    // ... 其他模型
-} from './models.js';
+  BranchInfo,
+  Change,
+  // ... 其他模型
+} from "./models.js";
 ```
 
 这样所有现有的导入语句仍然有效：
+
 ```typescript
-import { OpenFolderDialog } from '@wails/go/backend/App'
+import { OpenFolderDialog } from "@wails/go/backend/App";
 ```
 
 ---
@@ -112,6 +116,7 @@ ls -la frontend/wailsjs/go/backend/
 ```
 
 应该看到：
+
 - `App.js` - 兼容层
 - `App.d.ts` - TypeScript 声明
 - `appservice.js` - 新生成的服务
@@ -129,6 +134,7 @@ grep "SearchInFiles" frontend/wailsjs/go/backend/appservice.js
 ### 3. 测试功能
 
 在应用中：
+
 1. 点击"打开文件夹"按钮
 2. 应该能正常打开对话框
 3. 控制台不应有错误
@@ -140,6 +146,7 @@ grep "SearchInFiles" frontend/wailsjs/go/backend/appservice.js
 ### Q1: 重新生成绑定后仍然报错？
 
 **A**: 确保完全重启了应用：
+
 ```bash
 # 停止应用（Ctrl+C）
 # 等待几秒
@@ -150,6 +157,7 @@ task dev
 ### Q2: 浏览器缓存问题？
 
 **A**: 强制刷新浏览器：
+
 - macOS: `Cmd + Shift + R`
 - Windows/Linux: `Ctrl + Shift + R`
 
@@ -158,6 +166,7 @@ task dev
 ### Q3: 绑定生成失败？
 
 **A**: 检查 Go 代码是否有编译错误：
+
 ```bash
 go build
 ```
@@ -167,6 +176,7 @@ go build
 ### Q4: TypeScript 类型错误？
 
 **A**: 确保 `.d.ts` 文件存在且正确：
+
 ```bash
 ls -la frontend/wailsjs/go/backend/*.d.ts
 ```
@@ -178,6 +188,7 @@ ls -la frontend/wailsjs/go/backend/*.d.ts
 以下情况需要重新生成绑定：
 
 1. **添加新的 Go 方法**
+
    ```go
    func (a *AppService) NewMethod() string {
        return "hello"
@@ -185,6 +196,7 @@ ls -la frontend/wailsjs/go/backend/*.d.ts
    ```
 
 2. **修改方法签名**
+
    ```go
    // 从
    func (a *AppService) Method(arg1 string)
@@ -193,6 +205,7 @@ ls -la frontend/wailsjs/go/backend/*.d.ts
    ```
 
 3. **添加新的数据类型**
+
    ```go
    type NewType struct {
        Field string
@@ -234,11 +247,13 @@ task dev
 ### 3. 备份旧绑定
 
 在重新生成之前：
+
 ```bash
 cp -r frontend/wailsjs frontend/wailsjs.backup
 ```
 
 如果新绑定有问题，可以恢复：
+
 ```bash
 rm -rf frontend/wailsjs
 mv frontend/wailsjs.backup frontend/wailsjs
@@ -247,6 +262,7 @@ mv frontend/wailsjs.backup frontend/wailsjs
 ### 4. 文档化变更
 
 在提交消息中说明：
+
 ```
 feat: add SearchInFiles method
 
@@ -267,12 +283,12 @@ feat: add SearchInFiles method
 
 ## 📊 修复统计
 
-| 项目 | 数量 |
-|------|------|
+| 项目     | 数量                 |
+| -------- | -------------------- |
 | 修改文件 | 2 (App.js, App.d.ts) |
-| 新增方法 | 1 (SearchInFiles) |
-| 总方法数 | 36 |
-| 数据模型 | 8 |
+| 新增方法 | 1 (SearchInFiles)    |
+| 总方法数 | 36                   |
+| 数据模型 | 8                    |
 
 ---
 

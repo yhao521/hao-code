@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview"
   },
   "dependencies": {
     "@monaco-editor/loader": "^1.7.0",
     "@vicons/ionicons5": "^0.13.0",
+    "@wailsio/runtime": "^3.0.0-alpha.79",
     "monaco-editor": "^0.55.1",
     "naive-ui": "^2.44.1",
     "pinia": "^3.0.4",
