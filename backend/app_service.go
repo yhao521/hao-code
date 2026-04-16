@@ -532,5 +532,30 @@ func (a *AppService) SearchFilesWithOptions(opts SearchOptions) ([]SearchResult,
 
 // SendHTTPRequest 发送 HTTP 请求 (API Tester)
 func (a *AppService) SendHTTPRequest(req APIRequest) (*APIResponse, error) {
-	return SendHTTPRequest(req)
+	// 发送成功后自动保存历史记录
+	resp, err := SendHTTPRequest(req)
+	if err == nil {
+		SaveApiHistory(req)
+	}
+	return resp, err
+}
+
+// GetApiHistory 获取 API 历史记录
+func (a *AppService) GetApiHistory() ([]APIHistoryItem, error) {
+	return GetApiHistory()
+}
+
+// DeleteApiHistory 删除指定的历史记录
+func (a *AppService) DeleteApiHistory(id string) error {
+	return DeleteApiHistory(id)
+}
+
+// GetEnvVariables 获取环境变量
+func (a *AppService) GetEnvVariables() (map[string]string, error) {
+	return GetEnvVariables()
+}
+
+// SaveEnvVariables 保存环境变量
+func (a *AppService) SaveEnvVariables(vars map[string]string) error {
+	return SaveEnvVariables(vars)
 }

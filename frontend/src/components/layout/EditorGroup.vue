@@ -138,50 +138,7 @@ async function registerErrorLens(model: monaco.editor.ITextModel) {
             isWholeLine: false,
             inlineClassName: "error-lens-inline",
             after: {
-              contentText: ` ⚠ ${d.message}`,
-              inlineClassName: "error-lens-text",
-            },
-            glyphMarginClassName:
-              d.severity === 1 ? "glyph-error" : "glyph-warning",
-            hoverMessage: { value: d.message },
-          },
-        });
-      }
-    });
-
-    model.deltaDecorations([], decorations);
-  } catch (e) {
-    console.error("Failed to load diagnostics", e);
-  }
-}
-
-// 注册 Error Lens (错误透镜)
-async function registerErrorLens(model: monaco.editor.ITextModel) {
-  const uri = model.uri.toString();
-  const langId = model.getLanguageId();
-
-  try {
-    // 获取诊断信息
-    const diagnostics = await GetDiagnostics(langId, uri);
-
-    const decorations: monaco.editor.IModelDeltaDecoration[] = [];
-
-    diagnostics.forEach((d: any) => {
-      if (d.range && d.message) {
-        const range = new monaco.Range(
-          d.range.start.line + 1,
-          d.range.start.character + 1,
-          d.range.end.line + 1,
-          d.range.end.character + 1,
-        );
-
-        decorations.push({
-          range: range,
-          options: {
-            isWholeLine: false,
-            inlineClassName: "error-lens-inline",
-            after: {
-              contentText: ` ⚠ ${d.message}`,
+              content: ` ⚠ ${d.message}`,
               inlineClassName: "error-lens-text",
             },
             glyphMarginClassName:
@@ -242,6 +199,29 @@ async function registerBlameHover(model: monaco.editor.ITextModel) {
 
     // 应用 Glyph Margin 装饰器
     model.deltaDecorations([], glyphDecorations);
+
+    // 注册 Glyph Margin 点击事件 (通过监听容器点击并判断位置实现)
+    const domNode = editorInstance!.getDomNode();
+    if (domNode) {
+      domNode.addEventListener("click", (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (
+          target.classList.contains("blame-glyph-margin") ||
+          target.parentElement?.classList.contains("blame-glyph-margin")
+        ) {
+          // 获取当前鼠标位置对应的行号
+          const position = editorInstance!.getPosition();
+          if (position) {
+            const blame = blameMap.get(position.lineNumber - 1);
+            if (blame) {
+              window.dispatchEvent(
+                new CustomEvent("editor:show-blame", { detail: blame }),
+              );
+            }
+          }
+        }
+      });
+    }
 
     // 注册 Hover Provider
     monaco.languages.registerHoverProvider("*", {

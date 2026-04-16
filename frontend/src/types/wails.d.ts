@@ -117,5 +117,37 @@ declare module "@wails/backend/appservice.js" {
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;
   export function GetProjectRoot(): Promise<string>;
+
+  // API Tester 相关
+  export interface APIRequest {
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    body: string;
+  }
+
+  export interface APIResponse {
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    body: string;
+    duration: number;
+  }
+
+  export function SendHTTPRequest(req: APIRequest): Promise<APIResponse>;
+
+  // API History 相关
+  export interface APIHistoryItem {
+    id: string;
+    timestamp: number;
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    body: string;
+  }
+
+  export function SaveApiHistory(req: APIRequest): Promise<void>;
+  export function GetApiHistory(): Promise<APIHistoryItem[]>;
+  export function DeleteApiHistory(id: string): Promise<void>;
   // 可以根据需要添加更多导出函数的声明
 }

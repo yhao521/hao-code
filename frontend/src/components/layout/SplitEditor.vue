@@ -13,16 +13,20 @@
       v-if="store.editorGroups.length > 1"
       class="resizer"
       @mousedown="startResize"
-    ></div>
+    </div>
+    
+    <BlameDetailModal ref="blameModalRef" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type CSSProperties } from "vue";
+import { computed, ref, onMounted, type CSSProperties } from "vue";
 import { useEditorStore } from "@/stores/editor";
 import EditorGroup from "./EditorGroup.vue";
+import BlameDetailModal from "./BlameDetailModal.vue";
 
 const store = useEditorStore();
+const blameModalRef = ref<any>(null);
 const isVertical = ref(false); // 默认为水平分屏（左右排列）
 
 const layoutStyle = computed<CSSProperties>(() => ({
@@ -43,6 +47,14 @@ function startResize(e: MouseEvent) {
   e.preventDefault();
   // TODO: 实现拖拽改变大小
 }
+
+onMounted(() => {
+  window.addEventListener('editor:show-blame', (e: any) => {
+    if (blameModalRef.value) {
+      blameModalRef.value.show(e.detail);
+    }
+  });
+});
 </script>
 
 <style scoped>

@@ -21,6 +21,7 @@ declare module "@wails/go/backend/App" {
   export function CreateFile(path: string): Promise<void>;
   export function DeleteFileOrDirectory(path: string): Promise<void>;
   export function GetDirectoryTree(path: string, depth: number): Promise<any[]>;
+  export function GetFileBlame(path: string, filePath: string): Promise<any[]>;
   export function GetFileDiff(
     path: string,
     filePath: string,
@@ -61,6 +62,7 @@ declare module "@wails/go/backend/App" {
     maxResults: number,
   ): Promise<any[]>;
   export function SearchInFiles(opts: SearchOptions): Promise<SearchResult[]>;
+  export function ScanTodos(rootPath: string): Promise<SearchResult[]>;
   export function SetProjectRoot(path: string): Promise<void>;
   export function TouchFile(path: string): Promise<void>;
   export function WriteFile(path: string, content: string): Promise<void>;
@@ -187,6 +189,7 @@ declare module "@wails/backend/appservice" {
   export function CreateFile(path: string): Promise<void>;
   export function DeleteFileOrDirectory(path: string): Promise<void>;
   export function GetDirectoryTree(path: string, depth: number): Promise<any[]>;
+  export function GetFileBlame(path: string, filePath: string): Promise<any[]>;
   export function GetFileDiff(
     path: string,
     filePath: string,
@@ -227,9 +230,11 @@ declare module "@wails/backend/appservice" {
     maxResults: number,
   ): Promise<any[]>;
   export function SearchInFiles(opts: SearchOptions): Promise<SearchResult[]>;
+  export function ScanTodos(rootPath: string): Promise<SearchResult[]>;
   export function SetProjectRoot(path: string): Promise<void>;
   export function TouchFile(path: string): Promise<void>;
   export function WriteFile(path: string, content: string): Promise<void>;
+  export function ScanTodos(rootPath: string): Promise<SearchResult[]>;
 
   // AI Assistant methods
   export interface ChatMessage {
@@ -255,6 +260,118 @@ declare module "@wails/backend/appservice" {
     filePath: string,
   ): Promise<{ text: string }>;
 
+  // LSP Methods
+  export function InitializeLSP(
+    languageID: string,
+    rootPath: string,
+  ): Promise<void>;
+  export function GetCompletions(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any[]>;
+  export function GetDefinition(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any | null>;
+  export function GetDocumentSymbols(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function FindReferences(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any[]>;
+  export function RenameSymbol(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+    newName: string,
+  ): Promise<any | null>;
+  export function FormatDocument(
+    languageID: string,
+    uri: string,
+    content: string,
+  ): Promise<any[]>;
+  export function GetDiagnostics(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function GetDiagnosticsCount(
+    languageID: string,
+    uri: string,
+  ): Promise<{ errors: number; warnings: number }>;
+  export function GetHoverInfo(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any | null>;
+  export function GetSignatureHelp(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any | null>;
+  export function GetCodeActions(
+    languageID: string,
+    uri: string,
+    startLine: number,
+    startCol: number,
+    endLine: number,
+    endCol: number,
+    diagnostics: any[],
+  ): Promise<any[]>;
+  export function GetFoldingRanges(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function GetSemanticTokens(
+    languageID: string,
+    uri: string,
+  ): Promise<any | null>;
+  export function GetDocumentLinks(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function GetCodeLenses(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function PrepareCallHierarchy(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any[]>;
+  export function GetIncomingCalls(
+    languageID: string,
+    item: any,
+  ): Promise<any[]>;
+  export function GetTypeHierarchy(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any[]>;
+  export function GetImplementations(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any[]>;
+  export function GetWorkspaceSymbols(query: string): Promise<any[]>;
+  export function ResolveCodeAction(
+    languageID: string,
+    action: any,
+  ): Promise<any | null>;
+
   export function SetAIConfig(
     apiKey: string,
     baseURL: string,
@@ -267,6 +384,52 @@ declare module "@wails/backend/appservice" {
   ): Promise<ChatResponse>;
 
   export function GetAIConfig(): Promise<AIConfig>;
+
+  // Git Staging methods
+  export interface LineRange {
+    start: number;
+    end: number;
+  }
+
+  export function StageSelectedRanges(
+    path: string,
+    filePath: string,
+    ranges: LineRange[],
+  ): Promise<void>;
+
+  export function UnstageFile(path: string, filePath: string): Promise<void>;
+
+  // API Tester methods
+  export interface APIRequest {
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    body: string;
+  }
+
+  export interface APIResponse {
+    status: number;
+    statusText: string;
+    headers: Record<string, string>;
+    body: string;
+    duration: number;
+  }
+
+  export function SendHTTPRequest(req: APIRequest): Promise<APIResponse>;
+
+  // API History methods
+  export interface APIHistoryItem {
+    id: string;
+    timestamp: number;
+    method: string;
+    url: string;
+    headers: Record<string, string>;
+    body: string;
+  }
+
+  export function SaveApiHistory(req: APIRequest): Promise<void>;
+  export function GetApiHistory(): Promise<APIHistoryItem[]>;
+  export function DeleteApiHistory(id: string): Promise<void>;
 }
 
 declare module "@wails/backend/models" {

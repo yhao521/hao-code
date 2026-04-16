@@ -2,7 +2,9 @@ package main
 
 import (
 	"embed"
+	"net/http"
 	goruntime "runtime" // 重命名标准库 runtime 避免冲突
+	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -283,6 +285,30 @@ func createMenu(app *application.App, isMacOS bool) {
 	wailsApp.Menu.Set(appMenu)
 }
 
+// createHTTPHandler 创建自定义 HTTP 处理器，用于处理 WebSocket 和其他自定义路由
+func createHTTPHandler() http.Handler {
+	// 创建静态文件服务器
+	staticHandler := application.BundledAssetFileServer(assets)
+
+	// 返回一个组合处理器
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 检查是否是 WebSocket 路径
+		if strings.HasPrefix(r.URL.Path, "/ws/") {
+			// 处理 WebSocket 连接
+			if r.URL.Path == "/ws/terminal" {
+				backend.TerminalWebSocketHandler(w, r)
+				return
+			}
+			// 其他 WebSocket 路径可以在这里添加
+			http.NotFound(w, r)
+			return
+		}
+
+		// 对于非 WebSocket 请求，使用默认的静态文件处理器
+		staticHandler.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// 根据操作系统配置
 	isMacOS := goruntime.GOOS == "darwin"
@@ -290,6 +316,9 @@ func main() {
 	// 创建 Wails v3 应用实例
 	// 创建服务容器并直接使用 AppService
 	services := backend.NewServiceContainer()
+
+	// 创建自定义 HTTP 处理器用于 WebSocket 和其他自定义路由
+	httpHandler := createHTTPHandler()
 
 	wailsApp = application.New(application.Options{
 		Name:        "Hao-Code Editor",
@@ -300,7 +329,7 @@ func main() {
 			application.NewService(services.App.(*backend.AppService)),
 		},
 		Assets: application.AssetOptions{
-			Handler: application.BundledAssetFileServer(assets),
+			Handler: httpHandler,
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -319,9 +348,6 @@ func main() {
 		Frameless:        !isMacOS,                             // macOS 使用有边框窗口，Windows 使用无边框
 		BackgroundColour: application.NewRGBA(30, 30, 30, 255), // VSCode 深色背景
 	})
-
-	// 注册 WebSocket 路由用于终端通信
-	wailsApp.Router.GET("/ws/terminal", backend.TerminalWebSocketHandler)
 
 	// 监听窗口运行时就绪事件
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
