@@ -2,18 +2,18 @@
   <div class="type-node" :style="{ paddingLeft: level * 12 + 'px' }">
     <div class="node-content" @dblclick="handleNavigate">
       <span class="icon" v-if="hasChildren" @click.stop="toggle">
-        {{ expanded ? '▼' : '▶' }}
+        {{ expanded ? "▼" : "▶" }}
       </span>
       <span class="icon" v-else style="opacity: 0.3">●</span>
       <span class="name">{{ item.name }}</span>
       <span class="kind" v-if="item.kind">{{ getKindLabel(item.kind) }}</span>
     </div>
-    
+
     <div class="children" v-if="expanded && hasChildren">
-      <TypeHierarchyNode 
-        v-for="(child, index) in childrenItems" 
+      <TypeHierarchyNode
+        v-for="(child, index) in childrenItems"
         :key="index"
-        :item="child" 
+        :item="child"
         :level="level + 1"
         @navigate="$emit('navigate', $event)"
       />
@@ -22,15 +22,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { lspManager } from '@/utils/lspManager';
+import { ref, computed } from "vue";
+import { lspManager } from "@/utils/lspManager";
 
 const props = defineProps<{
   item: any;
   level: number;
 }>();
 
-const emit = defineEmits(['navigate']);
+const emit = defineEmits(["navigate"]);
 
 const expanded = ref(true);
 const childrenItems = ref<any[]>([]);
@@ -48,12 +48,39 @@ async function toggle() {
 }
 
 function handleNavigate() {
-  emit('navigate', props.item);
+  emit("navigate", props.item);
 }
 
 function getKindLabel(kind: number): string {
-  const kinds = ['File', 'Module', 'Namespace', 'Package', 'Class', 'Method', 'Property', 'Field', 'Constructor', 'Enum', 'Interface', 'Function', 'Variable', 'Constant', 'String', 'Number', 'Boolean', 'Array', 'Object', 'Key', 'Null', 'EnumMember', 'Struct', 'Event', 'Operator', 'TypeParameter'];
-  return kinds[kind] || '';
+  const kinds = [
+    "File",
+    "Module",
+    "Namespace",
+    "Package",
+    "Class",
+    "Method",
+    "Property",
+    "Field",
+    "Constructor",
+    "Enum",
+    "Interface",
+    "Function",
+    "Variable",
+    "Constant",
+    "String",
+    "Number",
+    "Boolean",
+    "Array",
+    "Object",
+    "Key",
+    "Null",
+    "EnumMember",
+    "Struct",
+    "Event",
+    "Operator",
+    "TypeParameter",
+  ];
+  return kinds[kind] || "";
 }
 </script>
 
