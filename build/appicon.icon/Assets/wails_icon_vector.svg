@@ -3,24 +3,25 @@
     <!-- Background rounded square - solid blue -->
     <rect x="16" y="16" width="480" height="480" rx="80" fill="#2563eb" />
     
-    <!-- White stylized symbol - solid fill matching appicon.png -->
+    <!-- HC Letter combination - white solid fill -->
     <g fill="white" stroke="none">
-        <!-- Center vertical bar with rounded ends -->
-        <rect x="240" y="120" width="32" height="272" rx="16" />
+        <!-- Letter H -->
+        <!-- Left vertical bar -->
+        <rect x="87" y="138" width="28" height="230" rx="14" />
+        <!-- Right vertical bar -->
+        <rect x="217" y="138" width="28" height="230" rx="14" />
+        <!-- Middle horizontal bar -->
+        <rect x="87" y="239" width="158" height="28" rx="14" />
         
-        <!-- Left > shape (upper diagonal) -->
-        <polygon points="180,160 240,256 240,240 180,144" />
-        
-        <!-- Left > shape (lower diagonal) -->
-        <polygon points="180,352 240,256 240,272 180,368" />
-        
-        <!-- Right < shape (upper diagonal) -->
-        <polygon points="332,160 272,256 272,240 332,144" />
-        
-        <!-- Right < shape (lower diagonal) -->
-        <polygon points="332,352 272,256 272,272 332,368" />
+        <!-- Letter C (block style - top, right, bottom bars) -->
+        <!-- Top horizontal bar -->
+        <rect x="271" y="138" width="154" height="28" rx="14" />
+        <!-- Right vertical bar -->
+        <rect x="397" y="138" width="28" height="230" rx="14" />
+        <!-- Bottom horizontal bar -->
+        <rect x="271" y="340" width="154" height="28" rx="14" />
     </g>
     
     <!-- Accent line at bottom - light blue -->
-    <rect x="106" y="380" width="300" height="12" rx="6" fill="#93c5fd" opacity="0.8" />
+    <rect x="75" y="380" width="362" height="13" rx="6" fill="#93c5fd" />
 </svg>
