@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,8 @@ type AppService struct {
 	tasks      *TaskService
 	store      *PluginStore
 	ai         *AIService
+	terminals  map[string]*TerminalSession
+	terminalMu sync.Mutex
 }
 
 // NewAppService 创建应用服务
@@ -43,6 +46,7 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		tasks:      NewTaskService(ctx),
 		store:      NewPluginStore(pluginDir),
 		ai:         NewAIService(AIConfig{BaseURL: "https://api.openai.com/v1", Model: "gpt-3.5-turbo", MaxTokens: 100}),
+		terminals:  make(map[string]*TerminalSession),
 	}
 }
 
@@ -419,4 +423,80 @@ func (a *AppService) ChatWithAI(messages []ChatMessage, context string) (*ChatRe
 		Context:  context,
 	}
 	return a.ai.ChatWithAI(req)
+}
+
+// GetAIConfig 获取 AI 配置
+func (a *AppService) GetAIConfig() AIConfig {
+	return a.ai.GetAIConfig()
+}
+
+// ==================== Git Staging 增强方法 ====================
+
+// StageSelectedRanges 暂存指定行范围
+func (a *AppService) StageSelectedRanges(path, filePath string, ranges []LineRange) error {
+	return a.git.StageSelectedRanges(path, filePath, ranges)
+}
+
+// UnstageFile 取消暂存文件
+func (a *AppService) UnstageFile(path, filePath string) error {
+	return a.git.UnstageFile(path, filePath)
+}
+
+// GetAIContextFromFiles 获取指定文件的 AI 上下文内容
+func (a *AppService) GetAIContextFromFiles(rootPath string, references []string) string {
+	return a.ai.BuildContextFromReferences(rootPath, references)
+}
+
+// ==================== 终端分屏管理方法 ====================
+
+// CreateTerminal 创建一个新的终端会话并返回 ID
+func (a *AppService) CreateTerminal() (string, error) {
+	a.terminalMu.Lock()
+	defer a.terminalMu.Unlock()
+
+	session, err := NewTerminalSession()
+	if err != nil {
+		return "", err
+	}
+
+	id := fmt.Sprintf("term-%d", time.Now().UnixNano())
+	a.terminals[id] = session
+	return id, nil
+}
+
+// WriteToTerminal 向指定终端写入数据
+func (a *AppService) WriteToTerminal(id string, data string) error {
+	a.terminalMu.Lock()
+	session, ok := a.terminals[id]
+	a.terminalMu.Unlock()
+
+	if !ok {
+		return fmt.Errorf("terminal %s not found", id)
+	}
+	_, err := session.Write([]byte(data))
+	return err
+}
+
+// ResizeTerminal 调整指定终端的大小
+func (a *AppService) ResizeTerminal(id string, cols, rows int) error {
+	a.terminalMu.Lock()
+	session, ok := a.terminals[id]
+	a.terminalMu.Unlock()
+
+	if !ok {
+		return fmt.Errorf("terminal %s not found", id)
+	}
+	return session.Resize(uint32(cols), uint32(rows))
+}
+
+// CloseTerminal 关闭指定终端
+func (a *AppService) CloseTerminal(id string) error {
+	a.terminalMu.Lock()
+	session, ok := a.terminals[id]
+	if ok {
+		session.Close()
+		delete(a.terminals, id)
+	}
+	a.terminalMu.Unlock()
+	return nil
 }

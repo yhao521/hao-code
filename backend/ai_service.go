@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -203,4 +205,37 @@ func (s *AIService) ChatWithAI(req ChatRequest) (*ChatResponse, error) {
 	content := message["content"].(string)
 
 	return &ChatResponse{Reply: content}, nil
+}
+
+// ChatWithAIStream 流式聊天（模拟实现，实际需配合 SSE）
+func (s *AIService) ChatWithAIStream(req ChatRequest) (*ChatResponse, error) {
+	// 目前 Wails v3 对原生 SSE 支持有限，我们先通过常规接口返回
+	// 后续可以通过 WebSocket 实现真正的打字机效果
+	return s.ChatWithAI(req)
+}
+
+// GetAIConfig 获取当前 AI 配置（脱敏）
+func (s *AIService) GetAIConfig() AIConfig {
+	cfg := s.config
+	if cfg.APIKey != "" && len(cfg.APIKey) > 8 {
+		cfg.APIKey = cfg.APIKey[:4] + "****" + cfg.APIKey[len(cfg.APIKey)-4:]
+	}
+	return cfg
+}
+
+// BuildContextFromReferences 根据文件引用构建上下文
+func (s *AIService) BuildContextFromReferences(rootPath string, references []string) string {
+	var contextBuilder strings.Builder
+	for _, ref := range references {
+		// 简单的安全检查，防止路径遍历
+		if strings.Contains(ref, "..") {
+			continue
+		}
+		fullPath := filepath.Join(rootPath, ref)
+		content, err := os.ReadFile(fullPath)
+		if err == nil {
+			contextBuilder.WriteString(fmt.Sprintf("\n--- File: %s ---\n%s\n", ref, string(content)))
+		}
+	}
+	return contextBuilder.String()
 }

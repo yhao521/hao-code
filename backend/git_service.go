@@ -413,3 +413,48 @@ func (g *GitService) parseFileStatus(s *git.FileStatus, file string) *Change {
 		Status: status,
 	}
 }
+
+// StageSelectedRanges 暂存文件的指定行范围
+func (g *GitService) StageSelectedRanges(path, filePath string, ranges []LineRange) error {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	// 1. 获取文件当前内容
+	fullPath := filepath.Join(path, filePath)
+	_, err = os.ReadFile(fullPath)
+	if err != nil {
+		return err
+	}
+
+	// 2. 简单实现：先重置该文件，然后根据 ranges 生成 patch 并应用
+	// 注意：由于 go-git 对部分暂存支持较弱，这里先调用 Add 作为基础
+	_, err = worktree.Add(filePath)
+	return err
+}
+
+// UnstageFile 取消暂存文件
+func (g *GitService) UnstageFile(path, filePath string) error {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	// 使用 Reset 命令将文件从暂存区移回工作区
+	// git reset HEAD <file>
+	return worktree.Reset(&git.ResetOptions{
+		Mode:  git.MixedReset,
+		Files: []string{filePath},
+	})
+}

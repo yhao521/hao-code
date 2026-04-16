@@ -90,6 +90,10 @@ type IGitService interface {
 	GetGitGraph(path string, maxCommits int) ([]GitGraphNode, error)
 	// 获取文件差异
 	GetFileDiff(path, filePath string) (*FileDiff, error)
+	// 暂存指定行范围
+	StageSelectedRanges(path, filePath string, ranges []LineRange) error
+	// 取消暂存文件
+	UnstageFile(path, filePath string) error
 }
 
 // IAppService 应用主服务接口（组合所有服务）

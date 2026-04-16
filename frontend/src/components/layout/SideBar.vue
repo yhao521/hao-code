@@ -50,15 +50,11 @@ import SearchPanel from "../SearchPanel.vue";
 import GitPanel from "./GitPanel.vue";
 import OutlinePanel from "./OutlinePanel.vue";
 import ExtensionsPanel from "./ExtensionsPanel.vue";
-import TasksPanel from "./TasksPanel.vue";
-import CallHierarchyPanel from "./CallHierarchyPanel.vue";
-import TypeHierarchyPanel from "./TypeHierarchyPanel.vue";
-import WelcomeView from "./WelcomeView.vue";
-import AIPanel from "./AIPanel.vue";
 import CallHierarchyPanel from "../sidebar/CallHierarchyPanel.vue";
 import TypeHierarchyPanel from "../sidebar/TypeHierarchyPanel.vue";
 import TasksPanel from "../sidebar/TasksPanel.vue";
 import WelcomeView from "../sidebar/WelcomeView.vue";
+import AIPanel from "../sidebar/AIPanel.vue";
 
 interface ActivityItem {
   id: string;

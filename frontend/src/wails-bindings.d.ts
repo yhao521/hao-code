@@ -230,6 +230,43 @@ declare module "@wails/backend/appservice" {
   export function SetProjectRoot(path: string): Promise<void>;
   export function TouchFile(path: string): Promise<void>;
   export function WriteFile(path: string, content: string): Promise<void>;
+
+  // AI Assistant methods
+  export interface ChatMessage {
+    role: string;
+    content: string;
+  }
+
+  export interface ChatResponse {
+    reply: string;
+  }
+
+  export interface AIConfig {
+    apiKey: string;
+    baseURL: string;
+    model: string;
+    maxTokens: number;
+  }
+
+  export function GetGhostText(
+    prefix: string,
+    suffix: string,
+    language: string,
+    filePath: string,
+  ): Promise<{ text: string }>;
+
+  export function SetAIConfig(
+    apiKey: string,
+    baseURL: string,
+    model: string,
+  ): Promise<void>;
+
+  export function ChatWithAI(
+    messages: ChatMessage[],
+    context: string,
+  ): Promise<ChatResponse>;
+
+  export function GetAIConfig(): Promise<AIConfig>;
 }
 
 declare module "@wails/backend/models" {

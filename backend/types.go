@@ -93,3 +93,9 @@ type FileDiff struct {
 	NewContent string `json:"newContent"`
 	Status     string `json:"status"` // added, modified, deleted, renamed
 }
+
+// LineRange 行范围
+type LineRange struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
