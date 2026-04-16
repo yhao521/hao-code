@@ -115,12 +115,18 @@ let resizeObserver: ResizeObserver | null = null;
 // 监听跳转事件
 onMounted(() => {
   window.addEventListener("editor:jump-to-line", handleJumpToLine as any);
-  window.addEventListener("editor:jump-to-location", handleJumpToLocation as any);
+  window.addEventListener(
+    "editor:jump-to-location",
+    handleJumpToLocation as any,
+  );
 });
 
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);
-  window.removeEventListener("editor:jump-to-location", handleJumpToLocation as any);
+  window.removeEventListener(
+    "editor:jump-to-location",
+    handleJumpToLocation as any,
+  );
 });
 
 function handleJumpToLine(event: CustomEvent) {
@@ -903,11 +909,14 @@ monaco.languages.registerCodeActionProvider("*", {
         const resolvedActions = await Promise.all(
           actions.map(async (action: any) => {
             if (action.data && lspManager) {
-              const resolved = await lspManager.resolveCodeAction(langId, action);
+              const resolved = await lspManager.resolveCodeAction(
+                langId,
+                action,
+              );
               return resolved || action;
             }
             return action;
-          })
+          }),
         );
 
         return {
