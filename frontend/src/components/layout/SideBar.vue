@@ -23,6 +23,7 @@
       <OutlinePanel v-else-if="activeView === 'outline'" />
       <CallHierarchyPanel v-else-if="activeView === 'call-hierarchy'" />
       <TypeHierarchyPanel v-else-if="activeView === 'type-hierarchy'" />
+      <TasksPanel v-else-if="activeView === 'tasks'" />
       <ExtensionsPanel v-else-if="activeView === 'extensions'" />
     </div>
   </div>
@@ -40,6 +41,7 @@ import {
   CubeOutline,
   CallOutline,
   LayersOutline,
+  PlayOutline,
 } from "@vicons/ionicons5";
 import FileExplorer from "./FileExplorer.vue";
 import SearchPanel from "../SearchPanel.vue";
@@ -48,6 +50,7 @@ import OutlinePanel from "./OutlinePanel.vue";
 import ExtensionsPanel from "./ExtensionsPanel.vue";
 import CallHierarchyPanel from "../sidebar/CallHierarchyPanel.vue";
 import TypeHierarchyPanel from "../sidebar/TypeHierarchyPanel.vue";
+import TasksPanel from "../sidebar/TasksPanel.vue";
 import WelcomeView from "../sidebar/WelcomeView.vue";
 
 interface ActivityItem {
@@ -91,6 +94,11 @@ const activityItems: ActivityItem[] = [
     id: "type-hierarchy",
     title: "类型层次结构",
     icon: LayersOutline,
+  },
+  {
+    id: "tasks",
+    title: "任务",
+    icon: PlayOutline,
   },
   {
     id: "extensions",

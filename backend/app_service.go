@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,10 +19,12 @@ type AppService struct {
 	loader     *PluginLoader
 	bridge     *PluginBridge
 	lifecycle  *PluginLifecycleManager
+	tasks      *TaskService
 }
 
 // NewAppService 创建应用服务
 func NewAppService(fs IFileSystemService, git IGitService, config IConfigService) *AppService {
+	ctx := context.Background()
 	return &AppService{
 		fileSystem: fs,
 		git:        git,
@@ -31,6 +34,7 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		loader:     NewPluginLoader(),
 		bridge:     NewPluginBridge(),
 		lifecycle:  NewPluginLifecycleManager(),
+		tasks:      NewTaskService(ctx),
 	}
 }
 
@@ -337,4 +341,16 @@ func (a *AppService) DeactivatePlugin(name string) error {
 // ExecutePluginCommand 执行插件命令
 func (a *AppService) ExecutePluginCommand(command string, payload interface{}) (interface{}, error) {
 	return a.bridge.ExecuteCommand(command, payload)
+}
+
+// ==================== 任务运行器方法 ====================
+
+// GetTasks 获取工作区任务列表
+func (a *AppService) GetTasks(rootPath string) ([]TaskItem, error) {
+	return a.tasks.GetTasks(rootPath)
+}
+
+// RunTask 运行指定任务
+func (a *AppService) RunTask(rootPath string, command string) error {
+	return a.tasks.RunTask(rootPath, command)
 }

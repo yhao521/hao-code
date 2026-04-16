@@ -1,8 +1,8 @@
 <template>
   <div class="editor-group" @click="activateGroup">
     <div class="tabs-header">
-      <div 
-        v-for="tab in group.tabs" 
+      <div
+        v-for="tab in group.tabs"
         :key="tab.id"
         class="tab-item"
         :class="{ active: tab.id === group.activeTabId }"
@@ -17,9 +17,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
-import * as monaco from 'monaco-editor';
-import { useEditorStore, type EditorGroup } from '@/stores/editor';
+import { ref, onMounted, watch, computed } from "vue";
+import * as monaco from "monaco-editor";
+import { useEditorStore, type EditorGroup } from "@/stores/editor";
 
 const props = defineProps<{
   group: EditorGroup;
@@ -47,9 +47,9 @@ function handleCloseTab(id: string) {
 onMounted(() => {
   if (monacoRef.value) {
     editorInstance = monaco.editor.create(monacoRef.value, {
-      value: '',
-      language: 'plaintext',
-      theme: 'vs-dark',
+      value: "",
+      language: "plaintext",
+      theme: "vs-dark",
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
@@ -57,20 +57,30 @@ onMounted(() => {
   }
 });
 
-watch(() => props.group.activeTabId, (newId) => {
-  const tab = props.group.tabs.find(t => t.id === newId);
-  if (tab && editorInstance) {
-    editorInstance.setValue(tab.content || '');
-    monaco.editor.setModelLanguage(editorInstance.getModel()!, tab.language || 'plaintext');
-  }
-}, { immediate: true });
+watch(
+  () => props.group.activeTabId,
+  (newId) => {
+    const tab = props.group.tabs.find((t) => t.id === newId);
+    if (tab && editorInstance) {
+      editorInstance.setValue(tab.content || "");
+      monaco.editor.setModelLanguage(
+        editorInstance.getModel()!,
+        tab.language || "plaintext",
+      );
+    }
+  },
+  { immediate: true },
+);
 
-watch(() => isActive.value, (active) => {
-  if (active && editorInstance) {
-    editorInstance.layout();
-    editorInstance.focus();
-  }
-});
+watch(
+  () => isActive.value,
+  (active) => {
+    if (active && editorInstance) {
+      editorInstance.layout();
+      editorInstance.focus();
+    }
+  },
+);
 </script>
 
 <style scoped>

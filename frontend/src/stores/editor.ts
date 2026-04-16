@@ -65,20 +65,26 @@ export const useEditorStore = defineStore("editor", () => {
 
   // Getters
   const activeGroup = computed(
-    () => editorGroups.value.find((g) => g.id === activeGroupId.value) || editorGroups.value[0],
+    () =>
+      editorGroups.value.find((g) => g.id === activeGroupId.value) ||
+      editorGroups.value[0],
   );
   const activeTab = computed(() =>
     activeGroup.value.tabs.find((t) => t.id === activeGroup.value.activeTabId),
   );
   const tabs = computed(() => activeGroup.value.tabs);
-  const dirtyTabs = computed(() => activeGroup.value.tabs.filter((t) => t.dirty));
+  const dirtyTabs = computed(() =>
+    activeGroup.value.tabs.filter((t) => t.dirty),
+  );
 
   // Actions
   function setWorkspace(path: string) {
     const name = path.split("/").filter(Boolean).pop() || path;
     workspace.value = { path, name };
     // Reset groups to a single empty group
-    editorGroups.value = [{ id: Date.now().toString(), tabs: [], activeTabId: null }];
+    editorGroups.value = [
+      { id: Date.now().toString(), tabs: [], activeTabId: null },
+    ];
     activeGroupId.value = editorGroups.value[0].id;
 
     // 调用后端 API 记录最近文件夹
@@ -94,7 +100,9 @@ export const useEditorStore = defineStore("editor", () => {
 
   function clearWorkspace() {
     workspace.value = null;
-    editorGroups.value = [{ id: Date.now().toString(), tabs: [], activeTabId: null }];
+    editorGroups.value = [
+      { id: Date.now().toString(), tabs: [], activeTabId: null },
+    ];
     activeGroupId.value = editorGroups.value[0].id;
   }
 
@@ -102,17 +110,17 @@ export const useEditorStore = defineStore("editor", () => {
     activeGroupId.value = id;
   }
 
-  function splitEditor(direction: 'right' | 'down') {
+  function splitEditor(direction: "right" | "down") {
     const currentGroup = activeGroup.value;
     if (!currentGroup.activeTabId) return;
 
     const newGroupId = Date.now().toString();
     const newGroup: EditorGroup = {
       id: newGroupId,
-      tabs: [...currentGroup.tabs.map(t => ({ ...t }))], // Clone tabs for simplicity or share them
+      tabs: [...currentGroup.tabs.map((t) => ({ ...t }))], // Clone tabs for simplicity or share them
       activeTabId: currentGroup.activeTabId,
     };
-    
+
     // For now, let's just add a new empty group and focus it
     // A real implementation would handle layout tree (split-view)
     // Here we simulate by adding a group. In UI we need a SplitView component.
@@ -334,7 +342,9 @@ export const useEditorStore = defineStore("editor", () => {
     isDiffMode,
     diffInfo,
     // Getters
+    activeGroup,
     activeTab,
+    tabs,
     dirtyTabs,
     // Actions
     openFile,

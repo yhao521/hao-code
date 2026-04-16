@@ -7,9 +7,9 @@
     />
 
     <!-- 标签页 -->
-    <div class="tabs-container" v-if="editorStore.tabs.length > 0">
+    <div class="tabs-container" v-if="editorStore.activeGroup.tabs.length > 0">
       <div
-        v-for="tab in editorStore.tabs"
+        v-for="tab in editorStore.activeGroup.tabs"
         :key="tab.id"
         class="tab"
         draggable="true"
@@ -35,10 +35,16 @@
     </div>
 
     <!-- Monaco Editor 容器 (已迁移至 SplitEditor) -->
-    <SplitEditor />
+    <SplitEditor
+      v-if="!editorStore.isDiffMode && editorStore.activeGroup.tabs.length > 0"
+    />
 
     <!-- Diff Editor 容器 -->
-    <div ref="diffContainer" class="monaco-container diff-mode" v-else>
+    <div
+      ref="diffContainer"
+      class="monaco-container diff-mode"
+      v-else-if="editorStore.isDiffMode"
+    >
       <div class="diff-toolbar">
         <span class="diff-title">{{ editorStore.diffInfo?.path }}</span>
         <div class="diff-actions">
@@ -50,7 +56,7 @@
     </div>
 
     <!-- 空状态 -->
-    <div v-if="editorStore.tabs.length === 0" class="empty-state">
+    <div v-if="editorStore.activeGroup.tabs.length === 0" class="empty-state">
       <div class="empty-content">
         <h2>Hao-Code Editor</h2>
         <p class="subtitle">轻量级跨平台代码编辑器</p>
@@ -89,7 +95,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useMessage } from "naive-ui";
 import * as monaco from "monaco-editor";
-import { useEditorStore } from "@/stores/editor";
+import { useEditorStore, type Tab } from "@/stores/editor";
 import {
   WriteFile,
   OpenFileDialog,
@@ -354,16 +360,16 @@ onMounted(async () => {
 
     // 监听内容变化
     editor.onDidChangeModelContent(() => {
-      if (editorStore.activeEditor) {
+      if (editorStore.activeTab) {
         const content = editor!.getValue();
-        editorStore.updateContent(editorStore.activeEditor, content);
+        editorStore.updateContent(editorStore.activeTab.id, content);
       }
     });
 
     // 注册保存快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      if (editorStore.activeEditor) {
-        handleSave(editorStore.activeEditor);
+      if (editorStore.activeTab) {
+        handleSave(editorStore.activeTab.id);
       }
     });
 
@@ -385,7 +391,7 @@ onMounted(async () => {
 
 // 监听标签页变化
 watch(
-  () => editorStore.activeEditor,
+  () => editorStore.activeTab?.id,
   async (newTabId) => {
     if (newTabId && editor && !editorStore.isDiffMode) {
       const tab = editorStore.tabs.find((t) => t.id === newTabId);
@@ -433,7 +439,9 @@ async function loadFileIntoEditor(tab: any) {
 // 处理标签页切换
 function handleTabChange(tabId: string) {
   // In split editor mode, we switch the active tab of the active group
-  const group = editorStore.editorGroups.find(g => g.id === editorStore.activeGroupId);
+  const group = editorStore.editorGroups.find(
+    (g) => g.id === editorStore.activeGroupId,
+  );
   if (group) {
     group.activeTabId = tabId;
   }
@@ -453,21 +461,24 @@ function handleDrop(e: DragEvent, targetTabId: string) {
   e.preventDefault();
   if (!draggedTabId || draggedTabId === targetTabId) return;
 
-  const fromIndex = editorStore.tabs.findIndex((t) => t.id === draggedTabId);
-  const toIndex = editorStore.tabs.findIndex((t) => t.id === targetTabId);
+  const group = editorStore.activeGroup;
+  const fromIndex = group.tabs.findIndex((t: Tab) => t.id === draggedTabId);
+  const toIndex = group.tabs.findIndex((t: Tab) => t.id === targetTabId);
 
   if (fromIndex !== -1 && toIndex !== -1) {
-    const newTabs = [...editorStore.tabs];
+    const newTabs = [...group.tabs];
     const [movedTab] = newTabs.splice(fromIndex, 1);
     newTabs.splice(toIndex, 0, movedTab);
-    editorStore.tabs = newTabs;
+    // 更新当前活动组的标签页顺序
+    group.tabs = newTabs;
   }
   draggedTabId = null;
 }
 
 // 保存文件
 async function handleSave(tabId: string) {
-  const tab = editorStore.tabs.find((t) => t.id === tabId);
+  const group = editorStore.activeGroup;
+  const tab = group.tabs.find((t: Tab) => t.id === tabId);
   if (!tab || !tab.content) return;
 
   try {
