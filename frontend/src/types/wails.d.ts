@@ -82,6 +82,17 @@ declare module "@wails/backend/appservice.js" {
     languageID: string,
     uri: string,
   ): Promise<any[]>;
+  export function GetCodeLenses(languageID: string, uri: string): Promise<any[]>;
+  export function PrepareCallHierarchy(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number
+  ): Promise<any[]>;
+  export function GetIncomingCalls(
+    languageID: string,
+    item: any
+  ): Promise<any[]>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

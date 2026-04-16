@@ -64,3 +64,18 @@ func (a *AppService) GetSemanticTokens(languageID string, uri string) (map[strin
 func (a *AppService) GetDocumentLinks(languageID string, uri string) ([]map[string]interface{}, error) {
 	return a.lsp.GetDocumentLinks(languageID, uri)
 }
+
+// GetCodeLenses 获取代码操作 (Code Lens)
+func (a *AppService) GetCodeLenses(languageID string, uri string) ([]map[string]interface{}, error) {
+	return a.lsp.GetCodeLenses(languageID, uri)
+}
+
+// PrepareCallHierarchy 准备调用层级
+func (a *AppService) PrepareCallHierarchy(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	return a.lsp.PrepareCallHierarchy(languageID, uri, line, col)
+}
+
+// GetIncomingCalls 获取传入调用
+func (a *AppService) GetIncomingCalls(languageID string, item map[string]interface{}) ([]map[string]interface{}, error) {
+	return a.lsp.GetIncomingCalls(languageID, item)
+}

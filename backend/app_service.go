@@ -16,6 +16,7 @@ type AppService struct {
 	debug      *DebugService
 	lsp        *LSPService
 	loader     *PluginLoader
+	bridge     *PluginBridge
 }
 
 // NewAppService 创建应用服务
@@ -27,6 +28,7 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		debug:      NewDebugService(),
 		lsp:        NewLSPService(),
 		loader:     NewPluginLoader(),
+		bridge:     NewPluginBridge(),
 	}
 }
 
@@ -313,4 +315,9 @@ func (a *AppService) GetInstalledPlugins() []PluginManifest {
 // ActivatePlugin 激活指定插件
 func (a *AppService) ActivatePlugin(name string) error {
 	return a.loader.ActivatePlugin(name)
+}
+
+// ExecutePluginCommand 执行插件命令
+func (a *AppService) ExecutePluginCommand(command string, payload interface{}) (interface{}, error) {
+	return a.bridge.ExecuteCommand(command, payload)
 }

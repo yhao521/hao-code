@@ -1041,6 +1041,45 @@ monaco.languages.registerLinkProvider("*", {
   },
 });
 
+// 注册代码操作 (Code Lens) 提供者
+monaco.languages.registerCodeLensProvider("*", {
+  provideCodeLenses: async (model) => {
+    if (!editorStore.activeTab || !lspManager) return { lenses: [] };
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+
+    try {
+      const lenses = await lspManager.getCodeLenses(langId, uri);
+      if (lenses) {
+        return {
+          lenses: lenses.map((lens: any) => ({
+            range: new monaco.Range(
+              lens.range.start.line + 1,
+              lens.range.start.character + 1,
+              lens.range.end.line + 1,
+              lens.range.end.character + 1
+            ),
+            id: lens.command?.command,
+            command: lens.command ? {
+              id: lens.command.command,
+              title: lens.command.title,
+              arguments: lens.command.arguments
+            } : undefined
+          })),
+          dispose: () => {}
+        };
+      }
+    } catch (e) {
+      console.error("Code lens provider error:", e);
+    }
+    return { lenses: [], dispose: () => {} };
+  },
+  resolveCodeLens: async (model, codeLens) => {
+    return codeLens;
+  }
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);

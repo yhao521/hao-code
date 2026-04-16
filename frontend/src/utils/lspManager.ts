@@ -12,6 +12,9 @@ import {
   GetFoldingRanges,
   GetSemanticTokens,
   GetDocumentLinks,
+  GetCodeLenses,
+  PrepareCallHierarchy,
+  GetIncomingCalls,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -189,6 +192,33 @@ export class LSPManager {
       return await GetDocumentLinks(languageId, uri);
     } catch (error) {
       console.error("LSP document links error:", error);
+      return [];
+    }
+  }
+
+  async getCodeLenses(languageId: string, uri: string) {
+    try {
+      return await GetCodeLenses(languageId, uri);
+    } catch (error) {
+      console.error("LSP code lenses error:", error);
+      return [];
+    }
+  }
+
+  async prepareCallHierarchy(languageId: string, uri: string, line: number, col: number) {
+    try {
+      return await PrepareCallHierarchy(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP prepare call hierarchy error:", error);
+      return [];
+    }
+  }
+
+  async getIncomingCalls(languageId: string, item: any) {
+    try {
+      return await GetIncomingCalls(languageId, item);
+    } catch (error) {
+      console.error("LSP incoming calls error:", error);
       return [];
     }
   }

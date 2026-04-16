@@ -448,6 +448,101 @@ func (s *LSPService) GetDocumentLinks(languageID string, uri string) ([]map[stri
 	return nil, nil
 }
 
+// GetCodeLenses 获取代码操作 (Code Lens)
+func (s *LSPService) GetCodeLenses(languageID string, uri string) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/codeLens", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var lenses []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				lenses = append(lenses, m)
+			}
+		}
+		return lenses, nil
+	}
+
+	return nil, nil
+}
+
+// PrepareCallHierarchy 准备调用层级
+func (s *LSPService) PrepareCallHierarchy(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"position": map[string]int{
+			"line":      line,
+			"character": col,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/prepareCallHierarchy", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var itemsResult []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				itemsResult = append(itemsResult, m)
+			}
+		}
+		return itemsResult, nil
+	}
+
+	return nil, nil
+}
+
+// GetIncomingCalls 获取传入调用
+func (s *LSPService) GetIncomingCalls(languageID string, item map[string]interface{}) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"item": item,
+	}
+
+	result, err := client.SendRequest("callHierarchy/incomingCalls", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var calls []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				calls = append(calls, m)
+			}
+		}
+		return calls, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {
