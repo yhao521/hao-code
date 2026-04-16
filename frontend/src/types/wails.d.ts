@@ -38,6 +38,18 @@ declare module "@wails/backend/appservice.js" {
     uri: string,
     content: string,
   ): Promise<any[]>;
+  export function GetHoverInfo(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any>;
+  export function GetSignatureHelp(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

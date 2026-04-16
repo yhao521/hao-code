@@ -34,3 +34,13 @@ func (a *AppService) RenameSymbol(languageID string, uri string, line int, col i
 func (a *AppService) FormatDocument(languageID string, uri string, content string) ([]map[string]interface{}, error) {
 	return a.lsp.FormatDocument(languageID, uri, content)
 }
+
+// GetHoverInfo 获取悬停提示信息
+func (a *AppService) GetHoverInfo(languageID string, uri string, line int, col int) (map[string]interface{}, error) {
+	return a.lsp.GetHoverInfo(languageID, uri, line, col)
+}
+
+// GetSignatureHelp 获取签名帮助
+func (a *AppService) GetSignatureHelp(languageID string, uri string, line int, col int) (map[string]interface{}, error) {
+	return a.lsp.GetSignatureHelp(languageID, uri, line, col)
+}

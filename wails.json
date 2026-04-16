@@ -10,5 +10,12 @@
   "author": {
     "name": "yanghao",
     "email": "791475014@qq.com"
+  },
+  "info": {
+    "companyName": "Hao-Code Team",
+    "productName": "Hao-Code Editor",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright(c) 2026",
+    "comments": "A modern cross-platform code editor built with Wails v3 and Vue 3."
   }
 }

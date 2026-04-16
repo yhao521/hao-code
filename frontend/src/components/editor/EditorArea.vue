@@ -750,6 +750,88 @@ monaco.languages.registerDocumentFormattingEditProvider("*", {
   },
 });
 
+// 注册悬停提示提供者
+monaco.languages.registerHoverProvider("*", {
+  provideHover: async (model, position) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const line = position.lineNumber - 1;
+    const col = position.column - 1;
+
+    try {
+      const result = await lspManager.getHoverInfo(langId, uri, line, col);
+      if (result && result.contents) {
+        let contents = result.contents;
+        if (!Array.isArray(contents)) {
+          contents = [contents];
+        }
+
+        const markdownContents = contents.map((c: any) => {
+          if (typeof c === "string") return { value: c };
+          if (c.kind === "markdown" || c.value) return { value: c.value || "" };
+          return { value: JSON.stringify(c) };
+        });
+
+        return {
+          contents: markdownContents,
+          range: new monaco.Range(
+            position.lineNumber,
+            position.column,
+            position.lineNumber,
+            position.column,
+          ),
+        };
+      }
+    } catch (e) {
+      console.error("Hover provider error:", e);
+    }
+    return null;
+  },
+});
+
+// 注册签名帮助提供者
+monaco.languages.registerSignatureHelpProvider("*", {
+  signatureHelpTriggerCharacters: ["(", ","],
+  provideSignatureHelp: async (model, position) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const line = position.lineNumber - 1;
+    const col = position.column - 1;
+
+    try {
+      const result = await lspManager.getSignatureHelp(langId, uri, line, col);
+      if (result && result.signatures) {
+        return {
+          value: {
+            signatures: result.signatures.map((sig: any) => ({
+              label: sig.label || "",
+              documentation: {
+                value: sig.documentation?.value || sig.documentation || "",
+              },
+              parameters: (sig.parameters || []).map((p: any) => ({
+                label: p.label || "",
+                documentation: {
+                  value: p.documentation?.value || p.documentation || "",
+                },
+              })),
+            })),
+            activeSignature: result.activeSignature || 0,
+            activeParameter: result.activeParameter || 0,
+          },
+          dispose: () => {},
+        };
+      }
+    } catch (e) {
+      console.error("Signature help provider error:", e);
+    }
+    return null;
+  },
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);

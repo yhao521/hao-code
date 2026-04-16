@@ -6,6 +6,8 @@ import {
   FindReferences,
   RenameSymbol,
   FormatDocument,
+  GetHoverInfo,
+  GetSignatureHelp,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -104,6 +106,34 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP format document error:", error);
       return [];
+    }
+  }
+
+  async getHoverInfo(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
+    try {
+      return await GetHoverInfo(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP hover info error:", error);
+      return null;
+    }
+  }
+
+  async getSignatureHelp(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
+    try {
+      return await GetSignatureHelp(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP signature help error:", error);
+      return null;
     }
   }
 }
