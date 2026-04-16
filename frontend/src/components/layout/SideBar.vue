@@ -21,6 +21,7 @@
       <GitPanel v-else-if="activeView === 'git'" />
       <OutlinePanel v-else-if="activeView === 'outline'" />
       <CallHierarchyPanel v-else-if="activeView === 'call-hierarchy'" />
+      <TypeHierarchyPanel v-else-if="activeView === 'type-hierarchy'" />
       <ExtensionsPanel v-else-if="activeView === 'extensions'" />
     </div>
   </div>
@@ -37,6 +38,7 @@ import {
   ListOutline,
   CubeOutline,
   CallOutline,
+  LayersOutline,
 } from "@vicons/ionicons5";
 import FileExplorer from "./FileExplorer.vue";
 import SearchPanel from "../SearchPanel.vue";
@@ -44,6 +46,7 @@ import GitPanel from "./GitPanel.vue";
 import OutlinePanel from "./OutlinePanel.vue";
 import ExtensionsPanel from "./ExtensionsPanel.vue";
 import CallHierarchyPanel from "../sidebar/CallHierarchyPanel.vue";
+import TypeHierarchyPanel from "../sidebar/TypeHierarchyPanel.vue";
 
 interface ActivityItem {
   id: string;
@@ -78,6 +81,11 @@ const activityItems: ActivityItem[] = [
     id: "call-hierarchy",
     title: "调用层级",
     icon: CallOutline,
+  },
+  {
+    id: "type-hierarchy",
+    title: "类型层次结构",
+    icon: LayersOutline,
   },
   {
     id: "extensions",
