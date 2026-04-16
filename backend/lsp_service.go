@@ -613,6 +613,61 @@ func (s *LSPService) GetImplementations(languageID string, uri string, line int,
 	return nil, nil
 }
 
+// GetWorkspaceSymbols 获取工作区符号
+func (s *LSPService) GetWorkspaceSymbols(query string) ([]map[string]interface{}, error) {
+	// 这里简单起见，只使用第一个活跃的客户端。在实际项目中，可能需要遍历所有客户端或根据上下文选择。
+	if len(s.clients) == 0 {
+		return nil, fmt.Errorf("no active LSP clients")
+	}
+
+	// 获取第一个客户端作为示例
+	var client *LSPClient
+	for _, c := range s.clients {
+		client = c
+		break
+	}
+
+	params := map[string]interface{}{
+		"query": query,
+	}
+
+	result, err := client.SendRequest("workspace/symbol", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var symbols []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				symbols = append(symbols, m)
+			}
+		}
+		return symbols, nil
+	}
+
+	return nil, nil
+}
+
+// ResolveCodeAction 解析代码动作（深度定制）
+func (s *LSPService) ResolveCodeAction(languageID string, action map[string]interface{}) (map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	result, err := client.SendRequest("codeAction/resolve", action)
+	if err != nil {
+		return nil, err
+	}
+
+	if m, ok := result.(map[string]interface{}); ok {
+		return m, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

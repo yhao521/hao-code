@@ -89,3 +89,13 @@ func (a *AppService) GetTypeHierarchy(languageID string, uri string, line int, c
 func (a *AppService) GetImplementations(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
 	return a.lsp.GetImplementations(languageID, uri, line, col)
 }
+
+// GetWorkspaceSymbols 获取工作区符号
+func (a *AppService) GetWorkspaceSymbols(query string) ([]map[string]interface{}, error) {
+	return a.lsp.GetWorkspaceSymbols(query)
+}
+
+// ResolveCodeAction 解析代码动作
+func (a *AppService) ResolveCodeAction(languageID string, action map[string]interface{}) (map[string]interface{}, error) {
+	return a.lsp.ResolveCodeAction(languageID, action)
+}

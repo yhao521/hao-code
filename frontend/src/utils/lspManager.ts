@@ -17,6 +17,8 @@ import {
   GetIncomingCalls,
   GetTypeHierarchy,
   GetImplementations,
+  GetWorkspaceSymbols,
+  ResolveCodeAction,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -255,6 +257,24 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP implementations error:", error);
       return [];
+    }
+  }
+
+  async getWorkspaceSymbols(query: string) {
+    try {
+      return await GetWorkspaceSymbols(query);
+    } catch (error) {
+      console.error("LSP workspace symbols error:", error);
+      return [];
+    }
+  }
+
+  async resolveCodeAction(languageId: string, action: any) {
+    try {
+      return await ResolveCodeAction(languageId, action);
+    } catch (error) {
+      console.error("LSP resolve code action error:", error);
+      return null;
     }
   }
 }

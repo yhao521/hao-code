@@ -115,10 +115,12 @@ let resizeObserver: ResizeObserver | null = null;
 // 监听跳转事件
 onMounted(() => {
   window.addEventListener("editor:jump-to-line", handleJumpToLine as any);
+  window.addEventListener("editor:jump-to-location", handleJumpToLocation as any);
 });
 
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);
+  window.removeEventListener("editor:jump-to-location", handleJumpToLocation as any);
 });
 
 function handleJumpToLine(event: CustomEvent) {
@@ -127,6 +129,22 @@ function handleJumpToLine(event: CustomEvent) {
     editor.revealLineInCenter(line);
     editor.setPosition({ lineNumber: line, column: 1 });
     editor.focus();
+  }
+}
+
+function handleJumpToLocation(event: CustomEvent) {
+  const { uri, line, col } = event.detail;
+  // 简单处理：如果 URI 是当前打开的文件，则跳转
+  if (editor && editorStore.activeTab) {
+    const currentUri = editor.getModel()?.uri.toString();
+    if (currentUri === uri) {
+      editor.revealLineInCenter(line);
+      editor.setPosition({ lineNumber: line, column: col });
+      editor.focus();
+    } else {
+      // TODO: 如果不是当前文件，需要先打开文件
+      console.log("Jump to location in different file:", uri, line, col);
+    }
   }
 }
 
@@ -881,8 +899,19 @@ monaco.languages.registerCodeActionProvider("*", {
       );
 
       if (actions) {
+        // 深度定制：解析每个 Action 以获取完整的编辑信息
+        const resolvedActions = await Promise.all(
+          actions.map(async (action: any) => {
+            if (action.data && lspManager) {
+              const resolved = await lspManager.resolveCodeAction(langId, action);
+              return resolved || action;
+            }
+            return action;
+          })
+        );
+
         return {
-          actions: actions.map((action: any) => ({
+          actions: resolvedActions.map((action: any) => ({
             title: action.title,
             kind: action.kind || "quickfix",
             diagnostics: context.markers,

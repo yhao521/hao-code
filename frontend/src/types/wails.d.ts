@@ -106,8 +106,13 @@ declare module "@wails/backend/appservice.js" {
     languageID: string,
     uri: string,
     line: number,
-    col: number,
+    col: number
   ): Promise<any[]>;
+  export function GetWorkspaceSymbols(query: string): Promise<any[]>;
+  export function ResolveCodeAction(
+    languageID: string,
+    action: any
+  ): Promise<any>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

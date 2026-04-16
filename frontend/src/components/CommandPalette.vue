@@ -32,6 +32,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
+import { lspManager } from "@/utils/lspManager";
+import { useEditorStore } from "@/stores/editor";
 
 const visible = ref(false);
 const query = ref("");
@@ -71,7 +73,46 @@ const commands: Command[] = [
   },
 ];
 
+const editorStore = useEditorStore();
+const workspaceSymbols = ref<Command[]>([]);
+
+// 监听输入，如果以 @ 开头则触发工作区符号搜索
+watch(query, async (newQuery) => {
+  if (newQuery.startsWith("@") && newQuery.length > 1) {
+    const searchQuery = newQuery.substring(1);
+    if (searchQuery.length >= 2) {
+      try {
+        const symbols = await lspManager.getWorkspaceSymbols(searchQuery);
+        workspaceSymbols.value = symbols.map((s: any) => ({
+          id: `symbol-${s.name}-${s.location.uri}`,
+          label: `${s.name} (${s.kind})`,
+          action: () => {
+            // 跳转到符号位置
+            const uri = s.location.uri;
+            const range = s.location.range;
+            window.dispatchEvent(
+              new CustomEvent("editor:jump-to-location", {
+                detail: {
+                  uri,
+                  line: range.start.line + 1,
+                  col: range.start.character + 1,
+                },
+              }),
+            );
+            close();
+          },
+        }));
+      } catch (e) {
+        console.error("Failed to fetch workspace symbols", e);
+      }
+    }
+  } else {
+    workspaceSymbols.value = [];
+  }
+});
+
 const filteredCommands = computed(() => {
+  if (workspaceSymbols.value.length > 0) return workspaceSymbols.value;
   if (!query.value) return commands;
   return commands.filter((cmd) =>
     cmd.label.toLowerCase().includes(query.value.toLowerCase()),

@@ -71,20 +71,25 @@ func (ps *PluginSandbox) Start() error {
 // listenResponses 监听来自子进程的 JSON-RPC 响应
 func (ps *PluginSandbox) listenResponses() {
 	decoder := json.NewDecoder(ps.stdout)
+	api := NewPluginAPI(ps)
 	for {
-		var resp SandboxResponse
-		if err := decoder.Decode(&resp); err != nil {
+		var req SandboxRequest
+		if err := decoder.Decode(&req); err != nil {
 			log.Printf("Sandbox decode error for %s: %v", ps.Name, err)
 			return
 		}
 
-		ps.mu.Lock()
-		if ch, ok := ps.responses[resp.ID]; ok {
-			ch <- resp.Result
-			close(ch)
-			delete(ps.responses, resp.ID)
+		// 处理请求并返回结果
+		result, err := api.HandleRequest(req.Method, req.Payload.(json.RawMessage))
+		resp := SandboxResponse{ID: req.ID}
+		if err != nil {
+			resp.Error = err.Error()
+		} else {
+			resp.Result = result
 		}
-		ps.mu.Unlock()
+
+		data, _ := json.Marshal(resp)
+		ps.stdin.Write(append(data, '\n'))
 	}
 }
 
