@@ -7,3 +7,4 @@ frontend/bindings
 .task
 build/darwin/Assets.car
 bin
+wails_windows_arm64.syso
