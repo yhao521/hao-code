@@ -8,7 +8,7 @@
 
 ### 1. 主 Taskfile 更新
 
-在 `/Users/yanghao/storage/code_projects/goProjects/hao-code/Taskfile.yml` 中添加了 `package:all` 任务：
+在 `/goProjects/hao-code/Taskfile.yml` 中添加了 `package:all` 任务：
 
 ```yaml
 package:all:
@@ -39,7 +39,7 @@ package:all:
 
 ### 2. Windows 平台增强
 
-在 `/Users/yanghao/storage/code_projects/goProjects/hao-code/build/windows/Taskfile.yml` 中添加了 ZIP 打包功能：
+在 `/goProjects/hao-code/build/windows/Taskfile.yml` 中添加了 ZIP 打包功能：
 
 ```yaml
 create:zip:
@@ -55,7 +55,7 @@ create:zip:
 
 ### 3. macOS 平台增强
 
-在 `/Users/yanghao/storage/code_projects/goProjects/hao-code/build/darwin/Taskfile.yml` 中添加了 DMG 和 ZIP 打包功能：
+在 `/goProjects/hao-code/build/darwin/Taskfile.yml` 中添加了 DMG 和 ZIP 打包功能：
 
 ```yaml
 create:dmg:
@@ -176,12 +176,12 @@ wails3 task package:all -dry
 
 ## 📝 相关文件
 
-- `/Users/yanghao/storage/code_projects/goProjects/hao-code/Taskfile.yml`
-- `/Users/yanghao/storage/code_projects/goProjects/hao-code/build/windows/Taskfile.yml`
-- `/Users/yanghao/storage/code_projects/goProjects/hao-code/build/darwin/Taskfile.yml`
-- `/Users/yanghao/storage/code_projects/goProjects/hao-code/build/linux/Taskfile.yml`
-- `/Users/yanghao/storage/code_projects/goProjects/hao-code/PACKAGE_ALL_PLATFORMS.md`
-- `/Users/yanghao/storage/code_projects/goProjects/hao-code/TASK_QUICK_REFERENCE.md`
+- `/goProjects/hao-code/Taskfile.yml`
+- `/goProjects/hao-code/build/windows/Taskfile.yml`
+- `/goProjects/hao-code/build/darwin/Taskfile.yml`
+- `/goProjects/hao-code/build/linux/Taskfile.yml`
+- `/goProjects/hao-code/PACKAGE_ALL_PLATFORMS.md`
+- `/goProjects/hao-code/TASK_QUICK_REFERENCE.md`
 
 ---
 
