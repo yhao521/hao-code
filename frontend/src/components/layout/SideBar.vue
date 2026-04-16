@@ -16,7 +16,8 @@
 
     <!-- 侧边栏内容 -->
     <div class="sidebar-content">
-      <FileExplorer v-if="activeView === 'explorer'" />
+      <WelcomeView v-if="!editorStore.workspace && activeView === 'explorer'" />
+      <FileExplorer v-else-if="activeView === 'explorer'" />
       <SearchPanel v-else-if="activeView === 'search'" />
       <GitPanel v-else-if="activeView === 'git'" />
       <OutlinePanel v-else-if="activeView === 'outline'" />
@@ -47,6 +48,7 @@ import OutlinePanel from "./OutlinePanel.vue";
 import ExtensionsPanel from "./ExtensionsPanel.vue";
 import CallHierarchyPanel from "../sidebar/CallHierarchyPanel.vue";
 import TypeHierarchyPanel from "../sidebar/TypeHierarchyPanel.vue";
+import WelcomeView from "../sidebar/WelcomeView.vue";
 
 interface ActivityItem {
   id: string;
@@ -54,6 +56,9 @@ interface ActivityItem {
   icon: Component;
 }
 
+import { useEditorStore } from "@/stores/editor";
+
+const editorStore = useEditorStore();
 const activeView = ref("explorer");
 
 const activityItems: ActivityItem[] = [
