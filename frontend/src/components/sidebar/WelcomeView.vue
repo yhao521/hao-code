@@ -22,9 +22,9 @@
     <div class="welcome-section" v-if="recentFolders.length > 0">
       <h2>Recent Folders</h2>
       <ul class="recent-list">
-        <li 
-          v-for="(folder, index) in recentFolders" 
-          :key="index" 
+        <li
+          v-for="(folder, index) in recentFolders"
+          :key="index"
           @click="openRecentFolder(folder)"
         >
           <NIcon><FolderOutline /></NIcon>
@@ -50,16 +50,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { NIcon, useMessage } from 'naive-ui';
-import { 
-  FolderOpenOutline, 
-  DocumentTextOutline, 
-  KeyOutline, 
+import { ref, onMounted } from "vue";
+import { NIcon, useMessage } from "naive-ui";
+import {
+  FolderOpenOutline,
+  DocumentTextOutline,
+  KeyOutline,
   BookOutline,
-  FolderOutline 
-} from '@vicons/ionicons5';
-import { GetRecentFolders } from '@wails/backend/appservice';
+  FolderOutline,
+} from "@vicons/ionicons5";
+import { GetRecentFolders } from "@wails/backend/appservice";
 import { Events } from "@wailsio/runtime";
 
 const message = useMessage();
@@ -69,36 +69,36 @@ onMounted(async () => {
   try {
     recentFolders.value = await GetRecentFolders();
   } catch (error) {
-    console.error('Failed to load recent folders:', error);
+    console.error("Failed to load recent folders:", error);
   }
 });
 
 function handleOpenFolder() {
-  Events.Emit('menu:open-folder');
+  Events.Emit("menu:open-folder");
 }
 
 function handleNewFile() {
-  Events.Emit('menu:new-text-file');
+  Events.Emit("menu:new-text-file");
 }
 
 async function openRecentFolder(path: string) {
   try {
-    message.loading('Opening folder...', { duration: 0 });
+    message.loading("Opening folder...", { duration: 0 });
     // Logic to open folder would go here, likely via store or event
     message.destroyAll();
-    message.success(`Opened: ${path.split('/').pop()}`);
+    message.success(`Opened: ${path.split("/").pop()}`);
   } catch (error) {
     message.destroyAll();
-    message.error('Failed to open folder');
+    message.error("Failed to open folder");
   }
 }
 
 function showShortcuts() {
-  Events.Emit('menu:show-all-commands');
+  Events.Emit("menu:show-all-commands");
 }
 
 function openDocs() {
-  window.open('https://github.com/your-repo/hao-code', '_blank');
+  window.open("https://github.com/your-repo/hao-code", "_blank");
 }
 </script>
 
@@ -134,13 +134,15 @@ function openDocs() {
   color: #e7e7e7;
 }
 
-.command-list, .recent-list {
+.command-list,
+.recent-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.command-list li, .recent-list li {
+.command-list li,
+.recent-list li {
   display: flex;
   align-items: center;
   padding: 6px 0;
@@ -148,11 +150,13 @@ function openDocs() {
   transition: color 0.2s;
 }
 
-.command-list li:hover, .recent-list li:hover {
+.command-list li:hover,
+.recent-list li:hover {
   color: #ffffff;
 }
 
-.command-list li .n-icon, .recent-list li .n-icon {
+.command-list li .n-icon,
+.recent-list li .n-icon {
   margin-right: 10px;
   font-size: 16px;
 }

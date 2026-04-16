@@ -13,7 +13,7 @@
         :key="tab.id"
         class="tab"
         draggable="true"
-        :class="{ active: editorStore.activeEditor === tab.id }"
+        :class="{ active: editorStore.activeTab?.id === tab.id }"
         @click="handleTabChange(tab.id)"
         @dragstart="handleDragStart($event, tab.id)"
         @dragover.prevent
@@ -34,12 +34,8 @@
       </div>
     </div>
 
-    <!-- Monaco Editor 容器 -->
-    <div
-      ref="editorContainer"
-      class="monaco-container"
-      v-if="!editorStore.isDiffMode"
-    ></div>
+    <!-- Monaco Editor 容器 (已迁移至 SplitEditor) -->
+    <SplitEditor />
 
     <!-- Diff Editor 容器 -->
     <div ref="diffContainer" class="monaco-container diff-mode" v-else>
@@ -101,6 +97,7 @@ import {
   GetProjectRoot,
 } from "@wails/backend/appservice.js";
 import Breadcrumb from "../Breadcrumb.vue";
+import SplitEditor from "../layout/SplitEditor.vue";
 import { LSPManager } from "@/utils/lspManager";
 import { DiagnosticsManager } from "@/utils/diagnosticsManager";
 
@@ -435,7 +432,11 @@ async function loadFileIntoEditor(tab: any) {
 
 // 处理标签页切换
 function handleTabChange(tabId: string) {
-  editorStore.activeEditor = tabId;
+  // In split editor mode, we switch the active tab of the active group
+  const group = editorStore.editorGroups.find(g => g.id === editorStore.activeGroupId);
+  if (group) {
+    group.activeTabId = tabId;
+  }
 }
 
 // 拖拽排序逻辑

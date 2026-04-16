@@ -35,10 +35,18 @@ export interface Breakpoint {
 
 export type SidebarView = "explorer" | "search" | "git" | "extensions";
 
+export interface EditorGroup {
+  id: string;
+  tabs: Tab[];
+  activeTabId: string | null;
+}
+
 export const useEditorStore = defineStore("editor", () => {
   // State
-  const activeEditor = ref<string | null>(null);
-  const tabs = ref<Tab[]>([]);
+  const editorGroups = ref<EditorGroup[]>([
+    { id: "1", tabs: [], activeTabId: null },
+  ]);
+  const activeGroupId = ref<string>("1");
   const sidebarVisible = ref(true);
   const sidebarView = ref<SidebarView>("explorer");
   const workspace = ref<Workspace | null>(null);
@@ -56,19 +64,22 @@ export const useEditorStore = defineStore("editor", () => {
   let autoSaveTimer: NodeJS.Timeout | null = null;
 
   // Getters
-  const activeTab = computed(() =>
-    tabs.value.find((t) => t.id === activeEditor.value),
+  const activeGroup = computed(
+    () => editorGroups.value.find((g) => g.id === activeGroupId.value) || editorGroups.value[0],
   );
-
-  const dirtyTabs = computed(() => tabs.value.filter((t) => t.dirty));
+  const activeTab = computed(() =>
+    activeGroup.value.tabs.find((t) => t.id === activeGroup.value.activeTabId),
+  );
+  const tabs = computed(() => activeGroup.value.tabs);
+  const dirtyTabs = computed(() => activeGroup.value.tabs.filter((t) => t.dirty));
 
   // Actions
   function setWorkspace(path: string) {
     const name = path.split("/").filter(Boolean).pop() || path;
     workspace.value = { path, name };
-    // 清空 tabs
-    tabs.value = [];
-    activeEditor.value = null;
+    // Reset groups to a single empty group
+    editorGroups.value = [{ id: Date.now().toString(), tabs: [], activeTabId: null }];
+    activeGroupId.value = editorGroups.value[0].id;
 
     // 调用后端 API 记录最近文件夹
     AddRecentFolder(path).catch((error) => {
@@ -83,15 +94,38 @@ export const useEditorStore = defineStore("editor", () => {
 
   function clearWorkspace() {
     workspace.value = null;
-    tabs.value = [];
-    activeEditor.value = null;
+    editorGroups.value = [{ id: Date.now().toString(), tabs: [], activeTabId: null }];
+    activeGroupId.value = editorGroups.value[0].id;
+  }
+
+  function setActiveGroup(id: string) {
+    activeGroupId.value = id;
+  }
+
+  function splitEditor(direction: 'right' | 'down') {
+    const currentGroup = activeGroup.value;
+    if (!currentGroup.activeTabId) return;
+
+    const newGroupId = Date.now().toString();
+    const newGroup: EditorGroup = {
+      id: newGroupId,
+      tabs: [...currentGroup.tabs.map(t => ({ ...t }))], // Clone tabs for simplicity or share them
+      activeTabId: currentGroup.activeTabId,
+    };
+    
+    // For now, let's just add a new empty group and focus it
+    // A real implementation would handle layout tree (split-view)
+    // Here we simulate by adding a group. In UI we need a SplitView component.
+    editorGroups.value.push(newGroup);
+    activeGroupId.value = newGroupId;
   }
 
   function openFile(path: string, content: string = "") {
-    const existingTab = tabs.value.find((t) => t.path === path);
+    const group = activeGroup.value;
+    const existingTab = group.tabs.find((t) => t.path === path);
 
     if (existingTab) {
-      activeEditor.value = existingTab.id;
+      group.activeTabId = existingTab.id;
       return;
     }
 
@@ -104,8 +138,8 @@ export const useEditorStore = defineStore("editor", () => {
       language: getLanguageFromPath(path),
     };
 
-    tabs.value.push(tab);
-    activeEditor.value = tab.id;
+    group.tabs.push(tab);
+    group.activeTabId = tab.id;
 
     // 添加到最近文件（后端持久化）
     addToRecentFiles(path);
@@ -117,30 +151,31 @@ export const useEditorStore = defineStore("editor", () => {
   }
 
   function closeTab(id: string) {
-    const index = tabs.value.findIndex((t) => t.id === id);
+    const group = activeGroup.value;
+    const index = group.tabs.findIndex((t) => t.id === id);
     if (index === -1) return;
 
-    const tab = tabs.value[index];
+    const tab = group.tabs[index];
     if (tab.dirty) {
       // TODO: 提示保存
       console.warn("File has unsaved changes:", tab.path);
       return;
     }
 
-    tabs.value.splice(index, 1);
+    group.tabs.splice(index, 1);
 
-    if (activeEditor.value === id) {
-      activeEditor.value = tabs.value[Math.max(0, index - 1)]?.id || null;
+    if (group.activeTabId === id) {
+      group.activeTabId = group.tabs[Math.max(0, index - 1)]?.id || null;
     }
   }
 
   function closeAllTabs() {
-    tabs.value = [];
-    activeEditor.value = null;
+    activeGroup.value.tabs = [];
+    activeGroup.value.activeTabId = null;
   }
 
   function updateContent(id: string, content: string) {
-    const tab = tabs.value.find((t) => t.id === id);
+    const tab = activeGroup.value.tabs.find((t) => t.id === id);
     if (tab) {
       tab.content = content;
       tab.dirty = true;
@@ -148,7 +183,7 @@ export const useEditorStore = defineStore("editor", () => {
   }
 
   async function saveFile(id: string) {
-    const tab = tabs.value.find((t) => t.id === id);
+    const tab = activeGroup.value.tabs.find((t) => t.id === id);
     if (tab && tab.content !== undefined) {
       try {
         await WriteFile(tab.path, tab.content);
@@ -288,8 +323,8 @@ export const useEditorStore = defineStore("editor", () => {
 
   return {
     // State
-    activeEditor,
-    tabs,
+    editorGroups,
+    activeGroupId,
     sidebarVisible,
     sidebarView,
     workspace,
@@ -322,5 +357,7 @@ export const useEditorStore = defineStore("editor", () => {
     currentDebugLine,
     activeMonacoModel,
     activeCursor,
+    setActiveGroup,
+    splitEditor,
   };
 });
