@@ -411,3 +411,12 @@ func (a *AppService) SetAIConfig(apiKey string, baseURL string, model string) {
 	}
 	a.ai.UpdateConfig(cfg)
 }
+
+// ChatWithAI 与 AI 聊天
+func (a *AppService) ChatWithAI(messages []ChatMessage, context string) (*ChatResponse, error) {
+	req := ChatRequest{
+		Messages: messages,
+		Context:  context,
+	}
+	return a.ai.ChatWithAI(req)
+}

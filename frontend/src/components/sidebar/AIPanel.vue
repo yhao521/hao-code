@@ -59,6 +59,7 @@ import { ref, nextTick } from "vue";
 import { NButton, NIcon, NInput } from "naive-ui";
 import { TrashOutline, CloseOutline } from "@vicons/ionicons5";
 import { useEditorStore } from "@/stores/editor";
+import { ChatWithAI } from "@wails/backend/appservice";
 
 interface Message {
   role: "user" | "ai";
@@ -77,7 +78,7 @@ const selectedCode = ref<{
   content: string;
 } | null>(null);
 
-// 模拟发送消息（后续对接真实后端接口）
+// 发送消息
 async function sendMessage() {
   if (!inputValue.value.trim()) return;
 
@@ -86,16 +87,37 @@ async function sendMessage() {
   inputValue.value = "";
   isLoading.value = true;
 
-  // TODO: 调用后端 Chat 接口
-  setTimeout(() => {
+  try {
+    // 准备上下文：如果选中了代码，则加入上下文
+    let context = "";
+    if (selectedCode.value) {
+      context = selectedCode.value.content;
+    }
+
+    // 转换消息格式以适配后端
+    const apiMessages = messages.value.map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: m.text + (m.code ? `\n\n\`\`\`\n${m.code}\n\`\`\`` : ""),
+    }));
+
+    const result = await ChatWithAI(apiMessages, context);
+
+    if (result && result.reply) {
+      messages.value.push({
+        role: "ai",
+        text: result.reply,
+      });
+    }
+  } catch (error) {
+    console.error("Chat error:", error);
     messages.value.push({
       role: "ai",
-      text: "这是一个模拟的 AI 回复。在实际实现中，这里会显示 LLM 生成的代码建议或解释。",
-      code: 'console.log("Hello Hao-Code!");',
+      text: "抱歉，AI 服务暂时不可用。请检查 API Key 配置。",
     });
+  } finally {
     isLoading.value = false;
     scrollToBottom();
-  }, 1500);
+  }
 }
 
 function clearChat() {

@@ -20,6 +20,7 @@
       <FileExplorer v-else-if="activeView === 'explorer'" />
       <SearchPanel v-else-if="activeView === 'search'" />
       <GitPanel v-else-if="activeView === 'git'" />
+      <AIPanel v-else-if="activeView === 'ai'" />
       <OutlinePanel v-else-if="activeView === 'outline'" />
       <CallHierarchyPanel v-else-if="activeView === 'call-hierarchy'" />
       <TypeHierarchyPanel v-else-if="activeView === 'type-hierarchy'" />
@@ -42,12 +43,18 @@ import {
   CallOutline,
   LayersOutline,
   PlayOutline,
+  SparklesOutline,
 } from "@vicons/ionicons5";
 import FileExplorer from "./FileExplorer.vue";
 import SearchPanel from "../SearchPanel.vue";
 import GitPanel from "./GitPanel.vue";
 import OutlinePanel from "./OutlinePanel.vue";
 import ExtensionsPanel from "./ExtensionsPanel.vue";
+import TasksPanel from "./TasksPanel.vue";
+import CallHierarchyPanel from "./CallHierarchyPanel.vue";
+import TypeHierarchyPanel from "./TypeHierarchyPanel.vue";
+import WelcomeView from "./WelcomeView.vue";
+import AIPanel from "./AIPanel.vue";
 import CallHierarchyPanel from "../sidebar/CallHierarchyPanel.vue";
 import TypeHierarchyPanel from "../sidebar/TypeHierarchyPanel.vue";
 import TasksPanel from "../sidebar/TasksPanel.vue";
@@ -79,6 +86,11 @@ const activityItems: ActivityItem[] = [
     id: "git",
     title: "源代码管理",
     icon: GitBranchOutline,
+  },
+  {
+    id: "ai",
+    title: "AI 助手",
+    icon: SparklesOutline,
   },
   {
     id: "outline",

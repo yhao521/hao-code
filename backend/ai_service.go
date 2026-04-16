@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // AIConfig AI 服务配置
@@ -27,6 +28,23 @@ type GhostTextRequest struct {
 // GhostTextResponse 行内建议响应
 type GhostTextResponse struct {
 	Text string `json:"text"`
+}
+
+// ChatRequest 聊天请求
+type ChatRequest struct {
+	Messages []ChatMessage `json:"messages"`
+	Context  string        `json:"context,omitempty"`
+}
+
+// ChatMessage 聊天消息结构
+type ChatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// ChatResponse 聊天响应
+type ChatResponse struct {
+	Reply string `json:"reply"`
 }
 
 // AIService AI 服务
@@ -111,4 +129,78 @@ func (s *AIService) GetGhostText(req GhostTextRequest) (*GhostTextResponse, erro
 	content := message["content"].(string)
 
 	return &GhostTextResponse{Text: content}, nil
+}
+
+// ChatWithAI 与 AI 进行对话
+func (s *AIService) ChatWithAI(req ChatRequest) (*ChatResponse, error) {
+	if s.config.APIKey == "" {
+		return nil, fmt.Errorf("AI API Key not configured")
+	}
+
+	// 构建提示词，加入上下文代码
+	var promptBuilder strings.Builder
+	if req.Context != "" {
+		promptBuilder.WriteString(fmt.Sprintf("Code Context:\n```\n%s\n```\n\n", req.Context))
+	}
+	promptBuilder.WriteString("Conversation:\n")
+	for _, msg := range req.Messages {
+		promptBuilder.WriteString(fmt.Sprintf("%s: %s\n", msg.Role, msg.Content))
+	}
+
+	// 构建请求体
+	payload := map[string]interface{}{
+		"model": s.config.Model,
+		"messages": []map[string]string{
+			{"role": "system", "content": "You are a helpful coding assistant in Hao-Code editor."},
+			{"role": "user", "content": promptBuilder.String()},
+		},
+		"max_tokens":  1024,
+		"temperature": 0.7,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("%s/chat/completions", s.config.BaseURL)
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.config.APIKey))
+
+	client := &http.Client{}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("AI API error: %s", string(respBody))
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, err
+	}
+
+	choices, ok := result["choices"].([]interface{})
+	if !ok || len(choices) == 0 {
+		return &ChatResponse{Reply: "No response from AI"}, nil
+	}
+
+	choice := choices[0].(map[string]interface{})
+	message := choice["message"].(map[string]interface{})
+	content := message["content"].(string)
+
+	return &ChatResponse{Reply: content}, nil
 }

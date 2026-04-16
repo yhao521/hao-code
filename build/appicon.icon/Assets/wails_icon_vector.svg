@@ -1,9 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="100%" height="100%" viewBox="0 0 583 533" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
-    <g transform="matrix(1,0,0,1,-246,-251)">
-        <g id="Ebene1">
-            <path d="M246,251L265,784L401,784L506,450L507,450L505,784L641,784L829,251L682,251L596,567L595,567L596,251L478,251L378,568L391,251L246,251Z"/>
-        </g>
+<svg width="100%" height="100%" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <!-- Background rounded square - solid blue -->
+    <rect x="16" y="16" width="480" height="480" rx="80" fill="#2563eb" />
+    
+    <!-- White stylized symbol - solid fill matching appicon.png -->
+    <g fill="white" stroke="none">
+        <!-- Center vertical bar with rounded ends -->
+        <rect x="240" y="120" width="32" height="272" rx="16" />
+        
+        <!-- Left > shape (upper diagonal) -->
+        <polygon points="180,160 240,256 240,240 180,144" />
+        
+        <!-- Left > shape (lower diagonal) -->
+        <polygon points="180,352 240,256 240,272 180,368" />
+        
+        <!-- Right < shape (upper diagonal) -->
+        <polygon points="332,160 272,256 272,240 332,144" />
+        
+        <!-- Right < shape (lower diagonal) -->
+        <polygon points="332,352 272,256 272,272 332,368" />
     </g>
+    
+    <!-- Accent line at bottom - light blue -->
+    <rect x="106" y="380" width="300" height="12" rx="6" fill="#93c5fd" opacity="0.8" />
 </svg>
