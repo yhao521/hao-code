@@ -19,6 +19,7 @@
       <FileExplorer v-if="activeView === 'explorer'" />
       <SearchPanel v-else-if="activeView === 'search'" />
       <GitPanel v-else-if="activeView === 'git'" />
+      <OutlinePanel v-else-if="activeView === 'outline'" />
       <ExtensionsPanel v-else-if="activeView === 'extensions'" />
     </div>
   </div>
@@ -32,11 +33,13 @@ import {
   FolderOutline,
   SearchOutline,
   GitBranchOutline,
+  ListOutline,
   CubeOutline,
 } from "@vicons/ionicons5";
 import FileExplorer from "./FileExplorer.vue";
 import SearchPanel from "../SearchPanel.vue";
 import GitPanel from "./GitPanel.vue";
+import OutlinePanel from "./OutlinePanel.vue";
 import ExtensionsPanel from "./ExtensionsPanel.vue";
 
 interface ActivityItem {
@@ -62,6 +65,11 @@ const activityItems: ActivityItem[] = [
     id: "git",
     title: "源代码管理",
     icon: GitBranchOutline,
+  },
+  {
+    id: "outline",
+    title: "大纲",
+    icon: ListOutline,
   },
   {
     id: "extensions",

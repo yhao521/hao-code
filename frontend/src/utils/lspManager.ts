@@ -2,6 +2,8 @@ import {
   GetCompletions,
   InitializeLSP,
   GetDefinition,
+  GetDocumentSymbols,
+  FindReferences,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -53,6 +55,29 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP definition error:", error);
       return null;
+    }
+  }
+
+  async getDocumentSymbols(languageId: string, uri: string) {
+    try {
+      return await GetDocumentSymbols(languageId, uri);
+    } catch (error) {
+      console.error("LSP document symbols error:", error);
+      return [];
+    }
+  }
+
+  async findReferences(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
+    try {
+      return await FindReferences(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP find references error:", error);
+      return [];
     }
   }
 }

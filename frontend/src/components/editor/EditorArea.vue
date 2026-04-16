@@ -640,6 +640,39 @@ monaco.languages.registerDefinitionProvider("*", {
   },
 });
 
+// 注册引用查找提供者
+monaco.languages.registerReferenceProvider("*", {
+  provideReferences: async (model, position) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const line = position.lineNumber - 1;
+    const col = position.column - 1;
+
+    try {
+      const refs = await lspManager.findReferences(langId, uri, line, col);
+      if (refs && refs.length > 0) {
+        return refs.map((ref: any) => {
+          const range = ref.range;
+          return {
+            uri: monaco.Uri.parse(ref.uri),
+            range: new monaco.Range(
+              range.start.line + 1,
+              range.start.character + 1,
+              range.end.line + 1,
+              range.end.character + 1,
+            ),
+          };
+        });
+      }
+    } catch (e) {
+      console.error("References provider error:", e);
+    }
+    return null;
+  },
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);

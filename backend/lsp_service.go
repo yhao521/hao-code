@@ -159,6 +159,44 @@ func (s *LSPService) GetDocumentSymbols(languageID string, uri string) ([]map[st
 	return nil, nil
 }
 
+// FindReferences 查找引用
+func (s *LSPService) FindReferences(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"position": map[string]int{
+			"line":      line,
+			"character": col,
+		},
+		"context": map[string]bool{
+			"includeDeclaration": true,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/references", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var refs []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				refs = append(refs, m)
+			}
+		}
+		return refs, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

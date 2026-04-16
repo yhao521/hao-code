@@ -16,6 +16,16 @@ declare module "@wails/backend/appservice.js" {
     line: number,
     col: number,
   ): Promise<any>;
+  export function GetDocumentSymbols(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function FindReferences(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+  ): Promise<any[]>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

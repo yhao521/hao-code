@@ -19,3 +19,8 @@ func (a *AppService) GetDefinition(languageID string, uri string, line int, col 
 func (a *AppService) GetDocumentSymbols(languageID string, uri string) ([]map[string]interface{}, error) {
 	return a.lsp.GetDocumentSymbols(languageID, uri)
 }
+
+// FindReferences 查找引用
+func (a *AppService) FindReferences(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	return a.lsp.FindReferences(languageID, uri, line, col)
+}
