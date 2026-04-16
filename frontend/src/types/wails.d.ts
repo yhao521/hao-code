@@ -33,6 +33,11 @@ declare module "@wails/backend/appservice.js" {
     col: number,
     newName: string,
   ): Promise<any>;
+  export function FormatDocument(
+    languageID: string,
+    uri: string,
+    content: string,
+  ): Promise<any[]>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

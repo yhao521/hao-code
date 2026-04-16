@@ -29,3 +29,8 @@ func (a *AppService) FindReferences(languageID string, uri string, line int, col
 func (a *AppService) RenameSymbol(languageID string, uri string, line int, col int, newName string) (map[string]interface{}, error) {
 	return a.lsp.RenameSymbol(languageID, uri, line, col, newName)
 }
+
+// FormatDocument 格式化文档
+func (a *AppService) FormatDocument(languageID string, uri string, content string) ([]map[string]interface{}, error) {
+	return a.lsp.FormatDocument(languageID, uri, content)
+}

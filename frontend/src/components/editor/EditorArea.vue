@@ -721,6 +721,35 @@ monaco.languages.registerRenameProvider("*", {
   },
 });
 
+// 注册格式化提供者
+monaco.languages.registerDocumentFormattingEditProvider("*", {
+  provideDocumentFormattingEdits: async (model, options) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const content = model.getValue();
+
+    try {
+      const edits = await lspManager.formatDocument(langId, uri, content);
+      if (edits && edits.length > 0) {
+        return edits.map((edit: any) => ({
+          range: new monaco.Range(
+            edit.range.start.line + 1,
+            edit.range.start.character + 1,
+            edit.range.end.line + 1,
+            edit.range.end.character + 1,
+          ),
+          text: edit.newText,
+        }));
+      }
+    } catch (e) {
+      console.error("Format provider error:", e);
+    }
+    return null;
+  },
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);

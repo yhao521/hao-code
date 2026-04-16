@@ -5,6 +5,7 @@ import {
   GetDocumentSymbols,
   FindReferences,
   RenameSymbol,
+  FormatDocument,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -94,6 +95,15 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP rename symbol error:", error);
       return null;
+    }
+  }
+
+  async formatDocument(languageId: string, uri: string, content: string) {
+    try {
+      return await FormatDocument(languageId, uri, content);
+    } catch (error) {
+      console.error("LSP format document error:", error);
+      return [];
     }
   }
 }
