@@ -197,6 +197,74 @@ func (s *LSPService) FindReferences(languageID string, uri string, line int, col
 	return nil, nil
 }
 
+// RenameSymbol 重命名符号
+func (s *LSPService) RenameSymbol(languageID string, uri string, line int, col int, newName string) (map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"position": map[string]int{
+			"line":      line,
+			"character": col,
+		},
+		"newName": newName,
+	}
+
+	result, err := client.SendRequest("textDocument/rename", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if m, ok := result.(map[string]interface{}); ok {
+		return m, nil
+	}
+
+	return nil, nil
+}
+
+// FormatDocument 格式化文档
+func (s *LSPService) FormatDocument(languageID string, uri string, content string) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"options": map[string]interface{}{
+			"tabSize":                4,
+			"insertSpaces":           true,
+			"trimTrailingWhitespace": true,
+			"insertFinalNewline":     true,
+			"trimFinalNewlines":      true,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/formatting", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var edits []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				edits = append(edits, m)
+			}
+		}
+		return edits, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

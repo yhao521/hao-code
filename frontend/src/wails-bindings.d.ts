@@ -21,6 +21,7 @@ declare module "@wails/go/backend/App" {
   export function CreateFile(path: string): Promise<void>;
   export function DeleteFileOrDirectory(path: string): Promise<void>;
   export function GetDirectoryTree(path: string, depth: number): Promise<any[]>;
+  export function GetFileDiff(path: string, filePath: string): Promise<any | null>;
   export function GetFileExtension(path: string): Promise<string>;
   export function GetFileStats(path: string): Promise<any | null>;
   export function GetGitGraph(path: string, maxCommits: number): Promise<any[]>;
@@ -181,6 +182,7 @@ declare module "@wails/backend/appservice" {
   export function CreateFile(path: string): Promise<void>;
   export function DeleteFileOrDirectory(path: string): Promise<void>;
   export function GetDirectoryTree(path: string, depth: number): Promise<any[]>;
+  export function GetFileDiff(path: string, filePath: string): Promise<any | null>;
   export function GetFileExtension(path: string): Promise<string>;
   export function GetFileStats(path: string): Promise<any | null>;
   export function GetGitGraph(path: string, maxCommits: number): Promise<any[]>;

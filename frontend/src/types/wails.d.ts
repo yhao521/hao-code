@@ -26,6 +26,13 @@ declare module "@wails/backend/appservice.js" {
     line: number,
     col: number,
   ): Promise<any[]>;
+  export function RenameSymbol(
+    languageID: string,
+    uri: string,
+    line: number,
+    col: number,
+    newName: string,
+  ): Promise<any>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

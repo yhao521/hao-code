@@ -673,6 +673,54 @@ monaco.languages.registerReferenceProvider("*", {
   },
 });
 
+// 注册重命名提供者
+monaco.languages.registerRenameProvider("*", {
+  provideRenameEdits: async (model, position, newName) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const line = position.lineNumber - 1;
+    const col = position.column - 1;
+
+    try {
+      const result = await lspManager.renameSymbol(
+        langId,
+        uri,
+        line,
+        col,
+        newName,
+      );
+      if (result && result.changes) {
+        const edit: monaco.languages.WorkspaceEdit = {
+          edits: [],
+        };
+
+        for (const [uriStr, textEdits] of Object.entries(result.changes)) {
+          const edits = (textEdits as any[]).map((te) => ({
+            resource: monaco.Uri.parse(uriStr),
+            versionId: undefined,
+            textEdit: {
+              range: new monaco.Range(
+                te.range.start.line + 1,
+                te.range.start.character + 1,
+                te.range.end.line + 1,
+                te.range.end.character + 1,
+              ),
+              text: te.newText,
+            },
+          }));
+          edit.edits.push(...edits);
+        }
+        return edit;
+      }
+    } catch (e) {
+      console.error("Rename provider error:", e);
+    }
+    return null;
+  },
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);

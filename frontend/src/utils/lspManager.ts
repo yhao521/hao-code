@@ -4,6 +4,7 @@ import {
   GetDefinition,
   GetDocumentSymbols,
   FindReferences,
+  RenameSymbol,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -78,6 +79,21 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP find references error:", error);
       return [];
+    }
+  }
+
+  async renameSymbol(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+    newName: string,
+  ) {
+    try {
+      return await RenameSymbol(languageId, uri, line, col, newName);
+    } catch (error) {
+      console.error("LSP rename symbol error:", error);
+      return null;
     }
   }
 }

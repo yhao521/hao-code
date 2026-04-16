@@ -24,3 +24,8 @@ func (a *AppService) GetDocumentSymbols(languageID string, uri string) ([]map[st
 func (a *AppService) FindReferences(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
 	return a.lsp.FindReferences(languageID, uri, line, col)
 }
+
+// RenameSymbol 重命名符号
+func (a *AppService) RenameSymbol(languageID string, uri string, line int, col int, newName string) (map[string]interface{}, error) {
+	return a.lsp.RenameSymbol(languageID, uri, line, col, newName)
+}
