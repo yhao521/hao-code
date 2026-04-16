@@ -890,11 +890,12 @@ monaco.languages.registerCodeActionProvider("*", {
             edit: {
               edits:
                 (
-                  (action.edit?.changes
+                  ((action.edit?.changes
                     ? Object.values(action.edit.changes)[0]
-                    : undefined) || []
+                    : undefined) as any[]) || []
                 ).map((te: any) => ({
                   resource: monaco.Uri.parse(uri),
+                  versionId: model.getVersionId(),
                   textEdit: {
                     range: new monaco.Range(
                       te.range.start.line + 1,
@@ -1058,16 +1059,18 @@ monaco.languages.registerCodeLensProvider("*", {
               lens.range.start.line + 1,
               lens.range.start.character + 1,
               lens.range.end.line + 1,
-              lens.range.end.character + 1
+              lens.range.end.character + 1,
             ),
             id: lens.command?.command,
-            command: lens.command ? {
-              id: lens.command.command,
-              title: lens.command.title,
-              arguments: lens.command.arguments
-            } : undefined
+            command: lens.command
+              ? {
+                  id: lens.command.command,
+                  title: lens.command.title,
+                  arguments: lens.command.arguments,
+                }
+              : undefined,
           })),
-          dispose: () => {}
+          dispose: () => {},
         };
       }
     } catch (e) {
@@ -1077,7 +1080,7 @@ monaco.languages.registerCodeLensProvider("*", {
   },
   resolveCodeLens: async (model, codeLens) => {
     return codeLens;
-  }
+  },
 });
 
 // 清理

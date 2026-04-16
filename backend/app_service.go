@@ -17,6 +17,7 @@ type AppService struct {
 	lsp        *LSPService
 	loader     *PluginLoader
 	bridge     *PluginBridge
+	lifecycle  *PluginLifecycleManager
 }
 
 // NewAppService 创建应用服务
@@ -29,6 +30,7 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		lsp:        NewLSPService(),
 		loader:     NewPluginLoader(),
 		bridge:     NewPluginBridge(),
+		lifecycle:  NewPluginLifecycleManager(),
 	}
 }
 
@@ -314,7 +316,22 @@ func (a *AppService) GetInstalledPlugins() []PluginManifest {
 
 // ActivatePlugin 激活指定插件
 func (a *AppService) ActivatePlugin(name string) error {
-	return a.loader.ActivatePlugin(name)
+	// 1. 从加载器中获取 Manifest
+	if err := a.loader.ScanAndLoad(); err != nil {
+		return err
+	}
+	plugin, exists := a.loader.Plugins[name]
+	if !exists {
+		return fmt.Errorf("plugin %s not found", name)
+	}
+
+	// 2. 通过生命周期管理器进行状态管理
+	return a.lifecycle.ActivatePlugin(name, plugin.Manifest)
+}
+
+// DeactivatePlugin 停用指定插件
+func (a *AppService) DeactivatePlugin(name string) error {
+	return a.lifecycle.DeactivatePlugin(name)
 }
 
 // ExecutePluginCommand 执行插件命令

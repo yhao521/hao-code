@@ -205,7 +205,12 @@ export class LSPManager {
     }
   }
 
-  async prepareCallHierarchy(languageId: string, uri: string, line: number, col: number) {
+  async prepareCallHierarchy(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
     try {
       return await PrepareCallHierarchy(languageId, uri, line, col);
     } catch (error) {
@@ -223,3 +228,5 @@ export class LSPManager {
     }
   }
 }
+
+export const lspManager = new LSPManager();
