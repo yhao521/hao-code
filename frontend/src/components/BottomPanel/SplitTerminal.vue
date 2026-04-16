@@ -61,12 +61,6 @@ import {
 import { useTerminalStore } from "@/stores/terminal";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import {
-  CreateTerminal,
-  WriteToTerminal,
-  ResizeTerminal,
-  CloseTerminal,
-} from "@wails/backend/appservice";
 import "xterm/css/xterm.css";
 
 const store = useTerminalStore();
@@ -147,6 +141,31 @@ async function handleClose(id: string) {
 
 // 暴露给父组件用于初始化第一个终端
 defineExpose({ handleAdd, initTerminalInstance });
+
+onMounted(() => {
+  if (store.instances.length === 0) {
+    store.addInstance("term-1");
+  }
+  // 监听任务运行事件
+  window.addEventListener("terminal:run", (e: any) => {
+    const command = e.detail;
+    // 确保有活跃的终端实例
+    if (store.instances.length === 0) {
+      store.addInstance("term-1");
+    }
+
+    // 找到当前活跃的终端并发送命令
+    const activeId = store.activeId || store.instances[0].id;
+    const termData = terminals.get(activeId);
+
+    if (termData && termData.ws.readyState === WebSocket.OPEN) {
+      // 在命令后添加换行符以模拟用户按下回车
+      termData.ws.send(command + "\r");
+      // 切换到该终端标签页
+      store.setActive(activeId);
+    }
+  });
+});
 </script>
 
 <style scoped>

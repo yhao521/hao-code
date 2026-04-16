@@ -430,6 +430,10 @@ declare module "@wails/backend/appservice" {
   export function SaveApiHistory(req: APIRequest): Promise<void>;
   export function GetApiHistory(): Promise<APIHistoryItem[]>;
   export function DeleteApiHistory(id: string): Promise<void>;
+
+  // Environment Variables methods
+  export function GetEnvVariables(): Promise<Record<string, string>>;
+  export function SaveEnvVariables(vars: Record<string, string>): Promise<void>;
 }
 
 declare module "@wails/backend/models" {
