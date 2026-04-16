@@ -33,9 +33,10 @@
 import { ref, watch } from "vue";
 import { useEditorStore } from "@/stores/editor";
 import { GetProjectRoot, GetFileHistory } from "@wails/backend/appservice";
+import type { CommitInfo } from "@wails/backend/models";
 
 const editorStore = useEditorStore();
-const history = ref<any[]>([]);
+const history = ref<CommitInfo[]>([]);
 
 const colors = ["#E57373", "#64B5F6", "#81C784", "#FFD54F", "#BA68C8"];
 

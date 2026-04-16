@@ -28,6 +28,10 @@ declare module "@wails/go/backend/App" {
   ): Promise<any | null>;
   export function GetFileExtension(path: string): Promise<string>;
   export function GetFileStats(path: string): Promise<any | null>;
+  export function GetFileHistory(
+    path: string,
+    filePath: string,
+  ): Promise<import("@wails/backend/models").CommitInfo[]>;
   export function GetGitGraph(path: string, maxCommits: number): Promise<any[]>;
   export function GetGitStatus(path: string): Promise<any | null>;
   export function GetProjectRoot(): Promise<string>;
@@ -196,6 +200,10 @@ declare module "@wails/backend/appservice" {
   ): Promise<any | null>;
   export function GetFileExtension(path: string): Promise<string>;
   export function GetFileStats(path: string): Promise<any | null>;
+  export function GetFileHistory(
+    path: string,
+    filePath: string,
+  ): Promise<import("@wails/backend/models").CommitInfo[]>;
   export function GetGitGraph(path: string, maxCommits: number): Promise<any[]>;
   export function GetGitStatus(path: string): Promise<any | null>;
   export function GetProjectRoot(): Promise<string>;
@@ -399,6 +407,12 @@ declare module "@wails/backend/appservice" {
 
   export function UnstageFile(path: string, filePath: string): Promise<void>;
 
+  // AI Context methods
+  export function GetAIContextFromFiles(
+    rootPath: string,
+    references: string[],
+  ): Promise<string>;
+
   // API Tester methods
   export interface APIRequest {
     method: string;
@@ -434,6 +448,9 @@ declare module "@wails/backend/appservice" {
   // Environment Variables methods
   export function GetEnvVariables(): Promise<Record<string, string>>;
   export function SaveEnvVariables(vars: Record<string, string>): Promise<void>;
+
+  // Terminal methods
+  export function CreateTerminal(): Promise<string>;
 }
 
 declare module "@wails/backend/models" {

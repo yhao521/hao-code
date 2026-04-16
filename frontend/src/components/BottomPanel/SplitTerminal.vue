@@ -9,7 +9,7 @@
         <NTooltip trigger="hover">
           <template #trigger>
             <NIcon class="tool-icon" @click="store.toggleSplitDirection()">
-              <SplitOutline v-if="store.splitDirection === 'horizontal'" />
+              <GridOutline v-if="store.splitDirection === 'horizontal'" />
               <AppsOutline v-else />
             </NIcon>
           </template>
@@ -55,10 +55,11 @@ import { NIcon, NTooltip } from "naive-ui";
 import {
   CloseOutline,
   AddOutline,
-  SplitOutline,
+  GridOutline,
   AppsOutline,
 } from "@vicons/ionicons5";
 import { useTerminalStore } from "@/stores/terminal";
+import { CreateTerminal } from "@wails/backend/appservice";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
