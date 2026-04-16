@@ -208,9 +208,12 @@ const editorStore = useEditorStore();
 const message = useMessage();
 const loading = ref(false);
 const treeData = ref<ExtendedTreeOption[]>([]);
-const workspaceName = ref("Hao-Code");
 const projectRoot = ref("");
 const hasWorkspace = computed(() => !!editorStore.workspace);
+const workspaceName = computed(() => {
+  if (!editorStore.workspace) return "Hao-Code";
+  return editorStore.workspace.name;
+});
 
 // 模态框状态
 const showNewFileModal = ref(false);

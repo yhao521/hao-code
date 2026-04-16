@@ -52,6 +52,8 @@ declare module "@wails/go/backend/App" {
     oldPath: string,
     newPath: string,
   ): Promise<void>;
+  export function RunTask(rootPath: string, command: string): Promise<void>;
+  export function GetTasks(rootPath: string): Promise<any[]>;
   export function SaveFileDialog(): Promise<string>;
   export function SearchFiles(
     rootPath: string,
@@ -216,6 +218,8 @@ declare module "@wails/backend/appservice" {
     oldPath: string,
     newPath: string,
   ): Promise<void>;
+  export function RunTask(rootPath: string, command: string): Promise<void>;
+  export function GetTasks(rootPath: string): Promise<any[]>;
   export function SaveFileDialog(): Promise<string>;
   export function SearchFiles(
     rootPath: string,

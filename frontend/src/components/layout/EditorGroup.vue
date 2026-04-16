@@ -55,9 +55,9 @@ function getModelForTab(tab: any): monaco.editor.ITextModel {
   let model = models.get(tab.id);
   if (!model) {
     model = monaco.editor.createModel(
-      tab.content || '',
-      tab.language || 'plaintext',
-      monaco.Uri.parse(`file://${tab.path}`)
+      tab.content || "",
+      tab.language || "plaintext",
+      monaco.Uri.parse(`file://${tab.path}`),
     );
     models.set(tab.id, model);
   }
@@ -67,7 +67,7 @@ function getModelForTab(tab: any): monaco.editor.ITextModel {
 onMounted(() => {
   if (monacoRef.value) {
     editorInstance = monaco.editor.create(monacoRef.value, {
-      theme: 'vs-dark',
+      theme: "vs-dark",
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
