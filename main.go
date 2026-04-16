@@ -315,7 +315,7 @@ func main() {
 
 	// 创建 Wails v3 应用实例
 	// 创建服务容器并直接使用 AppService
-	services := backend.NewServiceContainer()
+	services = backend.NewServiceContainer()
 
 	// 创建自定义 HTTP 处理器用于 WebSocket 和其他自定义路由
 	httpHandler := createHTTPHandler()
