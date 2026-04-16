@@ -28,6 +28,7 @@ const props = defineProps<{
 const store = useEditorStore();
 const monacoRef = ref<HTMLDivElement>();
 let editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
+const models = new Map<string, monaco.editor.ITextModel>();
 
 const isActive = computed(() => store.activeGroupId === props.group.id);
 
@@ -41,15 +42,32 @@ function selectTab(id: string) {
 }
 
 function handleCloseTab(id: string) {
+  // 关闭时销毁对应的 model 以释放内存
+  const model = models.get(id);
+  if (model) {
+    model.dispose();
+    models.delete(id);
+  }
   store.closeTab(id);
+}
+
+function getModelForTab(tab: any): monaco.editor.ITextModel {
+  let model = models.get(tab.id);
+  if (!model) {
+    model = monaco.editor.createModel(
+      tab.content || '',
+      tab.language || 'plaintext',
+      monaco.Uri.parse(`file://${tab.path}`)
+    );
+    models.set(tab.id, model);
+  }
+  return model;
 }
 
 onMounted(() => {
   if (monacoRef.value) {
     editorInstance = monaco.editor.create(monacoRef.value, {
-      value: "",
-      language: "plaintext",
-      theme: "vs-dark",
+      theme: 'vs-dark',
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
@@ -62,11 +80,8 @@ watch(
   (newId) => {
     const tab = props.group.tabs.find((t) => t.id === newId);
     if (tab && editorInstance) {
-      editorInstance.setValue(tab.content || "");
-      monaco.editor.setModelLanguage(
-        editorInstance.getModel()!,
-        tab.language || "plaintext",
-      );
+      const model = getModelForTab(tab);
+      editorInstance.setModel(model);
     }
   },
   { immediate: true },
