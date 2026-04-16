@@ -15,6 +15,8 @@ import {
   GetCodeLenses,
   PrepareCallHierarchy,
   GetIncomingCalls,
+  GetTypeHierarchy,
+  GetImplementations,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -224,6 +226,34 @@ export class LSPManager {
       return await GetIncomingCalls(languageId, item);
     } catch (error) {
       console.error("LSP incoming calls error:", error);
+      return [];
+    }
+  }
+
+  async getTypeHierarchy(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
+    try {
+      return await GetTypeHierarchy(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP type hierarchy error:", error);
+      return [];
+    }
+  }
+
+  async getImplementations(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
+    try {
+      return await GetImplementations(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP implementations error:", error);
       return [];
     }
   }

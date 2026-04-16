@@ -35,7 +35,7 @@ const loading = ref(false);
 
 const refreshHierarchy = async () => {
   if (!editorStore.activeTab || !lspManager) return;
-  
+
   // 注意：这里需要从编辑器实例获取光标位置，目前简化处理，假设用户已选中
   // 在实际集成中，可能需要通过 window.wails 调用后端或监听编辑器事件
   const position = { lineNumber: 1, column: 1 }; // 占位符
@@ -44,13 +44,13 @@ const refreshHierarchy = async () => {
   try {
     const langId = getLanguage(editorStore.activeTab.path);
     const uri = `file://${editorStore.activeTab.path}`;
-    
+
     // 1. 准备调用层级入口
     const items = await lspManager.prepareCallHierarchy(
-      langId, 
-      uri, 
-      position.lineNumber - 1, 
-      position.column - 1
+      langId,
+      uri,
+      position.lineNumber - 1,
+      position.column - 1,
     );
 
     if (items && items.length > 0) {

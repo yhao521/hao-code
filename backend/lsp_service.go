@@ -543,6 +543,76 @@ func (s *LSPService) GetIncomingCalls(languageID string, item map[string]interfa
 	return nil, nil
 }
 
+// GetTypeHierarchy 获取类型层次结构
+func (s *LSPService) GetTypeHierarchy(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"position": map[string]int{
+			"line":      line,
+			"character": col,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/prepareTypeHierarchy", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var itemsResult []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				itemsResult = append(itemsResult, m)
+			}
+		}
+		return itemsResult, nil
+	}
+
+	return nil, nil
+}
+
+// GetImplementations 获取实现查找
+func (s *LSPService) GetImplementations(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"position": map[string]int{
+			"line":      line,
+			"character": col,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/implementation", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var impls []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				impls = append(impls, m)
+			}
+		}
+		return impls, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

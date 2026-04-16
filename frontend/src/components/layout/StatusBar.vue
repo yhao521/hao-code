@@ -1,21 +1,35 @@
 <template>
   <div class="statusbar">
     <div class="statusbar-left">
-      <span class="status-item" @click="showGitInfo" v-if="currentBranch">
+      <span
+        class="status-item"
+        @click="showGitInfo"
+        v-if="currentBranch"
+        title="当前 Git 分支"
+      >
         <NIcon><GitBranchOutline /></NIcon>
         {{ currentBranch }}
       </span>
-      <span class="status-item" v-if="hasChanges">
+      <span
+        class="status-item"
+        v-if="hasChanges"
+        :title="`${changeCount} 个变更`"
+      >
         <NIcon><CreateOutline /></NIcon>
-        {{ changeCount }}
+        <span class="change-count">{{ changeCount }}</span>
       </span>
       <span
         class="status-item"
         v-if="diagnosticsCount > 0"
         :class="{ 'has-errors': hasErrors }"
+        :title="`${diagnosticsCount} 个问题`"
       >
         <NIcon><BugOutline /></NIcon>
         {{ diagnosticsCount }}
+      </span>
+      <span class="status-item status-separator"></span>
+      <span class="status-item status-info" title="Hao-Code v1.0.0">
+        Hao-Code
       </span>
     </div>
     <div class="statusbar-right">
@@ -149,5 +163,22 @@ function changeLanguage() {
 
 .status-item .n-icon {
   font-size: 14px;
+}
+
+.status-separator {
+  width: 1px;
+  height: 12px;
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 0 !important;
+  cursor: default;
+}
+
+.status-separator:hover {
+  background-color: transparent;
+}
+
+.status-info {
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 </style>

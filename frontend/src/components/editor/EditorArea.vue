@@ -1083,6 +1083,40 @@ monaco.languages.registerCodeLensProvider("*", {
   },
 });
 
+// 注册实现查找提供者
+monaco.languages.registerImplementationProvider("*", {
+  provideImplementation: async (model, position) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+
+    try {
+      const impls = await lspManager.getImplementations(
+        langId,
+        uri,
+        position.lineNumber - 1,
+        position.column - 1,
+      );
+      if (impls && impls.length > 0) {
+        return impls.map((impl: any) => ({
+          uri: monaco.Uri.parse(impl.uri || impl.targetUri),
+          range: new monaco.Range(
+            impl.range?.start.line + 1 || impl.targetRange.start.line + 1,
+            impl.range?.start.character + 1 ||
+              impl.targetRange.start.character + 1,
+            impl.range?.end.line + 1 || impl.targetRange.end.line + 1,
+            impl.range?.end.character + 1 || impl.targetRange.end.character + 1,
+          ),
+        }));
+      }
+    } catch (e) {
+      console.error("Implementation provider error:", e);
+    }
+    return [];
+  },
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);

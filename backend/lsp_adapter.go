@@ -79,3 +79,13 @@ func (a *AppService) PrepareCallHierarchy(languageID string, uri string, line in
 func (a *AppService) GetIncomingCalls(languageID string, item map[string]interface{}) ([]map[string]interface{}, error) {
 	return a.lsp.GetIncomingCalls(languageID, item)
 }
+
+// GetTypeHierarchy 获取类型层次结构
+func (a *AppService) GetTypeHierarchy(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	return a.lsp.GetTypeHierarchy(languageID, uri, line, col)
+}
+
+// GetImplementations 获取实现查找
+func (a *AppService) GetImplementations(languageID string, uri string, line int, col int) ([]map[string]interface{}, error) {
+	return a.lsp.GetImplementations(languageID, uri, line, col)
+}

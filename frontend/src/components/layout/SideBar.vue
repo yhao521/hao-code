@@ -119,18 +119,20 @@ function handleViewChange(id: string) {
   justify-content: center;
   cursor: pointer;
   color: #858585;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
 .activity-icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   fill: currentColor;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .activity-item:hover {
   color: #ffffff;
+  transform: scale(1.05);
 }
 
 .activity-item.active {
@@ -145,6 +147,7 @@ function handleViewChange(id: string) {
   bottom: 0;
   width: 2px;
   background-color: #007acc;
+  box-shadow: 0 0 8px rgba(0, 122, 204, 0.5);
 }
 
 /* 侧边栏内容区域 */
