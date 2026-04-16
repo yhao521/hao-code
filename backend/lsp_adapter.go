@@ -54,3 +54,13 @@ func (a *AppService) GetCodeActions(languageID string, uri string, startLine int
 func (a *AppService) GetFoldingRanges(languageID string, uri string) ([]map[string]interface{}, error) {
 	return a.lsp.GetFoldingRanges(languageID, uri)
 }
+
+// GetSemanticTokens 获取语义高亮标记
+func (a *AppService) GetSemanticTokens(languageID string, uri string) (map[string]interface{}, error) {
+	return a.lsp.GetSemanticTokens(languageID, uri)
+}
+
+// GetDocumentLinks 获取文档链接
+func (a *AppService) GetDocumentLinks(languageID string, uri string) ([]map[string]interface{}, error) {
+	return a.lsp.GetDocumentLinks(languageID, uri)
+}

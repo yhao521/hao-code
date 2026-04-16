@@ -392,6 +392,62 @@ func (s *LSPService) GetFoldingRanges(languageID string, uri string) ([]map[stri
 	return nil, nil
 }
 
+// GetSemanticTokens 获取语义高亮标记
+func (s *LSPService) GetSemanticTokens(languageID string, uri string) (map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/semanticTokens/full", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if m, ok := result.(map[string]interface{}); ok {
+		return m, nil
+	}
+
+	return nil, nil
+}
+
+// GetDocumentLinks 获取文档链接
+func (s *LSPService) GetDocumentLinks(languageID string, uri string) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/documentLink", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var links []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				links = append(links, m)
+			}
+		}
+		return links, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

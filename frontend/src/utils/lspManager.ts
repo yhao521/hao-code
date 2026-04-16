@@ -10,6 +10,8 @@ import {
   GetSignatureHelp,
   GetCodeActions,
   GetFoldingRanges,
+  GetSemanticTokens,
+  GetDocumentLinks,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -146,10 +148,18 @@ export class LSPManager {
     startCol: number,
     endLine: number,
     endCol: number,
-    diagnostics: any[]
+    diagnostics: any[],
   ) {
     try {
-      return await GetCodeActions(languageId, uri, startLine, startCol, endLine, endCol, diagnostics);
+      return await GetCodeActions(
+        languageId,
+        uri,
+        startLine,
+        startCol,
+        endLine,
+        endCol,
+        diagnostics,
+      );
     } catch (error) {
       console.error("LSP code actions error:", error);
       return [];
@@ -161,6 +171,24 @@ export class LSPManager {
       return await GetFoldingRanges(languageId, uri);
     } catch (error) {
       console.error("LSP folding ranges error:", error);
+      return [];
+    }
+  }
+
+  async getSemanticTokens(languageId: string, uri: string) {
+    try {
+      return await GetSemanticTokens(languageId, uri);
+    } catch (error) {
+      console.error("LSP semantic tokens error:", error);
+      return null;
+    }
+  }
+
+  async getDocumentLinks(languageId: string, uri: string) {
+    try {
+      return await GetDocumentLinks(languageId, uri);
+    } catch (error) {
+      console.error("LSP document links error:", error);
       return [];
     }
   }

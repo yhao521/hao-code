@@ -9,6 +9,7 @@
       <NNotificationProvider>
         <NDialogProvider>
           <AppContent />
+          <PerfMonitor />
         </NDialogProvider>
       </NNotificationProvider>
     </NMessageProvider>
@@ -29,6 +30,7 @@ import {
 
 // 导入实际的应用内容组件
 import AppContent from "./AppContent.vue";
+import PerfMonitor from "./components/layout/PerfMonitor.vue";
 
 // 主题配置 - VSCode 风格深色主题
 const theme = ref(darkTheme);

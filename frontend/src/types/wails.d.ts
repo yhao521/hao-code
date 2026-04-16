@@ -68,9 +68,20 @@ declare module "@wails/backend/appservice.js" {
     startCol: number,
     endLine: number,
     endCol: number,
-    diagnostics: any[]
+    diagnostics: any[],
   ): Promise<any[]>;
-  export function GetFoldingRanges(languageID: string, uri: string): Promise<any[]>;
+  export function GetFoldingRanges(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
+  export function GetSemanticTokens(
+    languageID: string,
+    uri: string,
+  ): Promise<any>;
+  export function GetDocumentLinks(
+    languageID: string,
+    uri: string,
+  ): Promise<any[]>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;

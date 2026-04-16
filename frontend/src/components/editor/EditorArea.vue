@@ -854,29 +854,30 @@ monaco.languages.registerSignatureHelpProvider("*", {
 // 注册代码动作提供者
 monaco.languages.registerCodeActionProvider("*", {
   provideCodeActions: async (model, range, context) => {
-    if (!editorStore.activeTab || !lspManager) return { actions: [], dispose: () => {} };
+    if (!editorStore.activeTab || !lspManager)
+      return { actions: [], dispose: () => {} };
 
     const langId = getLanguage(editorStore.activeTab.path);
     const uri = model.uri.toString();
-    
+
     try {
-      const diagnostics = context.markers.map(m => ({
+      const diagnostics = context.markers.map((m) => ({
         message: m.message,
         severity: m.severity,
         range: {
           start: { line: m.startLineNumber - 1, character: m.startColumn - 1 },
-          end: { line: m.endLineNumber - 1, character: m.endColumn - 1 }
-        }
+          end: { line: m.endLineNumber - 1, character: m.endColumn - 1 },
+        },
       }));
 
       const actions = await lspManager.getCodeActions(
-        langId, 
-        uri, 
-        range.startLineNumber - 1, 
-        range.startColumn - 1, 
-        range.endLineNumber - 1, 
+        langId,
+        uri,
+        range.startLineNumber - 1,
+        range.startColumn - 1,
+        range.endLineNumber - 1,
         range.endColumn - 1,
-        diagnostics
+        diagnostics,
       );
 
       if (actions) {
@@ -887,21 +888,26 @@ monaco.languages.registerCodeActionProvider("*", {
             diagnostics: context.markers,
             isPreferred: true,
             edit: {
-              edits: ((action.edit?.changes ? Object.values(action.edit.changes)[0] : undefined) || []).map((te: any) => ({
-                resource: monaco.Uri.parse(uri),
-                textEdit: {
-                  range: new monaco.Range(
-                    te.range.start.line + 1,
-                    te.range.start.character + 1,
-                    te.range.end.line + 1,
-                    te.range.end.character + 1
-                  ),
-                  text: te.newText
-                }
-              })) || []
-            }
+              edits:
+                (
+                  (action.edit?.changes
+                    ? Object.values(action.edit.changes)[0]
+                    : undefined) || []
+                ).map((te: any) => ({
+                  resource: monaco.Uri.parse(uri),
+                  textEdit: {
+                    range: new monaco.Range(
+                      te.range.start.line + 1,
+                      te.range.start.character + 1,
+                      te.range.end.line + 1,
+                      te.range.end.character + 1,
+                    ),
+                    text: te.newText,
+                  },
+                })) || [],
+            },
           })),
-          dispose: () => {}
+          dispose: () => {},
         };
       }
     } catch (e) {
@@ -925,15 +931,113 @@ monaco.languages.registerFoldingRangeProvider("*", {
         return ranges.map((r: any) => ({
           start: r.startLine + 1,
           end: r.endLine + 1,
-          kind: r.kind === "comment" ? monaco.languages.FoldingRangeKind.Comment : 
-                r.kind === "imports" ? monaco.languages.FoldingRangeKind.Imports : 
-                monaco.languages.FoldingRangeKind.Region
+          kind:
+            r.kind === "comment"
+              ? monaco.languages.FoldingRangeKind.Comment
+              : r.kind === "imports"
+                ? monaco.languages.FoldingRangeKind.Imports
+                : monaco.languages.FoldingRangeKind.Region,
         }));
       }
     } catch (e) {
       console.error("Folding range provider error:", e);
     }
     return null;
+  },
+});
+
+// 注册语义高亮提供者
+const legend = {
+  tokenTypes: [
+    "namespace",
+    "type",
+    "class",
+    "enum",
+    "interface",
+    "struct",
+    "typeParameter",
+    "parameter",
+    "variable",
+    "property",
+    "enumMember",
+    "event",
+    "function",
+    "method",
+    "macro",
+    "keyword",
+    "modifier",
+    "comment",
+    "string",
+    "number",
+    "regexp",
+    "operator",
+  ],
+  tokenModifiers: [
+    "declaration",
+    "definition",
+    "readonly",
+    "static",
+    "deprecated",
+    "abstract",
+    "async",
+    "modification",
+    "documentation",
+    "defaultLibrary",
+  ],
+};
+
+monaco.languages.registerDocumentSemanticTokensProvider("*", {
+  getLegend: () => legend,
+  provideDocumentSemanticTokens: async (model, lastResultId) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+
+    try {
+      const result = await lspManager.getSemanticTokens(langId, uri);
+      if (result && result.data) {
+        return {
+          data: new Uint32Array(result.data),
+          resultId: result.resultId,
+        };
+      }
+    } catch (e) {
+      console.error("Semantic tokens provider error:", e);
+    }
+    return null;
+  },
+  releaseDocumentSemanticTokens: () => {},
+});
+
+// 注册链接解析提供者
+monaco.languages.registerLinkProvider("*", {
+  provideLinks: async (model) => {
+    if (!editorStore.activeTab || !lspManager) return { links: [] };
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+
+    try {
+      const links = await lspManager.getDocumentLinks(langId, uri);
+      if (links) {
+        return {
+          links: links.map((link: any) => ({
+            range: new monaco.Range(
+              link.range.start.line + 1,
+              link.range.start.character + 1,
+              link.range.end.line + 1,
+              link.range.end.character + 1,
+            ),
+            url: link.target,
+            tooltip: link.tooltip,
+          })),
+        };
+      }
+    } catch (e) {
+      console.error("Link provider error:", e);
+    }
+    return { links: [] };
   },
 });
 
