@@ -1,4 +1,8 @@
-import { GetCompletions, InitializeLSP } from "@wails/backend/appservice.js";
+import {
+  GetCompletions,
+  InitializeLSP,
+  GetDefinition,
+} from "@wails/backend/appservice.js";
 
 export class LSPManager {
   private static instance: LSPManager;
@@ -35,6 +39,20 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP completion error:", error);
       return [];
+    }
+  }
+
+  async getDefinition(
+    languageId: string,
+    uri: string,
+    line: number,
+    col: number,
+  ) {
+    try {
+      return await GetDefinition(languageId, uri, line, col);
+    } catch (error) {
+      console.error("LSP definition error:", error);
+      return null;
     }
   }
 }

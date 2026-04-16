@@ -99,6 +99,35 @@ func (s *LSPService) GetCompletions(languageID string, uri string, line int, col
 	return nil, nil
 }
 
+// GetDefinition 获取定义位置
+func (s *LSPService) GetDefinition(languageID string, uri string, line int, col int) (map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"position": map[string]int{
+			"line":      line,
+			"character": col,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/definition", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if m, ok := result.(map[string]interface{}); ok {
+		return m, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

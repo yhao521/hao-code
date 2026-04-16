@@ -605,6 +605,41 @@ monaco.languages.registerCompletionItemProvider("*", {
   },
 });
 
+// 注册定义跳转提供者
+monaco.languages.registerDefinitionProvider("*", {
+  provideDefinition: async (model, position) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    const line = position.lineNumber - 1;
+    const col = position.column - 1;
+
+    try {
+      const result = await lspManager.getDefinition(langId, uri, line, col);
+      if (result && result.uri) {
+        // 解析 LSP 返回的位置信息
+        const targetUri = result.uri;
+        const range = result.range || result.selectionRange;
+        if (range) {
+          return {
+            uri: monaco.Uri.parse(targetUri),
+            range: new monaco.Range(
+              range.start.line + 1,
+              range.start.character + 1,
+              range.end.line + 1,
+              range.end.character + 1,
+            ),
+          };
+        }
+      }
+    } catch (e) {
+      console.error("Definition provider error:", e);
+    }
+    return null;
+  },
+});
+
 // 清理
 onUnmounted(() => {
   window.removeEventListener("editor:jump-to-line", handleJumpToLine as any);
