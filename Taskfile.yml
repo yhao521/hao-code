@@ -63,31 +63,80 @@ tasks:
       - task: common:run:docker
 
   package:all:
-    summary: Packages all platforms (Windows, macOS, Linux) installers
+    summary: Packages all platforms (Windows, macOS, Linux) installers for both arm64 and amd64
     desc: |
-      Creates installers for all supported platforms:
-      - Windows: NSIS installer (.exe) and ZIP archive
-      - macOS: DMG archive (.dmg), ZIP (.zip) and .app bundle
-      - Linux: AppImage, DEB, RPM, AUR packages
+      Creates installers for all supported platforms and architectures:
+      - Windows: NSIS installer (.exe) and ZIP archive (amd64 + arm64)
+      - macOS: DMG archive (.dmg), ZIP (.zip) and .app bundle (amd64 + arm64 + universal)
+      - Linux: AppImage, DEB, RPM, AUR packages (amd64 + arm64)
     cmds:
-      - echo "Starting cross-platform packaging..."
+      - echo "Starting cross-platform packaging for all architectures..."
 
-      # Windows packaging
-      - echo "Packaging Windows..."
+      # Windows packaging - amd64
+      - echo "Packaging Windows amd64..."
       - task: windows:package
         vars:
           FORMAT: nsis
+          ARCH: amd64
       - task: windows:create:zip
+        vars:
+          ARCH: amd64
 
-      # macOS packaging
-      - echo "Packaging macOS..."
+      # Windows packaging - arm64
+      - echo "Packaging Windows arm64..."
+      - task: windows:package
+        vars:
+          FORMAT: nsis
+          ARCH: arm64
+      - task: windows:create:zip
+        vars:
+          ARCH: arm64
+
+      # macOS packaging - amd64
+      - echo "Packaging macOS amd64..."
       - task: darwin:package
+        vars:
+          ARCH: amd64
       - task: darwin:create:dmg
+        vars:
+          ARCH: amd64
       - task: darwin:create:zip
+        vars:
+          ARCH: amd64
 
-      # Linux packaging
-      - echo "Packaging Linux..."
+      # macOS packaging - arm64
+      - echo "Packaging macOS arm64..."
+      - task: darwin:package
+        vars:
+          ARCH: arm64
+      - task: darwin:create:dmg
+        vars:
+          ARCH: arm64
+      - task: darwin:create:zip
+        vars:
+          ARCH: arm64
+
+      # macOS packaging - universal (arm64 + amd64)
+      - echo "Packaging macOS universal binary..."
+      - task: darwin:package:universal
+      - task: darwin:create:dmg
+        vars:
+          ARCH: universal
+      - task: darwin:create:zip
+        vars:
+          ARCH: universal
+
+      # Linux packaging - amd64
+      - echo "Packaging Linux amd64..."
       - task: linux:package
+        vars:
+          ARCH: amd64
+
+      # Linux packaging - arm64
+      - echo "Packaging Linux arm64..."
+      - task: linux:package
+        vars:
+          ARCH: arm64
 
       - echo "All platform packages created successfully!"
       - echo "Check the bin/ directory for output files"

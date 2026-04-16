@@ -21,14 +21,14 @@ task build          # 构建当前平台
 #### 一键全平台打包
 
 ```bash
-task package:all    # ⭐ 一次性打包所有平台
+task package:all    # ⭐ 一次性打包所有平台和架构
 ```
 
 生成的文件：
 
-- **Windows**: `.exe`, `-installer.exe`, `-windows-amd64.zip`
-- **macOS**: `.app`, `-macos.dmg`, `-macos.zip`
-- **Linux**: `AppImage`, `.deb`, `.rpm`, `.pkg.tar.zst`
+- **Windows**: `.exe`, `-installer.exe`, `-windows-amd64.zip`, `-windows-arm64.zip`
+- **macOS**: `.app`, `-macos-amd64.dmg`, `-macos-amd64.zip`, `-macos-arm64.dmg`, `-macos-arm64.zip`, `-macos-universal.dmg`, `-macos-universal.zip`
+- **Linux**: `AppImage`, `.deb`, `.rpm`, `.pkg.tar.zst` (amd64 + arm64)
 
 #### 单独平台打包
 

@@ -209,19 +209,23 @@ tasks:
   create:dmg:
     summary: Creates a DMG archive from the .app bundle
     deps:
-      - task: package
+      - task: '{{if eq .ARCH "universal"}}package:universal{{else}}package{{end}}'
     cmds:
-      - cmd: hdiutil create -volname "{{.APP_NAME}}" -srcfolder "{{.BIN_DIR}}/{{.APP_NAME}}.app" -ov -format UDZO "{{.BIN_DIR}}/{{.APP_NAME}}-macos.dmg"
+      - cmd: hdiutil create -volname "{{.APP_NAME}}" -srcfolder "{{.BIN_DIR}}/{{.APP_NAME}}.app" -ov -format UDZO "{{.BIN_DIR}}/{{.APP_NAME}}-macos-{{.ARCH}}.dmg"
         platforms: [darwin]
       - cmd: echo "DMG creation requires macOS. Skipping on {{OS}}."
         platforms: [linux, windows]
+    vars:
+      ARCH: "{{.ARCH | default ARCH}}"
 
   create:zip:
     summary: Creates a ZIP archive of the .app bundle
     deps:
-      - task: package
+      - task: '{{if eq .ARCH "universal"}}package:universal{{else}}package{{end}}'
     cmds:
-      - cmd: cd "{{.BIN_DIR}}" && zip -r "{{.APP_NAME}}-macos.zip" "{{.APP_NAME}}.app"
+      - cmd: cd "{{.BIN_DIR}}" && zip -r "{{.APP_NAME}}-macos-{{.ARCH}}.zip" "{{.APP_NAME}}.app"
         platforms: [darwin, linux]
-      - cmd: powershell Compress-Archive -Path "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}.app" -DestinationPath "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}-macos.zip" -Force
+      - cmd: powershell Compress-Archive -Path "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}.app" -DestinationPath "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}-macos-{{.ARCH}}.zip" -Force
         platforms: [windows]
+    vars:
+      ARCH: "{{.ARCH | default ARCH}}"

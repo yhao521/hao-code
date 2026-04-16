@@ -2,7 +2,7 @@
 
 ## 一键打包所有平台
 
-使用以下命令一次性为所有平台生成安装包：
+使用以下命令一次性为所有平台和架构生成安装包：
 
 ```bash
 wails3 task package:all
@@ -12,19 +12,24 @@ wails3 task package:all
 
 执行上述命令后，将在 `bin/` 目录下生成以下文件：
 
-#### Windows
+#### Windows (amd64 + arm64)
 
 - `haoyun-code.exe` - Windows 可执行文件
 - `haoyun-code-installer.exe` - NSIS 安装程序
-- `haoyun-code-windows-amd64.zip` - ZIP 压缩包
+- `haoyun-code-windows-amd64.zip` - ZIP 压缩包 (amd64)
+- `haoyun-code-windows-arm64.zip` - ZIP 压缩包 (arm64)
 
-#### macOS
+#### macOS (amd64 + arm64 + universal)
 
 - `haoyun-code.app` - macOS 应用程序包
-- `haoyun-code-macos.dmg` - DMG 磁盘映像
-- `haoyun-code-macos.zip` - ZIP 压缩包
+- `haoyun-code-macos-amd64.dmg` - DMG 磁盘映像 (amd64)
+- `haoyun-code-macos-amd64.zip` - ZIP 压缩包 (amd64)
+- `haoyun-code-macos-arm64.dmg` - DMG 磁盘映像 (arm64)
+- `haoyun-code-macos-arm64.zip` - ZIP 压缩包 (arm64)
+- `haoyun-code-macos-universal.dmg` - DMG 磁盘映像 (universal)
+- `haoyun-code-macos-universal.zip` - ZIP 压缩包 (universal)
 
-#### Linux
+#### Linux (amd64 + arm64)
 
 - `haoyun-code` - Linux 可执行文件
 - `haoyun-code.AppImage` - AppImage 便携包
