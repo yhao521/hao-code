@@ -14,3 +14,8 @@ func (a *AppService) GetCompletions(languageID string, uri string, line int, col
 func (a *AppService) GetDefinition(languageID string, uri string, line int, col int) (map[string]interface{}, error) {
 	return a.lsp.GetDefinition(languageID, uri, line, col)
 }
+
+// GetDocumentSymbols 获取文档符号大纲
+func (a *AppService) GetDocumentSymbols(languageID string, uri string) ([]map[string]interface{}, error) {
+	return a.lsp.GetDocumentSymbols(languageID, uri)
+}

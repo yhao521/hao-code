@@ -128,6 +128,37 @@ func (s *LSPService) GetDefinition(languageID string, uri string, line int, col 
 	return nil, nil
 }
 
+// GetDocumentSymbols 获取文档符号大纲
+func (s *LSPService) GetDocumentSymbols(languageID string, uri string) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/documentSymbol", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var symbols []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				symbols = append(symbols, m)
+			}
+		}
+		return symbols, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {
