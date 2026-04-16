@@ -35,6 +35,11 @@ func (a *AppService) FormatDocument(languageID string, uri string, content strin
 	return a.lsp.FormatDocument(languageID, uri, content)
 }
 
+// GetDiagnosticsCount 获取 Linter 错误统计
+func (a *AppService) GetDiagnosticsCount(languageID string, uri string) (map[string]int, error) {
+	return a.lsp.GetDiagnosticsCount(languageID, uri)
+}
+
 // GetHoverInfo 获取悬停提示信息
 func (a *AppService) GetHoverInfo(languageID string, uri string, line int, col int) (map[string]interface{}, error) {
 	return a.lsp.GetHoverInfo(languageID, uri, line, col)

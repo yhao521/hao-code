@@ -42,6 +42,8 @@ type IFileSystemService interface {
 	GetFileStats(path string) (*FileInfo, error)
 	// 搜索文件
 	SearchFiles(rootPath, keyword string, maxResults int) ([]FileInfo, error)
+	// 高级搜索（支持正则和排除项）
+	SearchFilesWithOptions(opts SearchOptions) ([]SearchResult, error)
 	// 判断是否为文本文件
 	IsTextFile(path string) bool
 	// 获取文件扩展名
@@ -94,6 +96,10 @@ type IGitService interface {
 	StageSelectedRanges(path, filePath string, ranges []LineRange) error
 	// 取消暂存文件
 	UnstageFile(path, filePath string) error
+	// 获取文件 Blame 信息
+	GetFileBlame(path, filePath string) ([]BlameInfo, error)
+	// 获取文件历史记录
+	GetFileHistory(path, filePath string) ([]CommitInfo, error)
 }
 
 // IAppService 应用主服务接口（组合所有服务）

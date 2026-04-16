@@ -26,6 +26,7 @@
       <TypeHierarchyPanel v-else-if="activeView === 'type-hierarchy'" />
       <TasksPanel v-else-if="activeView === 'tasks'" />
       <ExtensionsPanel v-else-if="activeView === 'extensions'" />
+      <FileHistoryPanel v-else-if="activeView === 'history'" />
     </div>
   </div>
 </template>
@@ -44,6 +45,7 @@ import {
   LayersOutline,
   PlayOutline,
   SparklesOutline,
+  TimeOutline,
 } from "@vicons/ionicons5";
 import FileExplorer from "./FileExplorer.vue";
 import SearchPanel from "../SearchPanel.vue";
@@ -55,6 +57,7 @@ import TypeHierarchyPanel from "../sidebar/TypeHierarchyPanel.vue";
 import TasksPanel from "../sidebar/TasksPanel.vue";
 import WelcomeView from "../sidebar/WelcomeView.vue";
 import AIPanel from "../sidebar/AIPanel.vue";
+import FileHistoryPanel from "../sidebar/FileHistoryPanel.vue";
 
 interface ActivityItem {
   id: string;
@@ -112,6 +115,11 @@ const activityItems: ActivityItem[] = [
     id: "extensions",
     title: "扩展",
     icon: CubeOutline,
+  },
+  {
+    id: "history",
+    title: "文件历史",
+    icon: TimeOutline,
   },
 ];
 

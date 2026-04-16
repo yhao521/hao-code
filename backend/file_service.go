@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -310,6 +311,52 @@ func (f *FileSystemService) SearchFiles(rootPath, keyword string, maxResults int
 			}
 		}
 
+		return nil
+	})
+
+	return results, err
+}
+
+// SearchFilesWithOptions 高级搜索（支持正则和内容扫描）
+func (f *FileSystemService) SearchFilesWithOptions(opts SearchOptions) ([]SearchResult, error) {
+	var results []SearchResult
+	re, err := regexp.Compile(opts.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	excludeDirs := strings.Split(opts.Exclude, ",")
+
+	err = filepath.WalkDir(opts.RootPath, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		// 排除目录检查
+		for _, exclude := range excludeDirs {
+			if strings.Contains(path, strings.TrimSpace(exclude)) {
+				if entry.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+		}
+
+		if entry.IsDir() || !f.IsTextFile(path) {
+			return nil
+		}
+
+		content, _ := os.ReadFile(path)
+		lines := strings.Split(string(content), "\n")
+		for i, line := range lines {
+			if re.MatchString(line) {
+				results = append(results, SearchResult{
+					FilePath:    path,
+					LineNumber:  i + 1,
+					LineContent: strings.TrimSpace(line),
+				})
+			}
+		}
 		return nil
 	})
 

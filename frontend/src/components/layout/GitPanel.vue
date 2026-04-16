@@ -122,13 +122,32 @@
         </NEmpty>
       </div>
     </NSpin>
+
+    <!-- 逐行暂存 Diff 视图 -->
+    <NModal
+      v-model:show="currentDiff"
+      preset="card"
+      style="width: 800px"
+      title="逐行暂存更改"
+    >
+      <template #header-extra>
+        <NButton text @click="closeDiffView"
+          ><NIcon><CloseOutline /></NIcon
+        ></NButton>
+      </template>
+      <StagingDiff v-if="currentDiff" :diff="currentDiff" />
+    </NModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { NIcon, NInput, NButton, NSpin, NEmpty, useMessage } from "naive-ui";
-import { GitBranchOutline, RefreshOutline } from "@vicons/ionicons5";
+import {
+  GitBranchOutline,
+  RefreshOutline,
+  CloseOutline,
+} from "@vicons/ionicons5";
 import { useGitStore } from "@/stores/git";
 import { useEditorStore } from "@/stores/editor";
 import {
@@ -141,12 +160,14 @@ import {
   GetFileDiff,
 } from "@wails/backend/appservice";
 import GitGraph from "./GitGraph.vue";
+import StagingDiff from "./StagingDiff.vue";
 
 const gitStore = useGitStore();
 const editorStore = useEditorStore();
 const recentCommits = ref<any[]>([]);
 const graphNodes = ref<any[]>([]);
 const message = useMessage();
+const currentDiff = ref<any>(null);
 
 const hasChanges = computed(
   () => gitStore.changes.length > 0 || gitStore.stagedChanges.length > 0,
@@ -283,16 +304,16 @@ async function handleFileClick(filePath: string) {
     );
     const diff = await GetFileDiff(projectRoot, filePath);
     if (diff) {
-      editorStore.setDiffMode(true, {
-        path: diff.path,
-        oldContent: diff.oldContent,
-        newContent: diff.newContent,
-      });
+      currentDiff.value = diff;
     }
   } catch (error) {
     console.error("Failed to get file diff:", error);
     message.error("获取差异失败");
   }
+}
+
+function closeDiffView() {
+  currentDiff.value = null;
 }
 
 onMounted(() => {

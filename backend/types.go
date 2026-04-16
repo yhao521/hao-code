@@ -99,3 +99,12 @@ type LineRange struct {
 	Start int `json:"start"`
 	End   int `json:"end"`
 }
+
+// BlameInfo 代码行责任信息
+type BlameInfo struct {
+	Line      int    `json:"line"`
+	Hash      string `json:"hash"`
+	Author    string `json:"author"`
+	Timestamp string `json:"timestamp"`
+	Message   string `json:"message"`
+}

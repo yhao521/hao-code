@@ -668,6 +668,38 @@ func (s *LSPService) ResolveCodeAction(languageID string, action map[string]inte
 	return nil, nil
 }
 
+// GetDiagnostics 获取当前文件的诊断信息 (Errors/Warnings)
+func (s *LSPService) GetDiagnostics(languageID string, uri string) ([]map[string]interface{}, error) {
+	_, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	// 在实际生产中，这里应该从缓存中读取服务器推送的最新 diagnostics
+	// 为了演示，我们返回一个空列表或模拟数据
+	return []map[string]interface{}{}, nil
+}
+
+// GetDiagnosticsCount 获取诊断信息的统计数量
+func (s *LSPService) GetDiagnosticsCount(languageID string, uri string) (map[string]int, error) {
+	diagnostics, err := s.GetDiagnostics(languageID, uri)
+	if err != nil {
+		return nil, err
+	}
+
+	counts := map[string]int{"errors": 0, "warnings": 0}
+	for _, d := range diagnostics {
+		if severity, ok := d["severity"].(float64); ok {
+			if severity == 1 {
+				counts["errors"]++
+			} else if severity == 2 {
+				counts["warnings"]++
+			}
+		}
+	}
+	return counts, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

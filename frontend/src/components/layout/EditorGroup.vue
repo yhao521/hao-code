@@ -20,7 +20,14 @@
 import { ref, onMounted, watch, computed } from "vue";
 import * as monaco from "monaco-editor";
 import { useEditorStore, type EditorGroup } from "@/stores/editor";
-import { GetGhostText } from "@wails/backend/appservice";
+import {
+  GetGhostText,
+  GetProjectRoot,
+  GetFileBlame,
+  FormatDocument,
+  GetDiagnosticsCount,
+  GetDiagnostics,
+} from "@wails/backend/appservice";
 
 const props = defineProps<{
   group: EditorGroup;
@@ -105,6 +112,157 @@ function registerAIGhostText() {
   );
 }
 
+// 注册 Error Lens (错误透镜)
+async function registerErrorLens(model: monaco.editor.ITextModel) {
+  const uri = model.uri.toString();
+  const langId = model.getLanguageId();
+
+  try {
+    // 获取诊断信息
+    const diagnostics = await GetDiagnostics(langId, uri);
+
+    const decorations: monaco.editor.IModelDeltaDecoration[] = [];
+
+    diagnostics.forEach((d: any) => {
+      if (d.range && d.message) {
+        const range = new monaco.Range(
+          d.range.start.line + 1,
+          d.range.start.character + 1,
+          d.range.end.line + 1,
+          d.range.end.character + 1,
+        );
+
+        decorations.push({
+          range: range,
+          options: {
+            isWholeLine: false,
+            inlineClassName: "error-lens-inline",
+            after: {
+              contentText: ` ⚠ ${d.message}`,
+              inlineClassName: "error-lens-text",
+            },
+            glyphMarginClassName:
+              d.severity === 1 ? "glyph-error" : "glyph-warning",
+            hoverMessage: { value: d.message },
+          },
+        });
+      }
+    });
+
+    model.deltaDecorations([], decorations);
+  } catch (e) {
+    console.error("Failed to load diagnostics", e);
+  }
+}
+
+// 注册 Error Lens (错误透镜)
+async function registerErrorLens(model: monaco.editor.ITextModel) {
+  const uri = model.uri.toString();
+  const langId = model.getLanguageId();
+
+  try {
+    // 获取诊断信息
+    const diagnostics = await GetDiagnostics(langId, uri);
+
+    const decorations: monaco.editor.IModelDeltaDecoration[] = [];
+
+    diagnostics.forEach((d: any) => {
+      if (d.range && d.message) {
+        const range = new monaco.Range(
+          d.range.start.line + 1,
+          d.range.start.character + 1,
+          d.range.end.line + 1,
+          d.range.end.character + 1,
+        );
+
+        decorations.push({
+          range: range,
+          options: {
+            isWholeLine: false,
+            inlineClassName: "error-lens-inline",
+            after: {
+              contentText: ` ⚠ ${d.message}`,
+              inlineClassName: "error-lens-text",
+            },
+            glyphMarginClassName:
+              d.severity === 1 ? "glyph-error" : "glyph-warning",
+            hoverMessage: { value: d.message },
+          },
+        });
+      }
+    });
+
+    model.deltaDecorations([], decorations);
+  } catch (e) {
+    console.error("Failed to load diagnostics", e);
+  }
+}
+
+// 注册 Blame Hover Provider
+async function registerBlameHover(model: monaco.editor.ITextModel) {
+  const path = model.uri.fsPath;
+  if (!path) return;
+
+  try {
+    const root = await GetProjectRoot();
+    const relativePath = path.replace(root + "/", "");
+    const blames = await GetFileBlame(root, relativePath);
+
+    // 创建一个按行号映射的 Blame 信息 Map
+    const blameMap = new Map<number, any>();
+    // 生成一个颜色 Map，为不同的提交者分配不同颜色
+    const authorColors = new Map<string, string>();
+    let hue = 0;
+
+    // 为每行创建 Blame 信息并分配颜色
+    blames.forEach((b: any) => {
+      blameMap.set(b.line, b);
+      if (!authorColors.has(b.author)) {
+        // 使用 HSL 生成不同色调的颜色
+        authorColors.set(b.author, `hsl(${hue}, 70%, 60%)`);
+        hue = (hue + 137.5) % 360; // 使用黄金角度确保颜色分散
+      }
+    });
+
+    // 创建 Glyph Margin 装饰器
+    const glyphDecorations: monaco.editor.IModelDeltaDecoration[] = [];
+    blames.forEach((b: any) => {
+      glyphDecorations.push({
+        range: new monaco.Range(b.line + 1, 1, b.line + 1, 1),
+        options: {
+          glyphMarginClassName: `blame-glyph-margin ${b.author.replace(/[^a-zA-Z0-9]/g, "-")}`,
+          glyphMarginHoverMessage: {
+            value: `**${b.author}** (${b.timestamp})\n${b.message}`,
+          },
+          isWholeLine: true,
+          linesDecorationsClassName: "blame-line-decoration",
+        },
+      });
+    });
+
+    // 应用 Glyph Margin 装饰器
+    model.deltaDecorations([], glyphDecorations);
+
+    // 注册 Hover Provider
+    monaco.languages.registerHoverProvider("*", {
+      provideHover: (model, position) => {
+        const blame = blameMap.get(position.lineNumber - 1); // Blame 行号从0开始
+        if (blame) {
+          return {
+            contents: [
+              { value: `**${blame.author}** (${blame.timestamp})` },
+              { value: blame.message },
+            ],
+          };
+        }
+        return null;
+      },
+    });
+  } catch (e) {
+    console.error("Failed to load blame info", e);
+  }
+}
+
 onMounted(() => {
   if (monacoRef.value) {
     editorInstance = monaco.editor.create(monacoRef.value, {
@@ -117,6 +275,11 @@ onMounted(() => {
 
     // 注册 AI 补全
     registerAIGhostText();
+
+    // 监听保存事件进行自动格式化
+    editorInstance.onDidChangeModelContent(() => {
+      // 这里可以触发防抖后的 LSP 诊断请求
+    });
   }
 });
 
@@ -127,6 +290,9 @@ watch(
     if (tab && editorInstance) {
       const model = getModelForTab(tab);
       editorInstance.setModel(model);
+      // 为当前模型加载 Blame 信息和 Error Lens
+      registerBlameHover(model);
+      registerErrorLens(model);
     }
   },
   { immediate: true },
@@ -193,5 +359,23 @@ watch(
 .monaco-container {
   flex: 1;
   width: 100%;
+}
+
+/* Error Lens Styles */
+.error-lens-text {
+  color: #888;
+  font-style: italic;
+  margin-left: 8px;
+  opacity: 0.7;
+}
+
+.glyph-error {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23f48771'/></svg>")
+    no-repeat center center;
+}
+
+.glyph-warning {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23cca700'/></svg>")
+    no-repeat center center;
 }
 </style>

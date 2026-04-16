@@ -320,6 +320,9 @@ func main() {
 		BackgroundColour: application.NewRGBA(30, 30, 30, 255), // VSCode 深色背景
 	})
 
+	// 注册 WebSocket 路由用于终端通信
+	wailsApp.Router.GET("/ws/terminal", backend.TerminalWebSocketHandler)
+
 	// 监听窗口运行时就绪事件
 	mainWindow.RegisterHook(events.Common.WindowRuntimeReady, func(e *application.WindowEvent) {
 		// Wails v3 中服务会自动初始化，无需手动调用 Startup

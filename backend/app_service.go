@@ -500,3 +500,40 @@ func (a *AppService) CloseTerminal(id string) error {
 	a.terminalMu.Unlock()
 	return nil
 }
+
+// GetFileBlame 获取文件 Blame 信息
+func (a *AppService) GetFileBlame(path, filePath string) ([]BlameInfo, error) {
+	return a.git.GetFileBlame(path, filePath)
+}
+
+// GetFileHistory 获取文件历史记录
+func (a *AppService) GetFileHistory(path, filePath string) ([]CommitInfo, error) {
+	return a.git.GetFileHistory(path, filePath)
+}
+
+// GetDiagnostics 获取 LSP 诊断信息
+func (a *AppService) GetDiagnostics(languageID string, uri string) ([]map[string]interface{}, error) {
+	return a.lsp.GetDiagnostics(languageID, uri)
+}
+
+// ScanTodos 扫描项目中的 TODO/FIXME 注释
+func (a *AppService) ScanTodos(rootPath string) ([]SearchResult, error) {
+	opts := SearchOptions{
+		RootPath:      rootPath,
+		Query:         "(TODO|FIXME|HACK|XXX|BUG):",
+		UseRegex:      true,
+		CaseSensitive: true,
+		Exclude:       "node_modules,.git,vendor,dist,build",
+	}
+	return a.fileSystem.SearchFilesWithOptions(opts)
+}
+
+// SearchFilesWithOptions 代理文件系统的高级搜索
+func (a *AppService) SearchFilesWithOptions(opts SearchOptions) ([]SearchResult, error) {
+	return a.fileSystem.SearchFilesWithOptions(opts)
+}
+
+// SendHTTPRequest 发送 HTTP 请求 (API Tester)
+func (a *AppService) SendHTTPRequest(req APIRequest) (*APIResponse, error) {
+	return SendHTTPRequest(req)
+}
