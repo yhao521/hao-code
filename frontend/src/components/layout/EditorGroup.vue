@@ -20,6 +20,7 @@
 import { ref, onMounted, watch, computed } from "vue";
 import * as monaco from "monaco-editor";
 import { useEditorStore, type EditorGroup } from "@/stores/editor";
+import { GetGhostText } from "@wails/backend/appservice";
 
 const props = defineProps<{
   group: EditorGroup;
@@ -29,6 +30,7 @@ const store = useEditorStore();
 const monacoRef = ref<HTMLDivElement>();
 let editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
 const models = new Map<string, monaco.editor.ITextModel>();
+let ghostTextDisposable: monaco.IDisposable | null = null;
 
 const isActive = computed(() => store.activeGroupId === props.group.id);
 
@@ -64,6 +66,45 @@ function getModelForTab(tab: any): monaco.editor.ITextModel {
   return model;
 }
 
+// 注册 AI Ghost Text 提供者
+function registerAIGhostText() {
+  if (ghostTextDisposable) {
+    ghostTextDisposable.dispose();
+  }
+
+  ghostTextDisposable = monaco.languages.registerInlineCompletionsProvider(
+    "*",
+    {
+      provideInlineCompletions: async (model, position) => {
+        try {
+          const text = model.getValue();
+          const offset = model.getOffsetAt(position);
+          const prefix = text.substring(0, offset);
+          const suffix = text.substring(offset);
+
+          // 调用后端 AI 服务
+          const result = await GetGhostText(
+            prefix,
+            suffix,
+            model.getLanguageId(),
+            model.uri.toString(),
+          );
+
+          if (result && result.text) {
+            return {
+              items: [{ insertText: result.text }],
+            };
+          }
+        } catch (error) {
+          console.error("AI completion error:", error);
+        }
+        return { items: [] };
+      },
+      disposeInlineCompletions: () => {},
+    },
+  );
+}
+
 onMounted(() => {
   if (monacoRef.value) {
     editorInstance = monaco.editor.create(monacoRef.value, {
@@ -71,7 +112,11 @@ onMounted(() => {
       automaticLayout: true,
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
+      inlineSuggest: { enabled: true },
     });
+
+    // 注册 AI 补全
+    registerAIGhostText();
   }
 });
 

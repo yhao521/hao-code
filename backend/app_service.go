@@ -20,11 +20,17 @@ type AppService struct {
 	bridge     *PluginBridge
 	lifecycle  *PluginLifecycleManager
 	tasks      *TaskService
+	store      *PluginStore
+	ai         *AIService
 }
 
 // NewAppService 创建应用服务
 func NewAppService(fs IFileSystemService, git IGitService, config IConfigService) *AppService {
 	ctx := context.Background()
+	// 确定插件存储路径，例如用户目录下的 .hao-code/plugins
+	homeDir, _ := os.UserHomeDir()
+	pluginDir := filepath.Join(homeDir, ".hao-code", "plugins")
+
 	return &AppService{
 		fileSystem: fs,
 		git:        git,
@@ -35,6 +41,8 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		bridge:     NewPluginBridge(),
 		lifecycle:  NewPluginLifecycleManager(),
 		tasks:      NewTaskService(ctx),
+		store:      NewPluginStore(pluginDir),
+		ai:         NewAIService(AIConfig{BaseURL: "https://api.openai.com/v1", Model: "gpt-3.5-turbo", MaxTokens: 100}),
 	}
 }
 
@@ -353,4 +361,53 @@ func (a *AppService) GetTasks(rootPath string) ([]TaskItem, error) {
 // RunTask 运行指定任务
 func (a *AppService) RunTask(rootPath string, command string) error {
 	return a.tasks.RunTask(rootPath, command)
+}
+
+// ==================== 插件商店方法 ====================
+
+// InstallPluginFromURL 从 URL 安装插件
+func (a *AppService) InstallPluginFromURL(url string) (*PluginManifest, error) {
+	manifest, err := a.store.InstallFromURL(url)
+	if err != nil {
+		return nil, err
+	}
+	// 安装后自动加载
+	a.loader.ScanAndLoad()
+	return manifest, nil
+}
+
+// UninstallPlugin 卸载插件
+func (a *AppService) UninstallPlugin(name string) error {
+	// 先停用
+	a.lifecycle.DeactivatePlugin(name)
+	return a.store.Uninstall(name)
+}
+
+// GetInstalledPluginNames 获取已安装插件名称列表
+func (a *AppService) GetInstalledPluginNames() ([]string, error) {
+	return a.store.ListInstalled()
+}
+
+// ==================== AI 助手方法 ====================
+
+// GetGhostText 获取行内代码建议
+func (a *AppService) GetGhostText(prefix string, suffix string, language string, filePath string) (*GhostTextResponse, error) {
+	req := GhostTextRequest{
+		Prefix:   prefix,
+		Suffix:   suffix,
+		Language: language,
+		FilePath: filePath,
+	}
+	return a.ai.GetGhostText(req)
+}
+
+// SetAIConfig 设置 AI 配置
+func (a *AppService) SetAIConfig(apiKey string, baseURL string, model string) {
+	cfg := AIConfig{
+		APIKey:    apiKey,
+		BaseURL:   baseURL,
+		Model:     model,
+		MaxTokens: 100,
+	}
+	a.ai.UpdateConfig(cfg)
 }

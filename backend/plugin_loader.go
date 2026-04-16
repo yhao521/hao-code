@@ -23,7 +23,7 @@ type PluginLoader struct {
 func NewPluginLoader() *PluginLoader {
 	home, _ := os.UserHomeDir()
 	return &PluginLoader{
-		ExtensionsDir: filepath.Join(home, ".hao-code", "extensions"),
+		ExtensionsDir: filepath.Join(home, ".hao-code", "plugins"),
 		Plugins:       make(map[string]*PluginInstance),
 	}
 }

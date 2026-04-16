@@ -1,0 +1,114 @@
+package backend
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+)
+
+// AIConfig AI 服务配置
+type AIConfig struct {
+	APIKey    string `json:"apiKey"`
+	BaseURL   string `json:"baseURL"`
+	Model     string `json:"model"`
+	MaxTokens int    `json:"maxTokens"`
+}
+
+// GhostTextRequest 行内建议请求
+type GhostTextRequest struct {
+	Prefix   string `json:"prefix"`
+	Suffix   string `json:"suffix"`
+	Language string `json:"language"`
+	FilePath string `json:"filePath"`
+}
+
+// GhostTextResponse 行内建议响应
+type GhostTextResponse struct {
+	Text string `json:"text"`
+}
+
+// AIService AI 服务
+type AIService struct {
+	config AIConfig
+}
+
+// NewAIService 创建 AI 服务
+func NewAIService(config AIConfig) *AIService {
+	return &AIService{config: config}
+}
+
+// UpdateConfig 更新配置
+func (s *AIService) UpdateConfig(config AIConfig) {
+	s.config = config
+}
+
+// GetGhostText 获取行内代码建议
+func (s *AIService) GetGhostText(req GhostTextRequest) (*GhostTextResponse, error) {
+	if s.config.APIKey == "" {
+		return nil, fmt.Errorf("AI API Key not configured")
+	}
+
+	// 构建提示词
+	prompt := fmt.Sprintf("Complete the following %s code:\n\n%s", req.Language, req.Prefix)
+
+	// 构建请求体（以 OpenAI 兼容格式为例）
+	payload := map[string]interface{}{
+		"model": s.config.Model,
+		"messages": []map[string]string{
+			{"role": "system", "content": "You are a professional code completion assistant."},
+			{"role": "user", "content": prompt},
+		},
+		"max_tokens":  s.config.MaxTokens,
+		"temperature": 0.2,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	// 发送请求
+	url := fmt.Sprintf("%s/chat/completions", s.config.BaseURL)
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.config.APIKey))
+
+	client := &http.Client{}
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("AI API error: %s", string(respBody))
+	}
+
+	// 解析响应
+	var result map[string]interface{}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, err
+	}
+
+	choices, ok := result["choices"].([]interface{})
+	if !ok || len(choices) == 0 {
+		return &GhostTextResponse{Text: ""}, nil
+	}
+
+	choice := choices[0].(map[string]interface{})
+	message := choice["message"].(map[string]interface{})
+	content := message["content"].(string)
+
+	return &GhostTextResponse{Text: content}, nil
+}

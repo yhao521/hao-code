@@ -16,6 +16,45 @@ var assets embed.FS
 // 全局应用实例，用于菜单回调
 var wailsApp *application.App
 var mainWindow *application.WebviewWindow
+var services *backend.ServiceContainer
+
+// updateRecentMenu 更新最近文件子菜单
+func updateRecentMenu(recentMenu *application.Menu) {
+	// 清空旧菜单项
+	// 注意：Wails v3 菜单 API 可能不支持清空，我们需要重建
+
+	// 获取最近文件列表
+	recentFiles := services.App.GetRecentFiles()
+	for i, file := range recentFiles {
+		if i >= 10 { // 最多显示 10 个文件
+			break
+		}
+		fileCopy := file // 创建副本避免闭包问题
+		recentMenu.Add(fileCopy.Name).OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-recent-file", fileCopy.Path)
+		})
+	}
+
+	if len(recentFiles) > 0 {
+		recentMenu.AddSeparator()
+	}
+
+	// 获取最近文件夹列表
+	recentFolders := services.App.GetRecentFolders()
+	for i, folder := range recentFolders {
+		if i >= 5 { // 最多显示 5 个文件夹
+			break
+		}
+		folderCopy := folder // 创建副本避免闭包问题
+		recentMenu.Add("📁 " + folderCopy.Name).OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:open-recent-folder", folderCopy.Path)
+		})
+	}
+
+	if len(recentFiles) == 0 && len(recentFolders) == 0 {
+		recentMenu.Add("空").SetEnabled(false)
+	}
+}
 
 func createMenu(app *application.App, isMacOS bool) {
 	// 创建应用菜单
@@ -54,9 +93,13 @@ func createMenu(app *application.App, isMacOS bool) {
 		fileMenu.Add("打开文件夹...").OnClick(func(ctx *application.Context) {
 			mainWindow.EmitEvent("menu:open-folder")
 		})
-		fileMenu.Add("打开最近的文件").OnClick(func(ctx *application.Context) {
-			mainWindow.EmitEvent("menu:open-recent")
-		})
+
+		// 打开最近的文件 - 改为子菜单
+		recentMenu := fileMenu.AddSubmenu("打开最近的文件")
+
+		// 动态添加最近文件和文件夹
+		updateRecentMenu(recentMenu)
+
 		fileMenu.AddSeparator()
 
 		// 保存相关
@@ -161,9 +204,11 @@ func createMenu(app *application.App, isMacOS bool) {
 		fileMenu.Add("打开文件夹...").OnClick(func(ctx *application.Context) {
 			mainWindow.EmitEvent("menu:open-folder")
 		})
-		fileMenu.Add("打开最近的文件").OnClick(func(ctx *application.Context) {
-			mainWindow.EmitEvent("menu:open-recent")
-		})
+
+		// 打开最近的文件 - 改为子菜单
+		recentMenu := fileMenu.AddSubmenu("打开最近的文件")
+		updateRecentMenu(recentMenu)
+
 		fileMenu.AddSeparator()
 		fileMenu.Add("保存").OnClick(func(ctx *application.Context) {
 			mainWindow.EmitEvent("menu:save")

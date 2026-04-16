@@ -161,9 +161,66 @@ onMounted(() => {
     }
   });
 
-  // 打开最近的文件
+  // 打开最近的文件（旧的事件，保留兼容）
   EventsOn("menu:open-recent", () => {
     recentFilesModalRef.value?.show();
+  });
+
+  // 从子菜单打开最近文件
+  EventsOn("menu:open-recent-file", async (ev: any) => {
+    const filePath = ev?.data || ev;
+    try {
+      message.loading("正在读取文件...", { duration: 0 });
+      const content = await ReadFile(filePath);
+      message.destroyAll();
+
+      editorStore.openFile(filePath, content);
+      message.success(`已打开: ${filePath.split("/").pop()}`);
+
+      // 再次记录到最近文件（更新时间）
+      try {
+        await AddRecentFile(filePath);
+      } catch (error) {
+        console.error("Failed to add recent file:", error);
+      }
+    } catch (error) {
+      message.destroyAll();
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      message.error(`打开文件失败: ${errorMsg}`);
+    }
+  });
+
+  // 从子菜单打开最近文件夹
+  EventsOn("menu:open-recent-folder", async (ev: any) => {
+    const folderPath = ev?.data || ev;
+    try {
+      message.loading("正在加载文件夹...", { duration: 0 });
+
+      // 验证文件夹
+      try {
+        await ListDir(folderPath);
+      } catch (error) {
+        message.destroyAll();
+        message.error("无法访问该文件夹");
+        return;
+      }
+
+      editorStore.setWorkspace(folderPath);
+      message.destroyAll();
+      message.success(`已打开: ${folderPath.split("/").pop()}`);
+
+      // 再次记录到最近文件夹（更新时间）
+      try {
+        await AddRecentFolder(folderPath);
+      } catch (error) {
+        console.error("Failed to add recent folder:", error);
+      }
+    } catch (error) {
+      message.destroyAll();
+      console.error("Failed to open folder:", error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      message.error(`打开文件夹失败: ${errorMsg}`);
+    }
   });
 
   // 保存
