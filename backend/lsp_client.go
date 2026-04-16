@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -35,13 +36,24 @@ func NewLSPClient(command string, args ...string) (*LSPClient, error) {
 		return nil, fmt.Errorf("failed to start LSP server: %w", err)
 	}
 
+	diagChan := make(chan map[string]interface{}, 100)
+	handler := &noopHandler{DiagnosticsChan: diagChan}
+
 	stream := jsonrpc2.NewBufferedStream(&pipe{stdin, stdout}, jsonrpc2.VSCodeObjectCodec{})
-	conn := jsonrpc2.NewConn(context.Background(), stream, &noopHandler{})
+	conn := jsonrpc2.NewConn(context.Background(), stream, handler)
 
 	client := &LSPClient{
 		conn: conn,
 		cmd:  cmd,
 	}
+
+	// 启动 goroutine 监听诊断信息
+	go func() {
+		for params := range diagChan {
+			log.Printf("Received diagnostics for URI: %v", params["uri"])
+			// 这里可以进一步处理，比如通过 Wails 事件发送给前端
+		}
+	}()
 
 	return client, nil
 }
@@ -91,10 +103,17 @@ func (p *pipe) Read(data []byte) (int, error) {
 	return p.Reader.Read(data)
 }
 
-// noopHandler 是一个空的 Handler，用于处理来自服务器的通知
-type noopHandler struct{}
+// noopHandler 处理来自服务器的通知
+type noopHandler struct {
+	DiagnosticsChan chan map[string]interface{}
+}
 
 func (h *noopHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
-	// 在实际生产中，这里应该处理服务器的通知（如 diagnostics）
-	log.Printf("Received notification from LSP server: %s", req.Method)
+	if req.Method == "textDocument/publishDiagnostics" {
+		if h.DiagnosticsChan != nil && req.Params != nil {
+			var params map[string]interface{}
+			json.Unmarshal(*req.Params, &params)
+			h.DiagnosticsChan <- params
+		}
+	}
 }

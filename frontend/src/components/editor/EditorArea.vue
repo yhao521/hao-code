@@ -102,6 +102,7 @@ import {
 } from "@wails/backend/appservice.js";
 import Breadcrumb from "../Breadcrumb.vue";
 import { LSPManager } from "@/utils/lspManager";
+import { DiagnosticsManager } from "@/utils/diagnosticsManager";
 
 const editorStore = useEditorStore();
 const message = useMessage();
@@ -547,10 +548,12 @@ watch(
 
 // LSP 自动补全集成
 let lspManager: LSPManager | null = null;
+let diagnosticsManager: DiagnosticsManager | null = null;
 
 async function initLSP() {
   if (!lspManager) {
     lspManager = LSPManager.getInstance();
+    diagnosticsManager = new DiagnosticsManager();
   }
 
   if (editorStore.activeTab) {
