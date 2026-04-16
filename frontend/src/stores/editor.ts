@@ -49,6 +49,8 @@ export const useEditorStore = defineStore("editor", () => {
   const diffInfo = ref<DiffInfo | null>(null);
   const breakpoints = ref<Map<string, Set<number>>>(new Map());
   const currentDebugLine = ref<{ path: string; line: number } | null>(null);
+  const activeMonacoModel = ref<any>(null);
+  const activeCursor = ref<{ lineNumber: number; column: number } | null>(null);
 
   // 自动保存定时器
   let autoSaveTimer: NodeJS.Timeout | null = null;
@@ -72,6 +74,11 @@ export const useEditorStore = defineStore("editor", () => {
     AddRecentFolder(path).catch((error) => {
       console.error("Failed to add recent folder:", error);
     });
+
+    // 触发工作区变更事件，通知 FileExplorer 重新加载
+    window.dispatchEvent(
+      new CustomEvent("workspace-changed", { detail: path }),
+    );
   }
 
   function clearWorkspace() {
@@ -313,5 +320,7 @@ export const useEditorStore = defineStore("editor", () => {
     setCurrentDebugLine,
     breakpoints,
     currentDebugLine,
+    activeMonacoModel,
+    activeCursor,
   };
 });

@@ -23,6 +23,18 @@ func createMenu(app *application.App, isMacOS bool) {
 
 	if isMacOS {
 		// macOS 系统菜单结构
+		// 应用名称菜单（macOS 特有）
+		appInfoMenu := appMenu.AddSubmenu("Hao-Code Editor")
+		appInfoMenu.Add("关于 Hao-Code Editor").OnClick(func(ctx *application.Context) {
+			mainWindow.EmitEvent("menu:about")
+		})
+		appInfoMenu.AddSeparator()
+		appInfoMenu.Add("偏好设置").SetAccelerator("CmdOrCtrl+,")
+		appInfoMenu.AddSeparator()
+		appInfoMenu.Add("退出 Hao-Code Editor").SetAccelerator("CmdOrCtrl+Q").OnClick(func(ctx *application.Context) {
+			app.Quit()
+		})
+
 		// 文件菜单
 		fileMenu := appMenu.AddSubmenu("文件")
 

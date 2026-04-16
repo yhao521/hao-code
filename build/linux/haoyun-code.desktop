@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=haoyun-code
+Exec=haoyun-code
+Icon=haoyun-code
+Categories=Development;
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false

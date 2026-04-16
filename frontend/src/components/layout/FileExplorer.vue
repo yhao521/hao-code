@@ -610,6 +610,15 @@ function pathExtname(p: string): string {
 }
 
 onMounted(() => {
+  // 监听工作区变更事件
+  const handleWorkspaceChange = (event: Event) => {
+    const path = (event as CustomEvent).detail;
+    if (path) {
+      loadFiles(path);
+    }
+  };
+  window.addEventListener("workspace-changed", handleWorkspaceChange);
+
   // 如果已经有工作区，加载文件
   if (editorStore.workspace) {
     loadFiles(editorStore.workspace.path);
