@@ -68,14 +68,16 @@ function getRelativePath(fullPath: string): string {
 }
 
 function jumpToLine(item: TodoItem) {
-  editorStore.openFile({
-    path: item.filePath,
-    name: item.filePath.split("/").pop() || "",
-    language: "plaintext",
-    content: "", // 实际应由 openFile 逻辑处理加载
-  });
-  // 这里需要触发编辑器跳转到指定行
-  console.log(`Jump to ${item.filePath}:${item.lineNumber}`);
+  // 打开文件（需要先读取文件内容）
+  // 这里简化处理，直接传递空内容，实际应该由 EditorArea 监听事件后加载
+  editorStore.openFile(item.filePath, "");
+
+  // 触发跳转到指定行的事件
+  window.dispatchEvent(
+    new CustomEvent("editor:jump-to-line", {
+      detail: { path: item.filePath, line: item.lineNumber },
+    }),
+  );
 }
 
 onMounted(() => {
