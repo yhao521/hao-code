@@ -323,6 +323,75 @@ func (s *LSPService) GetSignatureHelp(languageID string, uri string, line int, c
 	return nil, nil
 }
 
+// GetCodeActions 获取代码动作
+func (s *LSPService) GetCodeActions(languageID string, uri string, startLine int, startCol int, endLine int, endCol int, diagnostics []map[string]interface{}) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+		"range": map[string]interface{}{
+			"start": map[string]int{"line": startLine, "character": startCol},
+			"end":   map[string]int{"line": endLine, "character": endCol},
+		},
+		"context": map[string]interface{}{
+			"diagnostics": diagnostics,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/codeAction", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var actions []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				actions = append(actions, m)
+			}
+		}
+		return actions, nil
+	}
+
+	return nil, nil
+}
+
+// GetFoldingRanges 获取折叠范围
+func (s *LSPService) GetFoldingRanges(languageID string, uri string) ([]map[string]interface{}, error) {
+	client, ok := s.clients[languageID]
+	if !ok {
+		return nil, fmt.Errorf("LSP client for %s not found", languageID)
+	}
+
+	params := map[string]interface{}{
+		"textDocument": map[string]string{
+			"uri": uri,
+		},
+	}
+
+	result, err := client.SendRequest("textDocument/foldingRange", params)
+	if err != nil {
+		return nil, err
+	}
+
+	if items, ok := result.([]interface{}); ok {
+		var ranges []map[string]interface{}
+		for _, item := range items {
+			if m, ok := item.(map[string]interface{}); ok {
+				ranges = append(ranges, m)
+			}
+		}
+		return ranges, nil
+	}
+
+	return nil, nil
+}
+
 // Shutdown 关闭所有 LSP 服务
 func (s *LSPService) Shutdown() {
 	for lang, client := range s.clients {

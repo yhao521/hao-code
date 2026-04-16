@@ -8,6 +8,8 @@ import {
   FormatDocument,
   GetHoverInfo,
   GetSignatureHelp,
+  GetCodeActions,
+  GetFoldingRanges,
 } from "@wails/backend/appservice.js";
 
 export class LSPManager {
@@ -134,6 +136,32 @@ export class LSPManager {
     } catch (error) {
       console.error("LSP signature help error:", error);
       return null;
+    }
+  }
+
+  async getCodeActions(
+    languageId: string,
+    uri: string,
+    startLine: number,
+    startCol: number,
+    endLine: number,
+    endCol: number,
+    diagnostics: any[]
+  ) {
+    try {
+      return await GetCodeActions(languageId, uri, startLine, startCol, endLine, endCol, diagnostics);
+    } catch (error) {
+      console.error("LSP code actions error:", error);
+      return [];
+    }
+  }
+
+  async getFoldingRanges(languageId: string, uri: string) {
+    try {
+      return await GetFoldingRanges(languageId, uri);
+    } catch (error) {
+      console.error("LSP folding ranges error:", error);
+      return [];
     }
   }
 }

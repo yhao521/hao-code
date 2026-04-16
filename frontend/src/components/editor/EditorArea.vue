@@ -214,17 +214,18 @@ onMounted(async () => {
       value: "// Welcome to Hao-Code Editor\n",
       language: "typescript",
       theme: "vs-dark",
-      automaticLayout: true, // 启用自动布局，让编辑器自动适应容器大小
+      automaticLayout: true,
       fontSize: 14,
-      lineHeight: 22, // 增加行高，提升可读性
+      lineHeight: 22,
       fontFamily:
         "'Fira Code', 'Cascadia Code', 'Source Code Pro', Consolas, 'Courier New', monospace",
-      fontLigatures: true, // 启用字体连字
+      fontLigatures: true,
       minimap: {
         enabled: true,
         scale: 1,
         showSlider: "mouseover",
         renderCharacters: false,
+        maxColumn: 120, // 限制最小化宽度
       },
       scrollBeyondLastLine: false,
       renderWhitespace: "selection",
@@ -241,30 +242,42 @@ onMounted(async () => {
       insertSpaces: true,
       wordWrap: "on",
       padding: {
-        top: 10, // 顶部内边距
-        bottom: 10, // 底部内边距
+        top: 10,
+        bottom: 10,
       },
-      cursorBlinking: "smooth", // 光标平滑闪烁
-      cursorSmoothCaretAnimation: "on", // 平滑光标动画
-      smoothScrolling: true, // 平滑滚动
-      renderLineHighlight: "all", // 高亮当前行
+      cursorBlinking: "smooth",
+      cursorSmoothCaretAnimation: "on",
+      smoothScrolling: true,
+      renderLineHighlight: "all",
+      // 性能优化配置
+      stopRenderingLineAfter: 10000, // 超过 10000 行停止渲染
+      largeFileOptimizations: true, // 启用大文件优化
+      accessibilitySupport: "off", // 关闭辅助功能以提升性能
+      fixedOverflowWidgets: true, // 修复溢出小部件性能
+      suggest: {
+        snippetsPreventQuickSuggestions: false,
+      },
+      quickSuggestions: {
+        other: true,
+        comments: false,
+        strings: false,
+      },
       lineNumbers: "on",
-      lineNumbersMinChars: 2, // 减小行号最小宽度，从3改为2，节省左侧空间
-      glyphMargin: false, // 禁用字形边距，减少左侧空白
-      folding: true, // 启用代码折叠
+      lineNumbersMinChars: 2,
+      glyphMargin: false,
+      folding: true,
       foldingStrategy: "indentation",
       showFoldingControls: "mouseover",
-      links: true, // 启用链接检测
-      colorDecorators: true, // 颜色装饰器
-      formatOnPaste: true, // 粘贴时格式化
-      formatOnType: true, // 输入时格式化
+      links: true,
+      colorDecorators: true,
+      formatOnPaste: true,
+      formatOnType: true,
       scrollbar: {
-        verticalScrollbarSize: 10, // 垂直滚动条宽度
-        horizontalScrollbarSize: 10, // 水平滚动条宽度
+        verticalScrollbarSize: 10,
+        horizontalScrollbarSize: 10,
         verticalSliderSize: 10,
         horizontalSliderSize: 10,
       },
-      // 关键配置：禁用多余的边距
       roundedSelection: false,
       suggestOnTriggerCharacters: true,
       acceptSuggestionOnEnter: "on",
@@ -808,14 +821,20 @@ monaco.languages.registerSignatureHelpProvider("*", {
         return {
           value: {
             signatures: result.signatures.map((sig: any) => ({
-              label: sig.label || "",
+              label: sig.label,
               documentation: {
-                value: sig.documentation?.value || sig.documentation || "",
+                value:
+                  typeof sig.documentation === "string"
+                    ? sig.documentation
+                    : sig.documentation?.value || "",
               },
               parameters: (sig.parameters || []).map((p: any) => ({
-                label: p.label || "",
+                label: p.label,
                 documentation: {
-                  value: p.documentation?.value || p.documentation || "",
+                  value:
+                    typeof p.documentation === "string"
+                      ? p.documentation
+                      : p.documentation?.value || "",
                 },
               })),
             })),
@@ -827,6 +846,92 @@ monaco.languages.registerSignatureHelpProvider("*", {
       }
     } catch (e) {
       console.error("Signature help provider error:", e);
+    }
+    return null;
+  },
+});
+
+// 注册代码动作提供者
+monaco.languages.registerCodeActionProvider("*", {
+  provideCodeActions: async (model, range, context) => {
+    if (!editorStore.activeTab || !lspManager) return { actions: [], dispose: () => {} };
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+    
+    try {
+      const diagnostics = context.markers.map(m => ({
+        message: m.message,
+        severity: m.severity,
+        range: {
+          start: { line: m.startLineNumber - 1, character: m.startColumn - 1 },
+          end: { line: m.endLineNumber - 1, character: m.endColumn - 1 }
+        }
+      }));
+
+      const actions = await lspManager.getCodeActions(
+        langId, 
+        uri, 
+        range.startLineNumber - 1, 
+        range.startColumn - 1, 
+        range.endLineNumber - 1, 
+        range.endColumn - 1,
+        diagnostics
+      );
+
+      if (actions) {
+        return {
+          actions: actions.map((action: any) => ({
+            title: action.title,
+            kind: action.kind || "quickfix",
+            diagnostics: context.markers,
+            isPreferred: true,
+            edit: {
+              edits: ((action.edit?.changes ? Object.values(action.edit.changes)[0] : undefined) || []).map((te: any) => ({
+                resource: monaco.Uri.parse(uri),
+                textEdit: {
+                  range: new monaco.Range(
+                    te.range.start.line + 1,
+                    te.range.start.character + 1,
+                    te.range.end.line + 1,
+                    te.range.end.character + 1
+                  ),
+                  text: te.newText
+                }
+              })) || []
+            }
+          })),
+          dispose: () => {}
+        };
+      }
+    } catch (e) {
+      console.error("Code action provider error:", e);
+    }
+    return { actions: [], dispose: () => {} };
+  },
+});
+
+// 注册折叠范围提供者
+monaco.languages.registerFoldingRangeProvider("*", {
+  provideFoldingRanges: async (model, context) => {
+    if (!editorStore.activeTab || !lspManager) return null;
+
+    const langId = getLanguage(editorStore.activeTab.path);
+    const uri = model.uri.toString();
+
+    try {
+      const ranges = await lspManager.getFoldingRanges(langId, uri);
+      if (ranges) {
+        return ranges.map((r: any) => ({
+          start: r.startLine + 1,
+          end: r.endLine + 1,
+          kind: r.kind === "comment" ? monaco.languages.FoldingRangeKind.Comment : 
+                r.kind === "imports" ? monaco.languages.FoldingRangeKind.Imports : 
+                monaco.languages.FoldingRangeKind.Region
+        }));
+      }
+    } catch (e) {
+      console.error("Folding range provider error:", e);
     }
     return null;
   },

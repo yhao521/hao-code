@@ -44,3 +44,13 @@ func (a *AppService) GetHoverInfo(languageID string, uri string, line int, col i
 func (a *AppService) GetSignatureHelp(languageID string, uri string, line int, col int) (map[string]interface{}, error) {
 	return a.lsp.GetSignatureHelp(languageID, uri, line, col)
 }
+
+// GetCodeActions 获取代码动作
+func (a *AppService) GetCodeActions(languageID string, uri string, startLine int, startCol int, endLine int, endCol int, diagnostics []map[string]interface{}) ([]map[string]interface{}, error) {
+	return a.lsp.GetCodeActions(languageID, uri, startLine, startCol, endLine, endCol, diagnostics)
+}
+
+// GetFoldingRanges 获取折叠范围
+func (a *AppService) GetFoldingRanges(languageID string, uri string) ([]map[string]interface{}, error) {
+	return a.lsp.GetFoldingRanges(languageID, uri)
+}

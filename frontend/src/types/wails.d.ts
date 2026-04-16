@@ -50,6 +50,27 @@ declare module "@wails/backend/appservice.js" {
     line: number,
     col: number,
   ): Promise<any>;
+  export interface PluginManifest {
+    name: string;
+    version: string;
+    description: string;
+    main: string;
+    author: string;
+    license: string;
+    contributes: any;
+  }
+  export function GetInstalledPlugins(): Promise<PluginManifest[]>;
+  export function ActivatePlugin(name: string): Promise<void>;
+  export function GetCodeActions(
+    languageID: string,
+    uri: string,
+    startLine: number,
+    startCol: number,
+    endLine: number,
+    endCol: number,
+    diagnostics: any[]
+  ): Promise<any[]>;
+  export function GetFoldingRanges(languageID: string, uri: string): Promise<any[]>;
   export function WriteFile(path: string, content: string): Promise<void>;
   export function OpenFileDialog(): Promise<string>;
   export function OpenFolderDialog(): Promise<string>;
