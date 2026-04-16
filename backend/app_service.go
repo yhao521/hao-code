@@ -15,6 +15,7 @@ type AppService struct {
 	config     IConfigService
 	debug      *DebugService
 	lsp        *LSPService
+	loader     *PluginLoader
 }
 
 // NewAppService 创建应用服务
@@ -25,6 +26,7 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		config:     config,
 		debug:      NewDebugService(),
 		lsp:        NewLSPService(),
+		loader:     NewPluginLoader(),
 	}
 }
 
@@ -295,4 +297,20 @@ func (a *AppService) SearchInFiles(opts SearchOptions) ([]SearchResult, error) {
 	})
 
 	return results, err
+}
+
+// ==================== 插件系统方法 ====================
+
+// GetInstalledPlugins 获取已安装的插件列表
+func (a *AppService) GetInstalledPlugins() []PluginManifest {
+	var manifests []PluginManifest
+	for _, p := range a.loader.Plugins {
+		manifests = append(manifests, *p.Manifest)
+	}
+	return manifests
+}
+
+// ActivatePlugin 激活指定插件
+func (a *AppService) ActivatePlugin(name string) error {
+	return a.loader.ActivatePlugin(name)
 }

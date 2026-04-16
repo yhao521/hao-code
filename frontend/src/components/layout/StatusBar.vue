@@ -1,12 +1,21 @@
 <template>
   <div class="statusbar">
     <div class="statusbar-left">
-      <span class="status-item" @click="showGitInfo">
+      <span class="status-item" @click="showGitInfo" v-if="currentBranch">
         <NIcon><GitBranchOutline /></NIcon>
-        {{ currentBranch || "No Repository" }}
+        {{ currentBranch }}
       </span>
       <span class="status-item" v-if="hasChanges">
-        {{ changeCount }} changes
+        <NIcon><CreateOutline /></NIcon>
+        {{ changeCount }}
+      </span>
+      <span
+        class="status-item"
+        v-if="diagnosticsCount > 0"
+        :class="{ 'has-errors': hasErrors }"
+      >
+        <NIcon><BugOutline /></NIcon>
+        {{ diagnosticsCount }}
       </span>
     </div>
     <div class="statusbar-right">
@@ -29,17 +38,37 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { NIcon } from "naive-ui";
-import { GitBranchOutline, NotificationsOutline } from "@vicons/ionicons5";
+import {
+  GitBranchOutline,
+  NotificationsOutline,
+  CreateOutline,
+  BugOutline,
+} from "@vicons/ionicons5";
 import { useEditorStore } from "@/stores/editor";
 import { useGitStore } from "@/stores/git";
+import { useDiagnosticsStore } from "@/stores/diagnostics";
 
 const editorStore = useEditorStore();
 const gitStore = useGitStore();
+const diagnosticsStore = useDiagnosticsStore();
 
 const activeEditor = computed(() => editorStore.activeTab);
 const currentBranch = computed(() => gitStore.currentBranch);
 const hasChanges = computed(() => gitStore.changes.length > 0);
 const changeCount = computed(() => gitStore.changes.length);
+
+// 诊断信息同步
+const diagnosticsCount = computed(() => {
+  if (!activeEditor.value) return 0;
+  const markers = diagnosticsStore.markers[activeEditor.value.path] || [];
+  return markers.length;
+});
+
+const hasErrors = computed(() => {
+  if (!activeEditor.value) return false;
+  const markers = diagnosticsStore.markers[activeEditor.value.path] || [];
+  return markers.some((m: any) => m.severity === 8); // monaco.MarkerSeverity.Error
+});
 
 // 模拟光标位置（实际应该从 Monaco Editor 获取）
 const cursorLine = ref(1);
@@ -112,6 +141,10 @@ function changeLanguage() {
 
 .status-item:hover {
   background-color: rgba(255, 255, 255, 0.12);
+}
+
+.status-item.has-errors {
+  color: #f48771;
 }
 
 .status-item .n-icon {
