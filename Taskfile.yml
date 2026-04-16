@@ -61,3 +61,33 @@ tasks:
     summary: Builds and runs the Docker image
     cmds:
       - task: common:run:docker
+
+  package:all:
+    summary: Packages all platforms (Windows, macOS, Linux) installers
+    desc: |
+      Creates installers for all supported platforms:
+      - Windows: NSIS installer (.exe) and ZIP archive
+      - macOS: DMG archive (.dmg), ZIP (.zip) and .app bundle
+      - Linux: AppImage, DEB, RPM, AUR packages
+    cmds:
+      - echo "Starting cross-platform packaging..."
+
+      # Windows packaging
+      - echo "Packaging Windows..."
+      - task: windows:package
+        vars:
+          FORMAT: nsis
+      - task: windows:create:zip
+
+      # macOS packaging
+      - echo "Packaging macOS..."
+      - task: darwin:package
+      - task: darwin:create:dmg
+      - task: darwin:create:zip
+
+      # Linux packaging
+      - echo "Packaging Linux..."
+      - task: linux:package
+
+      - echo "All platform packages created successfully!"
+      - echo "Check the bin/ directory for output files"

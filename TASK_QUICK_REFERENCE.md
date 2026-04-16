@@ -2,16 +2,54 @@
 
 ## 🚀 常用命令
 
+### 开发模式
+
 ```bash
-# 开发
 task d              # 启动开发模式
 task df             # 快速开发模式
+```
 
-# 构建
+### 构建应用
+
+```bash
 task b              # 生产构建
-task c              # 清理
+task build          # 构建当前平台
+```
 
-# 帮助
+### 📦 打包应用（新增）
+
+#### 一键全平台打包
+
+```bash
+task package:all    # ⭐ 一次性打包所有平台
+```
+
+生成的文件：
+
+- **Windows**: `.exe`, `-installer.exe`, `-windows-amd64.zip`
+- **macOS**: `.app`, `-macos.dmg`, `-macos.zip`
+- **Linux**: `AppImage`, `.deb`, `.rpm`, `.pkg.tar.zst`
+
+#### 单独平台打包
+
+```bash
+# Windows
+task windows:package           # NSIS 安装程序
+task windows:create:zip        # ZIP 压缩包
+
+# macOS
+task darwin:package            # .app 包
+task darwin:create:dmg         # DMG 磁盘映像
+task darwin:create:zip         # ZIP 压缩包
+
+# Linux
+task linux:package             # 所有 Linux 包格式
+```
+
+### 清理和帮助
+
+```bash
+task c              # 清理
 task help           # 查看所有任务
 task check          # 检查环境
 ```
@@ -95,6 +133,10 @@ task b              # 确保能构建
 ### 跨平台发布
 
 ```bash
+# ⭐ 推荐：一键打包所有平台
+task package:all
+
+# 或者单独打包
 task build:macos:universal   # macOS
 task build:windows           # Windows
 task build:linux             # Linux

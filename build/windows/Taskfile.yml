@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 includes:
   common: ../Taskfile.yml
@@ -21,9 +21,9 @@ tasks:
       # Auto-detect CGO: if CGO_ENABLED=1, use Docker; otherwise use native Go cross-compile
       - task: '{{if and (ne OS "windows") (eq .CGO_ENABLED "1")}}build:docker{{else}}build:native{{end}}'
         vars:
-          ARCH: '{{.ARCH}}'
-          DEV: '{{.DEV}}'
-          EXTRA_TAGS: '{{.EXTRA_TAGS}}'
+          ARCH: "{{.ARCH}}"
+          DEV: "{{.DEV}}"
+          EXTRA_TAGS: "{{.EXTRA_TAGS}}"
     vars:
       # Default to CGO_ENABLED=0 if not explicitly set
       CGO_ENABLED: '{{.CGO_ENABLED | default "0"}}'
@@ -52,7 +52,7 @@ tasks:
     env:
       GOOS: windows
       CGO_ENABLED: '{{.CGO_ENABLED | default "0"}}'
-      GOARCH: '{{.ARCH | default ARCH}}'
+      GOARCH: "{{.ARCH | default ARCH}}"
 
   build:docker:
     summary: Cross-compiles for Windows using Docker with Zig (for CGO builds on non-Windows)
@@ -105,7 +105,7 @@ tasks:
     cmds:
       - wails3 generate syso -arch {{.ARCH}} -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_{{.ARCH}}.syso
     vars:
-      ARCH: '{{.ARCH | default ARCH}}'
+      ARCH: "{{.ARCH | default ARCH}}"
 
   create:nsis:installer:
     summary: Creates an NSIS installer
@@ -115,14 +115,14 @@ tasks:
     cmds:
       # Create the Microsoft WebView2 bootstrapper if it doesn't exist
       - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/nsis"
-      - | 
+      - |
         {{if eq OS "windows"}}
         makensis -DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}\{{.BIN_DIR}}\{{.APP_NAME}}.exe" project.nsi
         {{else}}
         makensis -DARG_WAILS_{{.ARG_FLAG}}_BINARY="{{.ROOT_DIR}}/{{.BIN_DIR}}/{{.APP_NAME}}.exe" project.nsi
         {{end}}
     vars:
-      ARCH: '{{.ARCH | default ARCH}}'
+      ARCH: "{{.ARCH | default ARCH}}"
       ARG_FLAG: '{{if eq .ARCH "amd64"}}AMD64{{else}}ARM64{{end}}'
 
   create:msix:package:
@@ -141,7 +141,7 @@ tasks:
           {{if .PUBLISHER}}--publisher "{{.PUBLISHER}}"{{end}} \
           {{if .USE_MSIX_TOOL}}--use-msix-tool{{else}}--use-makeappx{{end}}
     vars:
-      ARCH: '{{.ARCH | default ARCH}}'
+      ARCH: "{{.ARCH | default ARCH}}"
       CERT_PATH: '{{.CERT_PATH | default ""}}'
       PUBLISHER: '{{.PUBLISHER | default ""}}'
       USE_MSIX_TOOL: '{{.USE_MSIX_TOOL | default "false"}}'
@@ -153,7 +153,7 @@ tasks:
 
   run:
     cmds:
-      - '{{.BIN_DIR}}/{{.APP_NAME}}.exe'
+      - "{{.BIN_DIR}}/{{.APP_NAME}}.exe"
 
   sign:
     summary: Signs the Windows executable
@@ -182,3 +182,15 @@ tasks:
     preconditions:
       - sh: '[ -n "{{.SIGN_CERTIFICATE}}" ] || [ -n "{{.SIGN_THUMBPRINT}}" ]'
         msg: "Either SIGN_CERTIFICATE or SIGN_THUMBPRINT is required. Set it in the vars section at the top of build/windows/Taskfile.yml"
+
+  create:zip:
+    summary: Creates a ZIP archive of the Windows executable
+    deps:
+      - task: build
+    cmds:
+      - cmd: powershell Compress-Archive -Path "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}.exe" -DestinationPath "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}-windows-{{.ARCH}}.zip" -Force
+        platforms: [windows]
+      - cmd: cd {{.BIN_DIR}} && zip -r "{{.APP_NAME}}-windows-{{.ARCH}}.zip" "{{.APP_NAME}}.exe"
+        platforms: [linux, darwin]
+    vars:
+      ARCH: "{{.ARCH | default ARCH}}"

@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 includes:
   common: ../Taskfile.yml
@@ -18,13 +18,13 @@ tasks:
     cmds:
       - task: '{{if eq OS "darwin"}}build:native{{else}}build:docker{{end}}'
         vars:
-          ARCH: '{{.ARCH}}'
-          DEV: '{{.DEV}}'
-          OUTPUT: '{{.OUTPUT}}'
-          EXTRA_TAGS: '{{.EXTRA_TAGS}}'
+          ARCH: "{{.ARCH}}"
+          DEV: "{{.DEV}}"
+          OUTPUT: "{{.OUTPUT}}"
+          EXTRA_TAGS: "{{.EXTRA_TAGS}}"
     vars:
-      DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
-      OUTPUT: '{{ .OUTPUT | default .DEFAULT_OUTPUT }}'
+      DEFAULT_OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}"
+      OUTPUT: "{{ .OUTPUT | default .DEFAULT_OUTPUT }}"
 
   build:native:
     summary: Builds the application natively on macOS
@@ -42,12 +42,12 @@ tasks:
       - go build {{.BUILD_FLAGS}} -o {{.OUTPUT}}
     vars:
       BUILD_FLAGS: '{{if eq .DEV "true"}}{{if .EXTRA_TAGS}}-tags {{.EXTRA_TAGS}} {{end}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s"{{end}}'
-      DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
-      OUTPUT: '{{ .OUTPUT | default .DEFAULT_OUTPUT }}'
+      DEFAULT_OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}"
+      OUTPUT: "{{ .OUTPUT | default .DEFAULT_OUTPUT }}"
     env:
       GOOS: darwin
       CGO_ENABLED: 1
-      GOARCH: '{{.ARCH | default ARCH}}'
+      GOARCH: "{{.ARCH | default ARCH}}"
       CGO_CFLAGS: "-mmacosx-version-min=10.15"
       CGO_LDFLAGS: "-mmacosx-version-min=10.15"
       MACOSX_DEPLOYMENT_TARGET: "10.15"
@@ -72,8 +72,8 @@ tasks:
       - mv "bin/{{.APP_NAME}}-darwin-{{.DOCKER_ARCH}}" "{{.OUTPUT}}"
     vars:
       DOCKER_ARCH: '{{if eq .ARCH "arm64"}}arm64{{else if eq .ARCH "amd64"}}amd64{{else}}arm64{{end}}'
-      DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
-      OUTPUT: '{{ .OUTPUT | default .DEFAULT_OUTPUT }}'
+      DEFAULT_OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}"
+      OUTPUT: "{{ .OUTPUT | default .DEFAULT_OUTPUT }}"
       # Mount Go module cache for faster builds
       GO_CACHE_MOUNT:
         sh: 'echo "-v ${GOPATH:-$HOME/go}/pkg/mod:/go/pkg/mod"'
@@ -135,7 +135,6 @@ tasks:
     cmds:
       - task: create:app:bundle
 
-
   create:app:bundle:
     summary: Creates an `.app` bundle
     cmds:
@@ -174,7 +173,7 @@ tasks:
       - cp "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS"
       - cp "build/darwin/Info.dev.plist" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Info.plist"
       - codesign --force --deep --sign - "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
-      - '{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS/{{.APP_NAME}}'
+      - "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS/{{.APP_NAME}}"
 
   sign:
     summary: Signs the application bundle with Developer ID
@@ -206,3 +205,23 @@ tasks:
         msg: "SIGN_IDENTITY is required. Set it in the vars section at the top of build/darwin/Taskfile.yml"
       - sh: '[ -n "{{.KEYCHAIN_PROFILE}}" ]'
         msg: "KEYCHAIN_PROFILE is required. Set it in the vars section at the top of build/darwin/Taskfile.yml"
+
+  create:dmg:
+    summary: Creates a DMG archive from the .app bundle
+    deps:
+      - task: package
+    cmds:
+      - cmd: hdiutil create -volname "{{.APP_NAME}}" -srcfolder "{{.BIN_DIR}}/{{.APP_NAME}}.app" -ov -format UDZO "{{.BIN_DIR}}/{{.APP_NAME}}-macos.dmg"
+        platforms: [darwin]
+      - cmd: echo "DMG creation requires macOS. Skipping on {{OS}}."
+        platforms: [linux, windows]
+
+  create:zip:
+    summary: Creates a ZIP archive of the .app bundle
+    deps:
+      - task: package
+    cmds:
+      - cmd: cd "{{.BIN_DIR}}" && zip -r "{{.APP_NAME}}-macos.zip" "{{.APP_NAME}}.app"
+        platforms: [darwin, linux]
+      - cmd: powershell Compress-Archive -Path "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}.app" -DestinationPath "{{.ROOT_DIR}}\\{{.BIN_DIR}}\\{{.APP_NAME}}-macos.zip" -Force
+        platforms: [windows]
