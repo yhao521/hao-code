@@ -9,7 +9,7 @@
 
     <div v-if="loading" class="loading-state">Loading tasks...</div>
     <div v-else-if="tasks.length === 0" class="empty-state">
-      No tasks found. Try adding scripts to package.json or a Taskfile.yml.
+      未检测到任务。尝试在 package.json 或 Makefile 中添加脚本。
     </div>
     <div v-else class="task-list">
       <div
@@ -21,7 +21,7 @@
         <span class="task-icon">▶</span>
         <div class="task-info">
           <span class="task-name">{{ task.name }}</span>
-          <span class="task-source">{{ task.source }}</span>
+          <span class="task-source">{{ task.type }}</span>
         </div>
       </div>
     </div>
@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useMessage } from "naive-ui";
-import { GetTasks, RunTask } from "@wails/backend/appservice";
+import { GetTasks, GetProjectRoot } from "@wails/backend/appservice";
 import { useEditorStore } from "@/stores/editor";
 
 const store = useEditorStore();
@@ -40,11 +40,12 @@ const tasks = ref<any[]>([]);
 const loading = ref(false);
 
 async function refreshTasks() {
-  if (!store.workspace?.path) return;
-
-  loading.value = true;
   try {
-    tasks.value = await GetTasks(store.workspace.path);
+    const root = await GetProjectRoot();
+    if (!root) return;
+
+    loading.value = true;
+    tasks.value = await GetTasks(root);
   } catch (error) {
     message.error("Failed to load tasks");
   } finally {
@@ -53,17 +54,12 @@ async function refreshTasks() {
 }
 
 async function runTask(task: any) {
-  if (!store.workspace?.path) return;
-
-  message.info(`Running: ${task.name}`);
+  message.info(`正在运行任务: ${task.name} (${task.command})`);
   // 在实际实现中，这里应该触发终端面板并发送命令
-  // 目前我们简单调用后端执行
-  try {
-    await RunTask(store.workspace.path, task.command);
-    message.success(`Task '${task.name}' finished.`);
-  } catch (error) {
-    message.error(`Task '${task.name}' failed.`);
-  }
+  // 我们可以通过 Wails 事件或者直接操作 TerminalStore 来实现
+  window.dispatchEvent(
+    new CustomEvent("terminal:run", { detail: task.command }),
+  );
 }
 
 onMounted(() => {

@@ -11,6 +11,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 // GitService Git 服务实现
@@ -383,7 +384,63 @@ func (g *GitService) GetFileDiff(path, filePath string) (*FileDiff, error) {
 		OldContent: oldContent,
 		NewContent: newContent,
 		Status:     statusStr,
+		Lines:      generateLineDiffs(oldContent, newContent),
 	}, nil
+}
+
+// generateLineDiffs 使用 diff-match-patch 生成行级差异
+func generateLineDiffs(oldText, newText string) []DiffLine {
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(oldText, newText, false)
+
+	var lines []DiffLine
+	oldLineNum := 1
+	newLineNum := 1
+
+	for _, diff := range diffs {
+		text := diff.Text
+		// 处理换行符，按行分割
+		textLines := strings.Split(text, "\n")
+		// 如果最后一个元素是空字符串（因为以换行符结尾），则移除
+		if len(textLines) > 0 && textLines[len(textLines)-1] == "" {
+			textLines = textLines[:len(textLines)-1]
+		}
+
+		switch diff.Type {
+		case diffmatchpatch.DiffEqual:
+			for _, line := range textLines {
+				lines = append(lines, DiffLine{
+					Type:    "unchanged",
+					Content: line,
+					OldNum:  oldLineNum,
+					NewNum:  newLineNum,
+				})
+				oldLineNum++
+				newLineNum++
+			}
+		case diffmatchpatch.DiffInsert:
+			for _, line := range textLines {
+				lines = append(lines, DiffLine{
+					Type:    "added",
+					Content: line,
+					OldNum:  0,
+					NewNum:  newLineNum,
+				})
+				newLineNum++
+			}
+		case diffmatchpatch.DiffDelete:
+			for _, line := range textLines {
+				lines = append(lines, DiffLine{
+					Type:    "deleted",
+					Content: line,
+					OldNum:  oldLineNum,
+					NewNum:  0,
+				})
+				oldLineNum++
+			}
+		}
+	}
+	return lines
 }
 
 func (g *GitService) parseFileStatus(s *git.FileStatus, file string) *Change {

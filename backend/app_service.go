@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,7 +28,6 @@ type AppService struct {
 
 // NewAppService 创建应用服务
 func NewAppService(fs IFileSystemService, git IGitService, config IConfigService) *AppService {
-	ctx := context.Background()
 	// 确定插件存储路径，例如用户目录下的 .hao-code/plugins
 	homeDir, _ := os.UserHomeDir()
 	pluginDir := filepath.Join(homeDir, ".hao-code", "plugins")
@@ -43,7 +41,6 @@ func NewAppService(fs IFileSystemService, git IGitService, config IConfigService
 		loader:     NewPluginLoader(),
 		bridge:     NewPluginBridge(),
 		lifecycle:  NewPluginLifecycleManager(),
-		tasks:      NewTaskService(ctx),
 		store:      NewPluginStore(pluginDir),
 		ai:         NewAIService(AIConfig{BaseURL: "https://api.openai.com/v1", Model: "gpt-3.5-turbo", MaxTokens: 100}),
 		terminals:  make(map[string]*TerminalSession),

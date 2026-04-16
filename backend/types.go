@@ -86,12 +86,21 @@ type GitGraphNode struct {
 	Color     string   `json:"color"`    // 分支颜色
 }
 
+// DiffLine 差异行信息
+type DiffLine struct {
+	Type    string `json:"type"` // added, deleted, modified, unchanged
+	Content string `json:"content"`
+	OldNum  int    `json:"oldNum"` // 原始文件行号
+	NewNum  int    `json:"newNum"` // 新文件行号
+}
+
 // FileDiff 文件差异信息
 type FileDiff struct {
-	Path       string `json:"path"`
-	OldContent string `json:"oldContent"`
-	NewContent string `json:"newContent"`
-	Status     string `json:"status"` // added, modified, deleted, renamed
+	Path       string     `json:"path"`
+	OldContent string     `json:"oldContent"`
+	NewContent string     `json:"newContent"`
+	Status     string     `json:"status"` // added, modified, deleted, renamed
+	Lines      []DiffLine `json:"lines"`  // 详细的行级差异
 }
 
 // LineRange 行范围
@@ -107,4 +116,12 @@ type BlameInfo struct {
 	Author    string `json:"author"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
+}
+
+// TaskItem 任务项
+type TaskItem struct {
+	Name        string `json:"name"`
+	Command     string `json:"command"`
+	Type        string `json:"type"` // npm, make, custom
+	Description string `json:"description,omitempty"`
 }

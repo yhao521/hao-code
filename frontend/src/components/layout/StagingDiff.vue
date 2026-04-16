@@ -44,29 +44,14 @@ import { NButton, NCheckbox } from "naive-ui";
 import { StageSelectedRanges, GetProjectRoot } from "@wails/backend/appservice";
 
 const props = defineProps<{
-  diff: { path: string; oldContent: string; newContent: string };
+  diff: { path: string; oldContent: string; newContent: string; lines: any[] };
 }>();
 
 const selectedLines = ref<number[]>([]);
 
-// 简单的 Diff 解析逻辑（实际应使用 diff-match-patch 等库）
+// 直接使用后端返回的行级 Diff 数据
 const diffLines = computed(() => {
-  const oldLines = props.diff.oldContent.split("\n");
-  const newLines = props.diff.newContent.split("\n");
-  const lines: any[] = [];
-
-  // 这里简化处理：仅展示新内容并标记为添加/修改
-  // 真正的逐行暂存需要复杂的 Diff 算法来映射行号
-  newLines.forEach((content, i) => {
-    lines.push({
-      oldNum: i + 1,
-      newNum: i + 1,
-      content: content,
-      type: "new", // 简化为全部视为新行以便演示 UI
-    });
-  });
-
-  return lines;
+  return props.diff.lines || [];
 });
 
 function toggleLine(index: number, checked?: boolean) {
@@ -182,8 +167,14 @@ async function stageAll() {
 
 .line-text.added {
   color: #81b88b;
+  background-color: rgba(46, 160, 67, 0.1);
 }
 .line-text.deleted {
   color: #c74e39;
+  background-color: rgba(255, 0, 0, 0.1);
+  text-decoration: line-through;
+}
+.line-text.modified {
+  color: #e2c08d;
 }
 </style>
