@@ -451,6 +451,10 @@ declare module "@wails/backend/appservice" {
 
   // Terminal methods
   export function CreateTerminal(): Promise<string>;
+
+  // Theme methods
+  export function ImportTheme(themePath: string): Promise<string>;
+  export function GetThemeDefinition(themePath: string): Promise<any>;
 }
 
 declare module "@wails/backend/models" {

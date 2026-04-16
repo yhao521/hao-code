@@ -11,6 +11,13 @@
         <span class="tab-name">{{ tab.name }}</span>
         <span class="close-icon" @click.stop="handleCloseTab(tab.id)">×</span>
       </div>
+      <button
+        class="theme-btn"
+        @click.stop="handleImportTheme"
+        title="导入 VSCode 主题"
+      >
+        🎨
+      </button>
     </div>
     <div class="monaco-container" ref="monacoRef"></div>
   </div>
@@ -24,9 +31,9 @@ import {
   GetGhostText,
   GetProjectRoot,
   GetFileBlame,
-  FormatDocument,
-  GetDiagnosticsCount,
   GetDiagnostics,
+  OpenFileDialog,
+  GetThemeDefinition,
 } from "@wails/backend/appservice";
 
 const props = defineProps<{
@@ -152,6 +159,27 @@ async function registerErrorLens(model: monaco.editor.ITextModel) {
     model.deltaDecorations([], decorations);
   } catch (e) {
     console.error("Failed to load diagnostics", e);
+  }
+}
+
+// 主题导入与应用
+async function handleImportTheme() {
+  try {
+    const path = await OpenFileDialog();
+    if (!path) return;
+
+    // 1. 获取 Monaco 兼容的定义
+    const themeDef = await GetThemeDefinition(path);
+
+    // 2. 定义主题
+    const themeName = "custom-imported-theme";
+    monaco.editor.defineTheme(themeName, themeDef as any);
+
+    // 3. 应用主题
+    monaco.editor.setTheme(themeName);
+    console.log("Theme applied successfully");
+  } catch (e) {
+    console.error("Failed to import theme", e);
   }
 }
 
@@ -301,6 +329,22 @@ watch(
   display: flex;
   background-color: #252526;
   overflow-x: auto;
+  align-items: center;
+}
+
+.theme-btn {
+  background: transparent;
+  border: none;
+  color: #858585;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 14px;
+  margin-left: auto;
+}
+
+.theme-btn:hover {
+  color: #ffffff;
+  background-color: #2a2d2e;
 }
 
 .tab-item {

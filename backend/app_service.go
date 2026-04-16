@@ -559,3 +559,13 @@ func (a *AppService) GetEnvVariables() (map[string]string, error) {
 func (a *AppService) SaveEnvVariables(vars map[string]string) error {
 	return SaveEnvVariables(vars)
 }
+
+// ImportTheme 导入 VSCode 主题
+func (a *AppService) ImportTheme(themePath string) (string, error) {
+	return ImportTheme(themePath)
+}
+
+// GetThemeDefinition 获取主题定义
+func (a *AppService) GetThemeDefinition(themePath string) (map[string]interface{}, error) {
+	return GetThemeDefinition(themePath)
+}
